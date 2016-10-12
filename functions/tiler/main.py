@@ -41,11 +41,10 @@ def handle(event, context):
             "statusCode": 404,
         }
 
-
-    if format != FORMAT:
-        raise InvalidTileRequest("Invalid format")
-
     try:
+        if format != FORMAT:
+            raise InvalidTileRequest("Invalid format")
+
         tile = Tile(x, y, zoom)
         data = read_tile(scene, tile, scale=scale)
 
