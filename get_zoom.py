@@ -22,4 +22,4 @@ def get_zoom(input, dst_crs="EPSG:3857"):
                                           (resolution * CHUNK_SIZE)) / math.log(2)))
 
 if __name__ == "__main__":
-        print(get_zoom(sys.argv[1]))
+    print(get_zoom(sys.argv[1]))
