@@ -78,7 +78,6 @@ class InvalidTileRequest(Exception):
         return rv
 
 
-@rr_cache()
 def read_tile(id, tile, scale=1):
     meta = get_metadata(id)
 
@@ -117,6 +116,7 @@ def handle_ioerror(error):
     return '', 404
 
 
+@rr_cache()
 @app.route('/<id>/<int:z>/<int:x>/<int:y>.png')
 def get_tile(id, z, x, y):
     tile = read_tile(id, Tile(x, y, z))
@@ -126,6 +126,7 @@ def get_tile(id, z, x, y):
     }
 
 
+@rr_cache()
 @app.route('/<id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
 def get_scaled_tile(id, z, x, y, scale):
     tile = read_tile(id, Tile(x, y, z), scale=scale)
