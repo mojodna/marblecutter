@@ -36,66 +36,22 @@ Write back to S3:
 ```bash
 aws s3 cp \
   scene-0-image-0-DG-103001005E85AC00.tif \
-  s3://oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/
+  s3://oam-dynamic-tiler-tmp/sources/57fca69e84ae75bb00ec751f/index.tif
 aws s3 cp \
   scene-0-image-0-DG-103001005E85AC00.tif.ovr \
-  s3://oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/
+  s3://oam-dynamic-tiler-tmp/sources/57fca69e84ae75bb00ec751f/index.tif
 ```
 
-Create warped VRT:
-
-(zoom 19, from `get_zoom.py`)
+Create warped VRT and write to S3:
 
 ```bash
-gdalwarp \
-  /vsicurl/https://s3.amazonaws.com/oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/scene-0-image-0-DG-103001005E85AC00.tif \
-  scene-0-image-0-DG-103001005E85AC00.vrt \
-  -r cubic \
-  -t_srs epsg:3857 \
-  -of VRT \
-  -te -20037508.34 -20037508.34 20037508.34 20037508.34 \
-  -ts 134217728 134217728 \
-  -dstalpha
+id=57fc935b84ae75bb00ec751b; ./get_vrt.sh $id | aws s3 cp - s3://oam-dynamic-tiler-tmp/sources/${id}/index.vrt
 ```
 
-Write to S3:
+Generate metadata JSON and write to S3:
 
 ```bash
-aws s3 cp \
-  scene-0-image-0-DG-103001005E85AC00.vrt \
-  s3://oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/
-```
-
-Generate metadata JSON.
-
-```json
-{
-  "bounds": [
-    -74.2369160,
-     18.5141228,
-    -74.0413656,
-     18.7300648
-  ],
-  "maxzoom": 22,
-  "meta": {
-    "approximateZoom": 19,
-    "bandCount": 4,
-    "height": 48117,
-    "source": "/vsicurl/https://s3.amazonaws.com/oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/scene-0-image-0-DG-103001005E85AC00.vrt",
-    "width": 43574
-  },
-  "minzoom": 12,
-  "name": "57fca69e84ae75bb00ec751f",
-  "tilejson": "2.1.0"
-}
-```
-
-Write to S3:
-
-```bash
-aws s3 cp \
-  index.json \
-  s3://oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/
+id=57fc935b84ae75bb00ec751b; python get_metadata.py $id | aws s3 cp - s3://oam-dynamic-tiler-tmp/sources/${id}/index.json
 ```
 
 ## lambda

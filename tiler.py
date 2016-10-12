@@ -11,13 +11,12 @@ import rasterio
 import requests
 
 
-MIN_ZOOM = int(os.environ.get('MIN_ZOOM', 0))
-MAX_ZOOM = int(os.environ.get('MAX_ZOOM', 22))
+S3_BUCKET = os.environ["S3_BUCKET"]
 
 
 @lru_cache()
 def get_metadata(id):
-    return requests.get('https://s3.amazonaws.com/oam-dynamic-tiler-tmp/uploads/2016-10-11/{}/index.json'.format(id)).json()
+    return requests.get('https://s3.amazonaws.com/{}/sources/{}/index.json'.format(S3_BUCKET, id)).json()
 
     return meta
 
@@ -71,10 +70,11 @@ class InvalidTileRequest(Exception):
 
 def read_tile(id, tile, scale=1):
     meta = get_metadata(id)
+    maxzoom = int(meta['maxzoom'])
+    minzoom = int(meta['minzoom'])
 
-    # TODO limit to some number of zooms beneath approximateZoom
-    if not meta['meta']['approximateZoom'] - 5 <= tile.z <= MAX_ZOOM:
-        raise InvalidTileRequest('Invalid zoom: {} outside [{}, {}]'.format(tile.z, meta['meta']['approximateZoom'] - 5, MAX_ZOOM))
+    if not minzoom <= tile.z <= maxzoom:
+        raise InvalidTileRequest('Invalid zoom: {} outside [{}, {}]'.format(tile.z, minzoom, maxzoom))
 
     sw = mercantile.tile(*meta['bounds'][0:2], zoom=tile.z)
     ne = mercantile.tile(*meta['bounds'][2:4], zoom=tile.z)
