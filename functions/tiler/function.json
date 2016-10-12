@@ -4,7 +4,7 @@
   "runtime": "python",
   "hooks": {
     "build": "docker run --rm --entrypoint cat $(docker build -q ../../deps) /tmp/task.zip > task.zip && unzip -o task.zip && rm task.zip",
-    "clean": "rm -rf affine* cachetools* click* cligj* contextlib2* cycler* enum* flask* Flask* itsdangerous* jinja2 Jinja2* lib markupsafe MarkupSafe* mercantile* numpy* pyparsing* pytz* rasterio* raven* requests* share snuggs* PIL* Pillow* werkzeug Werkzeug*"
+    "clean": "rm -rf affine* cachetools* click* cligj* contextlib2* cycler* enum* lib mercantile* numpy* pyparsing* pytz* rasterio* raven* requests* share snuggs* PIL* Pillow*"
   },
   "environment": {
   }
