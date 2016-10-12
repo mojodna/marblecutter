@@ -68,8 +68,14 @@ def handle(event, context):
                 CacheControl="public, max-age=2592000",
                 StorageClass="REDUCED_REDUNDANCY",
             )
-    except InvalidTileRequest:
-        raise
+    except InvalidTileRequest as error:
+        return {
+            "statusCode": error.status_code,
+            "headers": {
+                "Content-Type": "application/json",
+            },
+            "body": json.dumps(error.to_dict()),
+        }
     except:
         sentry.captureException()
         raise
