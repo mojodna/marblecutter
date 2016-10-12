@@ -17,7 +17,7 @@ MAX_ZOOM = int(os.environ.get('MAX_ZOOM', 22))
 
 @lru_cache()
 def get_metadata(id):
-    return requests.get('https://s3.amazonaws.com/oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/scene-0-image-0-DG-103001005E85AC00.json').json()
+    return requests.get('https://s3.amazonaws.com/oam-dynamic-tiler-tmp/uploads/2016-10-11/{}/index.json'.format(id)).json()
 
     return meta
 

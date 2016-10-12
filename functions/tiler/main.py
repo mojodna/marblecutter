@@ -40,7 +40,7 @@ def handle(event, context):
 
     try:
         tile = Tile(x, y, zoom)
-        data = read_tile(id, tile, scale=scale)
+        data = read_tile(scene, tile, scale=scale)
 
         if scale == 1:
             key = "{}/{}/{}/{}.{}".format(scene, tile.z, tile.x, tile.y, FORMAT)

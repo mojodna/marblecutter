@@ -58,12 +58,44 @@ gdalwarp \
   -dstalpha
 ```
 
-Write back to S3:
+Write to S3:
 
 ```bash
 aws s3 cp \
   scene-0-image-0-DG-103001005E85AC00.vrt \
   s3://oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/
+```
+
+Generate metadata JSON.
+
+```json
+{
+  "bounds": [
+    -74.2369160,
+     18.5141228,
+    -74.0413656,
+     18.7300648
+  ],
+  "maxzoom": 22,
+  "meta": {
+    "approximateZoom": 19,
+    "bandCount": 4,
+    "height": 48117,
+    "source": "/vsicurl/https://s3.amazonaws.com/oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/scene-0-image-0-DG-103001005E85AC00.vrt",
+    "width": 43574
+  },
+  "minzoom": 12,
+  "name": "57fca69e84ae75bb00ec751f",
+  "tilejson": "2.1.0"
+}
+```
+
+Write to S3:
+
+```bash
+aws s3 cp \
+  index.json \
+  s3://oam-dynamic-tiler-tmp/uploads/2016-10-11/57fca69e84ae75bb00ec751f/
 ```
 
 ## lambda
