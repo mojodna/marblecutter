@@ -19,21 +19,28 @@ FORMAT = os.environ.get("FORMAT", "png")
 
 
 def handle(event, context):
-    (input_path, ext) = path.splitext(event["path"])
-    parts = input_path.split("@")
-    input_path = parts.pop(0)
+    try:
+        (input_path, ext) = path.splitext(event["path"])
+        parts = input_path.split("@")
+        input_path = parts.pop(0)
 
-    (y, x, zoom, scene, _) = reversed(input_path.split("/"))
-    y = int(y)
-    x = int(x)
-    zoom = int(zoom)
+        (y, x, zoom, scene, _) = reversed(input_path.split("/"))
+        y = int(y)
+        x = int(x)
+        zoom = int(zoom)
 
-    if len(parts) > 0:
-        scale = int(re.sub(r"[^\d]", "", parts.pop()))
-    else:
-        scale = 1
+        if len(parts) > 0:
+            scale = int(re.sub(r"[^\d]", "", parts.pop()))
+        else:
+            scale = 1
 
-    format = ext[1:]
+        format = ext[1:]
+    except:
+        # fail gracefully when a path doesn't match
+        return {
+            "statusCode": 404,
+        }
+
 
     if format != FORMAT:
         raise InvalidTileRequest("Invalid format")
