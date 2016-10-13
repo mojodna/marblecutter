@@ -6,6 +6,8 @@
   "timeout": 5,
   "role": "arn:aws:iam::670261699094:role/tiler_lambda_function",
   "environment": {
-    "S3_BUCKET": "oam-dynamic-tiler-tmp"
+    "S3_BUCKET": "oam-dynamic-tiler-tmp",
+    "CPL_VSIL_CURL_ALLOWED_EXTENSIONS": ".vrt,.tif,.ovr",
+    "VSI_CACHE_SIZE": "536870912"
   }
 }
