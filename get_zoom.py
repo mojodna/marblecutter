@@ -12,6 +12,8 @@ def get_zoom(input, dst_crs="EPSG:3857"):
     input = input.replace("s3://", "/vsicurl/http://s3.amazonaws.com/")
     with rasterio.drivers():
         with rasterio.open(input) as src:
+            # TODO can calculate this using bounds + width/height directly
+            # necessary for large, high resolution files, e.g. https://beta.openaerialmap.org/#/-74.38186168670653,18.600366290034742,18/032210312003/57fecef9b0eae7f3b143a8d5?_k=kl2eco
             affine, _, _ = calculate_default_transform(src.crs, dst_crs,
                 src.width, src.height, *src.bounds, resolution=None)
 
