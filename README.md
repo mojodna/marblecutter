@@ -24,7 +24,7 @@ aws s3 cp \
   --acl public-read
 aws s3 cp \
   57fca69e84ae75bb00ec751f.tif.ovr \
-  s3://oam-dynamic-tiler-tmp/sources/57fca69e84ae75bb00ec751f/index.tif \
+  s3://oam-dynamic-tiler-tmp/sources/57fca69e84ae75bb00ec751f/index.tif.ovr \
   --acl public-read
 ```
 
