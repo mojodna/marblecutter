@@ -103,3 +103,19 @@ Update `project.json` with `tiler_lambda_function`'s Role ARN, e.g. `arn:aws:iam
 Run `apex deploy`. (Add `-l debug` to see what's running.) This will build the Docker image defined
 in `deps/` to produce a `task.zip` containing binary dependencies needed when deploying to the
 Lambda runtime.
+
+
+### Test
+You may run a test by editing the contents of `test-png.json` to that of the `/{scene}/{z}/{x}/{y}.png` path of a "known tile" then running:
+
+```
+apex invoke tiler < test-png.json
+```
+
+You should then see some output such as:
+
+```
+{"headers": {"Location": "http://my-s3-bucket-name.s3.amazonaws.com/2015/17/24029/46260.png"}, "statusCode": 200}
+```
+
+You may then open the URL, eg: `http://my-s3-bucket-name.s3.amazonaws.com/2015/17/24029/46260.png`, in a browser to confirm that a tile was created.
