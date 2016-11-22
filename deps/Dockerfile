@@ -69,7 +69,7 @@ RUN \
 
 RUN \
   zip --symlinks \
-    -r9 /tmp/task.zip \
+    -r /tmp/task.zip \
     lib/libgdal.so* \
     lib/libproj.so*
 
@@ -77,7 +77,7 @@ WORKDIR /var/task
 
 RUN \
   zip --symlinks \
-    -r9 /tmp/task.zip \
+    -r /tmp/task.zip \
     share/gdal/ \
     .cache/matplotlib/
 
@@ -95,4 +95,4 @@ RUN \
     -x wheel\* \
     -x \*/tests/\* \
     -x \*/test/\* \
-    -r9 /tmp/task.zip *
+    -r /tmp/task.zip *
