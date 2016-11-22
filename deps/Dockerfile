@@ -28,11 +28,11 @@ RUN \
 # Fetch GDAL
 
 RUN \
-  curl -L http://download.osgeo.org/gdal/2.1.1/gdal-2.1.1.tar.gz | tar zxf - -C /tmp
+  curl -L http://download.osgeo.org/gdal/2.1.2/gdal-2.1.2.tar.gz | tar zxf - -C /tmp
 
 # Build + install GDAL
 
-WORKDIR /tmp/gdal-2.1.1
+WORKDIR /tmp/gdal-2.1.2
 
 RUN \
   ./configure \
@@ -64,7 +64,7 @@ RUN \
 WORKDIR /usr/local
 
 RUN \
-  strip lib/libgdal.so.20.1.1 && \
+  strip lib/libgdal.so.20.1.2 && \
   strip lib/libproj.so.12.0.0
 
 RUN \

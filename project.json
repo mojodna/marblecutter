@@ -9,6 +9,7 @@
     "S3_BUCKET": "oam-dynamic-tiler-tmp",
     "CPL_TMPDIR": "/tmp",
     "CPL_VSIL_CURL_ALLOWED_EXTENSIONS": ".vrt,.tif,.ovr",
+    "GDAL_DISABLE_READDIR_ON_OPEN": "TRUE",
     "VSI_CACHE": "TRUE",
     "VSI_CACHE_SIZE": "536870912"
   }
