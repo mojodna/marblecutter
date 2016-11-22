@@ -6,23 +6,22 @@ More information:
 
 * [Introducing the AWS Lambda Tiler](https://hi.stamen.com/stamen-aws-lambda-tiler-blog-post-76fc1138a145#.j644z9qvw)
 
-## Usage
+## Command Line Tools
+
+The command line tools (in `bin/`) require `bash`, `jq`, `python`, and `rasterio`.
 
 Transcode source scene:
 
 ```bash
-./transcode.sh \
+bin/transcode.sh \
   http://hotosm-oam.s3.amazonaws.com/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/scene-0-image-0-DG-103001005E85AC00.tif \
   57fca69e84ae75bb00ec751f.tif
 ```
 
 Add external overviews:
 
-Overview calculation (currently hardcoded in `make_overviews.sh`):
-`Math.floor(Math.log(Math.max(width, height)) / Math.log(2))`
-
 ```bash
-./make_overviews.sh 57fca69e84ae75bb00ec751f.tif
+bin/make_overviews.sh 57fca69e84ae75bb00ec751f.tif
 ```
 
 Write back to S3:
@@ -41,13 +40,13 @@ aws s3 cp \
 Create warped VRT and write to S3:
 
 ```bash
-id=57fc935b84ae75bb00ec751b; ./get_vrt.sh $id | aws s3 cp - s3://oam-dynamic-tiler-tmp/sources/${id}/index.vrt
+id=57fc935b84ae75bb00ec751b; bin/make_vrt.sh $id | aws s3 cp - s3://oam-dynamic-tiler-tmp/sources/${id}/index.vrt
 ```
 
 Generate metadata JSON and write to S3:
 
 ```bash
-id=57fc935b84ae75bb00ec751b; python get_metadata.py $id | aws s3 cp - s3://oam-dynamic-tiler-tmp/sources/${id}/index.json
+id=57fc935b84ae75bb00ec751b; bin/get_metadata.py $id | aws s3 cp - s3://oam-dynamic-tiler-tmp/sources/${id}/index.json
 ```
 
 ## lambda
