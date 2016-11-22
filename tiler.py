@@ -68,6 +68,10 @@ class InvalidTileRequest(Exception):
         return rv
 
 
+def get_bounds(id):
+    return get_metadata(id)['bounds']
+
+
 def read_tile(id, tile, scale=1):
     meta = get_metadata(id)
     maxzoom = int(meta['maxzoom'])
