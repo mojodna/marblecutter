@@ -1,3 +1,13 @@
+# OpenAerialMap Dynamic Tiler
+
+This is a standalone (Python / Flask) and Lambda-based dynamic tiler for S3-hosted GeoTIFFs.
+
+More information:
+
+* [Introducing the AWS Lambda Tiler](https://hi.stamen.com/stamen-aws-lambda-tiler-blog-post-76fc1138a145#.j644z9qvw)
+
+## Usage
+
 Transcode source scene:
 
 ```bash
