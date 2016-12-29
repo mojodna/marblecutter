@@ -57,7 +57,7 @@ ENV PATH /tmp/virtualenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/
 
 RUN \
   pip install numpy && \
-  pip install -U cachetools jinja2 mercantile pillow rasterio raven requests werkzeug
+  pip install -U cachetools flask flask_cors jinja2 mercantile pillow rasterio raven requests werkzeug
 
 # Add GDAL libs to the function zip
 

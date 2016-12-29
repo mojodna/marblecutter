@@ -59,15 +59,17 @@ def get_scaled_tile(id, z, x, y, scale):
 @rr_cache()
 @app.route('/<id>')
 def meta(id):
+    # TODO add tiles[] to form actionable TileJSON
     return jsonify(get_metadata(id))
 
 
 @rr_cache()
 @app.route('/<id>/wmts')
 def wmts(id):
-    return render_template('wmts.xml', id=id, bounds=get_bounds(id), base_url=url_for('meta', id=id, _external=True)), 200, {
-        'Content-Type': 'application/xml'
-    }
+    with app.app_context():
+        return render_template('wmts.xml', id=id, bounds=get_bounds(id), base_url=url_for('meta', id=id, _external=True)), 200, {
+            'Content-Type': 'application/xml'
+        }
 
 
 @app.route('/favicon.ico')
