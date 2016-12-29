@@ -1,11 +1,10 @@
 # coding=utf-8
 
+import base64
 import os
-from os import path
 import json
 import re
 
-import boto3
 from jinja2 import Template
 from mercantile import Tile
 from raven import Client
@@ -15,8 +14,7 @@ from tiler import InvalidTileRequest, get_metadata, read_tile
 
 
 sentry = Client()
-S3_BUCKET = os.environ["S3_BUCKET"]
-S3 = boto3.resource("s3")
+BASE_URL = os.environ.get("BASE_URL", "")
 FORMAT = os.environ.get("FORMAT", "png")
 WMTS_TEMPLATE = Template(open("templates/wmts.xml", "r").read())
 
@@ -32,33 +30,6 @@ def tile(scene, zoom, x, y, scale=1, **kwargs):
     try:
         tile = Tile(x, y, zoom)
         data = read_tile(scene, tile, scale=scale)
-
-        if scale == 1:
-            key = "{}/{}/{}/{}.{}".format(scene, tile.z, tile.x, tile.y, FORMAT)
-
-            S3.Object(
-                S3_BUCKET,
-                key,
-            ).put(
-                Body=data,
-                ACL="public-read",
-                ContentType="image/{}".format(FORMAT),
-                CacheControl="public, max-age=2592000",
-                StorageClass="REDUCED_REDUNDANCY",
-            )
-        elif scale == 2:
-            key = "{}/{}/{}/{}@2x.{}".format(scene, tile.z, tile.x, tile.y, FORMAT)
-
-            S3.Object(
-                S3_BUCKET,
-                key,
-            ).put(
-                Body=data,
-                ACL="public-read",
-                ContentType="image/{}".format(FORMAT),
-                CacheControl="public, max-age=2592000",
-                StorageClass="REDUCED_REDUNDANCY",
-            )
     except InvalidTileRequest as error:
         return {
             "statusCode": error.status_code,
@@ -69,29 +40,20 @@ def tile(scene, zoom, x, y, scale=1, **kwargs):
         }
 
     return {
-        "statusCode": 302,
+        "statusCode": 200,
         "headers": {
-            "Location": "http://{}.s3.amazonaws.com/{}".format(S3_BUCKET, key),
-        }
+            "Content-Type": "image/{}".format(FORMAT),
+        },
+        "body": base64.b64encode(data),
+        "isBase64Encoded": True,
     }
 
 
 def wmts(scene, **kwargs):
     data = WMTS_TEMPLATE.render(
-        base_url="http://{}.s3-website-us-east-1.amazonaws.com/{}".format(S3_BUCKET, scene),
+        base_url="{}/{}".format(BASE_URL, scene),
         bounds=get_metadata(scene)["bounds"],
         id=scene,
-    )
-
-    S3.Object(
-        S3_BUCKET,
-        "{}/wmts".format(scene),
-    ).put(
-        Body=data,
-        ACL="public-read",
-        ContentType="application/xml",
-        CacheControl="public, max-age=2592000",
-        StorageClass="REDUCED_REDUNDANCY",
     )
 
     return {

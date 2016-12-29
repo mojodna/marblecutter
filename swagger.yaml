@@ -29,3 +29,6 @@ paths:
         cacheKeyParameters:
         - "method.request.path.proxy"
         type: "aws_proxy"
+        contentHandling: "CONVERT_TO_BINARY"
+x-amazon-apigateway-binary-media-types:
+- "*/*"

@@ -7,6 +7,7 @@
   "role": "arn:aws:iam::670261699094:role/tiler_lambda_function",
   "environment": {
     "S3_BUCKET": "oam-dynamic-tiler-tmp",
+    "BASE_URL": "https://jp081v0r7k.execute-api.us-east-1.amazonaws.com/prod",
     "CPL_TMPDIR": "/tmp",
     "CPL_VSIL_CURL_ALLOWED_EXTENSIONS": ".vrt,.tif,.ovr",
     "GDAL_DISABLE_READDIR_ON_OPEN": "TRUE",
