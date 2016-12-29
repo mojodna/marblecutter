@@ -85,46 +85,10 @@ Create IAM policy: `tiler_lambda_logs` with policy document:
 }
 ```
 
-Attach policy to `tiler_lambda_function` role.
-
-Create inline policy to allow `tiler_lambda_function` to write to S3:
-
-```xml
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "s3:PutObject",
-                "s3:PutObjectAcl"
-            ],
-            "Resource": [
-                "arn:aws:s3:::oam-dynamic-tiler-tmp/*"
-            ]
-        }
-    ]
-}
-```
+Attach policy to the `tiler_lambda_function` role.
 
 Update `project.json` with `tiler_lambda_function`'s Role ARN, e.g. `arn:aws:iam::670261699094:role/tiler_lambda_function`.
 
 Run `apex deploy`. (Add `-l debug` to see what's running.) This will build the Docker image defined
 in `deps/` to produce a `task.zip` containing binary dependencies needed when deploying to the
 Lambda runtime.
-
-
-### Test
-You may run a test by editing the contents of `test-png.json` to that of the `/{scene}/{z}/{x}/{y}.png` path of a "known tile" then running:
-
-```
-apex invoke tiler < test-png.json
-```
-
-You should then see some output such as:
-
-```
-{"headers": {"Location": "http://my-s3-bucket-name.s3.amazonaws.com/2015/17/24029/46260.png"}, "statusCode": 200}
-```
-
-You may then open the URL, eg: `http://my-s3-bucket-name.s3.amazonaws.com/2015/17/24029/46260.png`, in a browser to confirm that a tile was created.
