@@ -24,7 +24,7 @@ def get_metadata(id):
         with rasterio.open(scene.replace("s3://", "/vsicurl/http://s3.amazonaws.com/")) as src:
             bounds = transform_bounds(src.crs, {'init': 'epsg:4326'}, *src.bounds)
             approximate_zoom = get_zoom(scene)
-            maxzoom = approximate_zoom + 3
+            maxzoom = max(approximate_zoom + 3, 22)
             minzoom = approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom)
             source = scene_vrt.replace("s3://", "http://s3.amazonaws.com/")
 
