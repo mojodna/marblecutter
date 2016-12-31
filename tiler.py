@@ -18,8 +18,6 @@ S3_BUCKET = os.environ["S3_BUCKET"]
 def get_metadata(id):
     return requests.get('https://s3.amazonaws.com/{}/sources/{}/index.json'.format(S3_BUCKET, id)).json()
 
-    return meta
-
 @lru_cache()
 def get_source(path):
     with rasterio.drivers():
