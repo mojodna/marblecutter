@@ -20,7 +20,7 @@ def get_metadata(id):
 
 @lru_cache()
 def get_source(path):
-    with rasterio.drivers():
+    with rasterio.Env():
         return rasterio.open(path)
 
 
