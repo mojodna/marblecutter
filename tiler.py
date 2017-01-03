@@ -44,10 +44,16 @@ def render_tile(meta, tile, scale=1):
 
     src = get_source(src_url)
     # use decimated reads to read from overviews, per https://github.com/mapbox/rasterio/issues/710
-    data = np.empty(shape=(4, 256 * scale, 256 * scale)).astype(src.profile['dtype'])
-    data = src.read(out=data, window=window)
+    data = src.read(out_shape=(3, 256 * scale, 256 * scale), window=window)
 
-    return data
+    mask_url = meta['meta'].get('mask')
+    if mask_url:
+        mask = get_source(mask_url)
+        mask_data = mask.read(out_shape=(1, 256 * scale, 256 * scale), window=window) * 255
+    else:
+        mask_data = np.full((1, 256 * scale, 256 * scale), np.iinfo(src.profile['dtype']), src.profile['dtype'])
+
+    return np.concatenate((data, mask_data))
 
 
 class InvalidTileRequest(Exception):
