@@ -16,15 +16,13 @@ def get_zoom_offset(width, height, approximate_zoom):
                 if (height / (2 ** (x + 1))) >= 1 and (width / (2 ** (x + 1))) >= 1])
 
 
-def get_zoom(input, dst_crs="EPSG:3857"):
+def get_zoom(input):
     input = input.replace("s3://", "/vsicurl/http://s3.amazonaws.com/")
     with rasterio.drivers():
         with rasterio.open(input) as src:
-            affine, _, _ = calculate_default_transform(src.crs, dst_crs,
-                src.width, src.height, *src.bounds, resolution=None)
-
-            # grab the lowest resolution dimension
-            resolution = max(abs(affine[0]), abs(affine[4]))
+            # grab the lowest resolution dimension (assuming units are meters)
+            # TODO if units aren't meters (CRS = epsg:4326), deal
+            resolution = max((src.bounds.right - src.bounds.left) / src.width, (src.bounds.top - src.bounds.bottom) / src.height)
 
             return int(math.ceil(math.log((2 * math.pi * 6378137) /
                                           (resolution * 256)) / math.log(2)))
