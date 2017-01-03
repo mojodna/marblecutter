@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update && \
   apt-get install -y --no-install-recommends software-properties-common && \
-  add-apt-repository ppa:ubuntugis/ubuntugis-unstable && \
+  add-apt-repository ppa:ubuntugis/ppa && \
   apt-get update && \
   apt-get upgrade -y && \
   apt-get install -y --no-install-recommends \
