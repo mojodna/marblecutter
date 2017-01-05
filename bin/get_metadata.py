@@ -25,7 +25,7 @@ def get_metadata(prefix):
             bounds = transform_bounds(src.crs, {'init': 'epsg:4326'}, *src.bounds)
             approximate_zoom = get_zoom(scene)
             maxzoom = max(approximate_zoom + 3, 22)
-            minzoom = approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom)
+            minzoom = max(approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom), 0)
             source = scene_vrt.replace("s3://", "http://s3.amazonaws.com/")
             mask = mask_vrt.replace("s3://", "http://s3.amazonaws.com/")
 
