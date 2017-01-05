@@ -18,12 +18,12 @@ if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
   input="/vsicurl/$input"
 fi
 
-echo "Transcoding RGB bands..."
+echo "Transcoding bands..."
 gdal_translate \
   -b 1 \
   -b 2 \
   -b 3 \
-  -a_nodata none \
+  -mask 4 \
   -co TILED=yes \
   -co COMPRESS=JPEG \
   -co PHOTOMETRIC=YCbCr \
@@ -58,35 +58,14 @@ gdaladdo \
   $output \
   $overviews
 
-# check if an alpha channel is available
-bands=$(rio info $input 2> /dev/null | jq .count)
-
-if [ $bands -eq 4 ]; then
-  echo "Creating mask..."
-  gdal_translate \
-    -b 4 \
-    -mo INTERNAL_MASK_FLAGS_1=2 \
-    -mo INTERNAL_MASK_FLAGS_2=2 \
-    -mo INTERNAL_MASK_FLAGS_3=2 \
-    -co TILED=yes \
-    -co COMPRESS=DEFLATE \
-    -co NBITS=1 \
-    -co BLOCKXSIZE=512 \
-    -co BLOCKYSIZE=512 \
-    -co SPARSE_OK=yes \
-    -co NUM_THREADS=ALL_CPUS \
-    $input $output.msk
-
-  echo "Adding overviews to mask..."
-  gdaladdo \
-    --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
-    --config TILED_OVERVIEW yes \
-    --config COMPRESS_OVERVIEW DEFLATE \
-    --config NBITS_OVERVIEW 1 \
-    --config BLOCKXSIZE_OVERVIEW 512 \
-    --config BLOCKYSIZE_OVERVIEW 512 \
-    --config SPARSE_OK_OVERVIEW yes \
-    --config NUM_THREADS_OVERVIEW ALL_CPUS \
-    $output.msk \
-    $overviews
-fi
+echo "Adding overviews to mask..."
+gdaladdo \
+  --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
+  --config TILED_OVERVIEW yes \
+  --config COMPRESS_OVERVIEW DEFLATE \
+  --config BLOCKXSIZE_OVERVIEW 512 \
+  --config BLOCKYSIZE_OVERVIEW 512 \
+  --config SPARSE_OK_OVERVIEW yes \
+  --config NUM_THREADS_OVERVIEW ALL_CPUS \
+  $output.msk \
+  $overviews

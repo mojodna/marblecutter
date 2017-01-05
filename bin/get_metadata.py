@@ -16,8 +16,8 @@ from get_zoom import get_zoom, get_zoom_offset
 
 def get_metadata(prefix):
     scene = "{}.tif".format(prefix)
-    scene_vrt = "{}.vrt".format(prefix)
-    mask_vrt = "{}_mask.vrt".format(prefix)
+    scene_vrt = "{}_warped.vrt".format(prefix)
+    mask_vrt = "{}_warped_mask.vrt".format(prefix)
 
     with rasterio.Env():
         # TODO this assumes US Standard region
@@ -34,7 +34,6 @@ def get_metadata(prefix):
               "maxzoom": maxzoom,
               "meta": {
                 "approximateZoom": approximate_zoom,
-                "bandCount": src.count,
                 "height": src.height,
                 "source": source,
                 "mask": mask,

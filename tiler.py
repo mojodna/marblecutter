@@ -28,9 +28,24 @@ def get_source(path):
         return rasterio.open(path)
 
 
+def read_window(window, src_url, mask_url=None, scale=1):
+    tile_size = 256 * scale
+
+    src = get_source(src_url)
+    # use decimated reads to read from overviews, per https://github.com/mapbox/rasterio/issues/710
+    data = src.read(out_shape=(3, tile_size, tile_size), window=window)
+
+    if mask_url:
+        mask = get_source(mask_url)
+        mask_data = mask.read(out_shape=(1, tile_size, tile_size), window=window)
+    else:
+        mask_data = np.full((1, tile_size, tile_size), np.iinfo(src.profile['dtype']).max, src.profile['dtype'])
+
+    return np.concatenate((data, mask_data))
+
+
 def render_tile(meta, tile, scale=1):
     src_tile_zoom = meta['meta']['approximateZoom']
-    src_url = meta['meta']['source']
     # do calculations in src_tile_zoom space
     dz = src_tile_zoom - tile.z
     x = 2**dz * tile.x
@@ -46,18 +61,19 @@ def render_tile(meta, tile, scale=1):
     window = [[top - (top - (256 * y)), top - (top - ((256 * y) + int(256 * dy)))],
               [256 * x, (256 * x) + int(256 * dx)]]
 
-    src = get_source(src_url)
-    # use decimated reads to read from overviews, per https://github.com/mapbox/rasterio/issues/710
-    data = src.read(out_shape=(3, 256 * scale, 256 * scale), window=window)
-
-    mask_url = meta['meta'].get('mask')
-    if mask_url:
-        mask = get_source(mask_url)
-        mask_data = mask.read(out_shape=(1, 256 * scale, 256 * scale), window=window) * 255
+    src_url = meta['meta'].get('source')
+    if src_url:
+        return read_window(window, src_url, meta['meta'].get('mask'), scale=scale)
     else:
-        mask_data = np.full((1, 256 * scale, 256 * scale), np.iinfo(src.profile['dtype']), src.profile['dtype'])
+        data = np.zeros(shape=(4, 256 * scale, 256 * scale)).astype(np.uint8)
+        for src_url, mask_url in zip(meta['meta'].get('sources', []), meta['meta'].get('masks', [])):
+            d = read_window(window, src_url, mask_url, scale=scale)
 
-    return np.concatenate((data, mask_data))
+            mask = d[3] > 0
+            mask = mask[np.newaxis,:]
+            data = np.where(mask, d, data)
+
+        return data
 
 
 class InvalidTileRequest(Exception):
