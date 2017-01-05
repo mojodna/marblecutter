@@ -347,6 +347,7 @@ RUN \
     jinja2/lexer.pyc \
     jinja2/bccache.pyc \
     jinja2/environment.pyc \
+    jinja2/ext.pyc \
     raven/* \
     contextlib2.pyc \
     flask/testing.pyc \
