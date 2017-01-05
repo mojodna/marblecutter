@@ -94,7 +94,7 @@ def meta(id, **kwargs):
 @app.route('/<id>/<int:scene_idx>/wmts')
 def scene_wmts(id, **kwargs):
     with app.app_context():
-        return render_template('wmts.xml', id=id, bounds=get_bounds(id, **kwargs), base_url=url_for('meta', id=id, _external=True, **kwargs), **kwargs), 200, {
+        return render_template('wmts.xml', id=id, bounds=get_bounds(id, **kwargs), base_url=url_for('scene_meta', id=id, _external=True, **kwargs), **kwargs), 200, {
             'Content-Type': 'application/xml'
         }
 
