@@ -15,8 +15,12 @@ S3_BUCKET = os.environ["S3_BUCKET"]
 
 
 @lru_cache()
-def get_metadata(id):
-    return requests.get('https://s3.amazonaws.com/{}/sources/{}/index.json'.format(S3_BUCKET, id)).json()
+def get_metadata(id, image_id=None, scene_idx=0):
+    # TODO support alternate regions
+    if image_id:
+        return requests.get('https://s3.amazonaws.com/{}/sources/{}/{}/{}.json'.format(S3_BUCKET, id, scene_idx, image_id)).json()
+    else:
+        return requests.get('https://s3.amazonaws.com/{}/sources/{}/{}/scene.json'.format(S3_BUCKET, id, scene_idx)).json()
 
 @lru_cache()
 def get_source(path):
@@ -72,12 +76,12 @@ class InvalidTileRequest(Exception):
         return rv
 
 
-def get_bounds(id):
-    return get_metadata(id)['bounds']
+def get_bounds(id, **kwargs):
+    return get_metadata(id, **kwargs)['bounds']
 
 
-def read_tile(id, tile, scale=1):
-    meta = get_metadata(id)
+def read_tile(id, tile, scale=1, **kwargs):
+    meta = get_metadata(id, **kwargs)
     maxzoom = int(meta['maxzoom'])
     minzoom = int(meta['minzoom'])
 
