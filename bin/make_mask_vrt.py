@@ -23,6 +23,6 @@ if __name__ == "__main__":
     source_dataset = doc.find("./GDALWarpOptions/SourceDataset")
     source_dataset.text = re.sub(".tif$", ".tif.msk", source_dataset.text)
     resample_alg = doc.find("./GDALWarpOptions/ResampleAlg")
-    resample_alg.text = "NearestNeighbor"
+    resample_alg.text = "NearestNeighbour"
 
     ET.dump(doc)
