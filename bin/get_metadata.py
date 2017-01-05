@@ -19,7 +19,7 @@ def get_metadata(prefix):
     scene_vrt = "{}.vrt".format(prefix)
     mask_vrt = "{}_mask.vrt".format(prefix)
 
-    with rasterio.drivers():
+    with rasterio.Env():
         # TODO this assumes US Standard region
         with rasterio.open(scene.replace("s3://", "/vsicurl/http://s3.amazonaws.com/")) as src:
             bounds = transform_bounds(src.crs, {'init': 'epsg:4326'}, *src.bounds)

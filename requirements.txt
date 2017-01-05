@@ -4,6 +4,6 @@ flask-cors
 mercantile
 numpy
 Pillow
-rasterio
+rasterio>=1.0a5
 raven
 requests

@@ -18,7 +18,7 @@ def get_zoom_offset(width, height, approximate_zoom):
 
 def get_zoom(input):
     input = input.replace("s3://", "/vsicurl/http://s3.amazonaws.com/")
-    with rasterio.drivers():
+    with rasterio.Env():
         with rasterio.open(input) as src:
             # grab the lowest resolution dimension (assuming units are meters)
             # TODO if units aren't meters (CRS = epsg:4326), deal
