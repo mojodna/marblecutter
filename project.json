@@ -3,7 +3,7 @@
   "name": "oam-dynamic-tiler",
   "description": "Dynamic tiling of raster data",
   "memory": 1536,
-  "timeout": 5,
+  "timeout": 15,
   "role": "arn:aws:iam::670261699094:role/tiler_lambda_function",
   "environment": {
     "S3_BUCKET": "oam-dynamic-tiler-tmp",
