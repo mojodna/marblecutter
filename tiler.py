@@ -1,5 +1,8 @@
 # coding=utf-8
 
+from functools import partial
+import logging
+from multiprocessing.dummy import Pool
 from StringIO import StringIO
 import os
 
@@ -12,6 +15,7 @@ import requests
 
 
 S3_BUCKET = os.environ["S3_BUCKET"]
+pool = Pool(100)
 
 
 @lru_cache()
@@ -22,7 +26,8 @@ def get_metadata(id, image_id=None, scene_idx=0):
     else:
         return requests.get('https://s3.amazonaws.com/{}/sources/{}/{}/scene.json'.format(S3_BUCKET, id, scene_idx)).json()
 
-@lru_cache()
+
+@lru_cache(maxsize=1024)
 def get_source(path):
     return rasterio.open(path)
 
@@ -60,6 +65,15 @@ def make_window(src_tile_zoom, tile):
             [256 * x, (256 * x) + int(256 * dx)]]
 
 
+def read_masked_window(source, tile, scale=1):
+    return read_window(
+        make_window(source['meta']['approximateZoom'], tile),
+        source['meta'].get('source'),
+        source['meta'].get('mask'),
+        scale=scale
+    )
+
+
 def render_tile(meta, tile, scale=1):
     src_url = meta['meta'].get('source')
     if src_url:
@@ -71,14 +85,9 @@ def render_tile(meta, tile, scale=1):
         )
     else:
         data = np.zeros(shape=(4, 256 * scale, 256 * scale)).astype(np.uint8)
-        for source in meta['meta'].get('sources', []):
-            d = read_window(
-                make_window(source['meta']['approximateZoom'], tile),
-                source['meta'].get('source'),
-                source['meta'].get('mask'),
-                scale=scale
-            )
 
+        # TODO further optimize by filtering sources to only include those that apply to this tile
+        for d in pool.map(partial(read_masked_window, tile=tile, scale=scale), meta['meta'].get('sources', [])):
             mask = d[3] > 0
             mask = mask[np.newaxis,:]
             data = np.where(mask, d, data)

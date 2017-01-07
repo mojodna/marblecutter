@@ -60,7 +60,7 @@ ENV PATH /tmp/virtualenv/bin:/var/task/bin:/usr/local/sbin:/usr/local/bin:/usr/s
 
 RUN \
   pip install -U cachetools flask flask_cors jinja2 mercantile numpy pillow raven requests werkzeug && \
-  pip install -U --no-binary :all: rasterio
+  pip install -U --no-binary :all: https://github.com/mojodna/rasterio/archive/1.0a5+nogil.tar.gz
 
 # Add GDAL libs to the function zip
 

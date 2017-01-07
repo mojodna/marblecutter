@@ -9,8 +9,10 @@ RUN apt-get update && \
   apt-get install -y --no-install-recommends \
     build-essential \
     curl \
+    cython \
     jq \
     python-pip \
+    python-wheel \
     python-setuptools && \
   apt-get clean
 
