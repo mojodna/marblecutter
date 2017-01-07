@@ -2,16 +2,12 @@ FROM lambci/lambda:build-python2.7
 
 # Install deps
 
-ADD automake16-1.6.3-18.6.amzn1.noarch.rpm /tmp
-ADD libcurl-devel-7.40.0-8.54.amzn1.x86_64.rpm /tmp
-ADD libjpeg-turbo-devel-1.2.90-5.14.amzn1.x86_64.rpm /tmp
-ADD libpng-devel-1.2.49-2.14.amzn1.x86_64.rpm /tmp
-
 RUN \
-  rpm -ivh /tmp/automake16-1.6.3-18.6.amzn1.noarch.rpm \
-    /tmp/libcurl-devel-7.40.0-8.54.amzn1.x86_64.rpm \
-    /tmp/libjpeg-turbo-devel-1.2.90-5.14.amzn1.x86_64.rpm \
-    /tmp/libpng-devel-1.2.49-2.14.amzn1.x86_64.rpm
+  yum install -y \
+    automake16 \
+    libcurl-devel \
+    libjpeg-turbo-devel \
+    libpng-devel
 
 # Fetch PROJ.4
 
