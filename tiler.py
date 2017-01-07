@@ -74,6 +74,16 @@ def read_masked_window(source, tile, scale=1):
     )
 
 
+def intersects(tile):
+    t = mercantile.bounds(*tile)
+
+    def _intersects(src):
+        (left, bottom, right, top) = src['bounds']
+        return not(left >= t.east or right <= t.west or top <= t.south or bottom >= t.north)
+
+    return _intersects
+
+
 def render_tile(meta, tile, scale=1):
     src_url = meta['meta'].get('source')
     if src_url:
@@ -84,10 +94,21 @@ def render_tile(meta, tile, scale=1):
             scale=scale
         )
     else:
+        # optimize by filtering sources to only include those that apply to this tile
+        sources = filter(intersects(tile), meta['meta'].get('sources', []))
+
+        if len(sources) == 1:
+            return read_window(
+                make_window(sources[0]['meta']['approximateZoom'], tile),
+                sources[0]['meta']['source'],
+                sources[0]['meta'].get('mask'),
+                scale=scale
+            )
+
         data = np.zeros(shape=(4, 256 * scale, 256 * scale)).astype(np.uint8)
 
-        # TODO further optimize by filtering sources to only include those that apply to this tile
-        for d in pool.map(partial(read_masked_window, tile=tile, scale=scale), meta['meta'].get('sources', [])):
+        # read windows in parallel and alpha composite
+        for d in pool.map(partial(read_masked_window, tile=tile, scale=scale), sources):
             mask = d[3] > 0
             mask = mask[np.newaxis,:]
             data = np.where(mask, d, data)
