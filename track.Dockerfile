@@ -1,16 +1,11 @@
 FROM lambci/lambda:build-python2.7
 
-# NOTE: comment deps/ in .dockerignore for this to work
-ADD deps/automake16-1.6.3-18.6.amzn1.noarch.rpm /tmp
-ADD deps/libcurl-devel-7.40.0-8.54.amzn1.x86_64.rpm /tmp
-ADD deps/libjpeg-turbo-devel-1.2.90-5.14.amzn1.x86_64.rpm /tmp
-ADD deps/libpng-devel-1.2.49-2.14.amzn1.x86_64.rpm /tmp
-
 RUN \
-  rpm -ivh /tmp/automake16-1.6.3-18.6.amzn1.noarch.rpm \
-    /tmp/libcurl-devel-7.40.0-8.54.amzn1.x86_64.rpm \
-    /tmp/libjpeg-turbo-devel-1.2.90-5.14.amzn1.x86_64.rpm \
-    /tmp/libpng-devel-1.2.49-2.14.amzn1.x86_64.rpm
+  yum install -y \
+    automake16 \
+    libcurl-devel \
+    libjpeg-turbo-devel \
+    libpng-devel
 
 # Fetch PROJ.4
 
@@ -57,8 +52,8 @@ RUN \
 ENV PATH /tmp/virtualenv/bin:/var/task/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN \
-  pip install -U cachetools flask flask_cors jinja2 mercantile numpy pillow raven requests werkzeug && \
-  pip install -U --no-binary :all: rasterio
+  pip install -U cachetools Cython flask flask_cors jinja2 mercantile numpy pillow raven requests werkzeug && \
+  pip install -U --no-binary :all: https://github.com/mojodna/rasterio/archive/1.0a5+nogil.tar.gz
 
 WORKDIR /var/task
 
