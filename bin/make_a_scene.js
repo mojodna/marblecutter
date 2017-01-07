@@ -3,6 +3,8 @@
 const async = require('async')
 const request = require('request')
 
+// aws s3 ls s3://oam-dynamic-tiler-tmp/sources/58655b07f91c99bd00e9c7ab/0/ | grep json | grep -v meta | grep -v scene | awk '{print "http://s3.amazonaws.com/oam-dynamic-tiler-tmp/sources/58655b07f91c99bd00e9c7ab/0/"  $4}' | xargs bin/make_a_scene.js | aws s3 cp - s3://oam-dynamic-tiler-tmp/sources/58655b07f91c99bd00e9c7ab/0/scene.json
+
 const scene = {
   // TODO command line arg
   name: 's3://oam-dynamic-tiler-tmp/sources/571ebe60cd0663bb003c3298/0',
