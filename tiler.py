@@ -40,6 +40,7 @@ def read_window(window, src_url, mask_url=None, scale=1):
         # use decimated reads to read from overviews, per https://github.com/mapbox/rasterio/issues/710
         data = src.read(out_shape=(3, tile_size, tile_size), window=window)
 
+        # TODO read the data and the mask in parallel
         if mask_url:
             mask = get_source(mask_url)
             mask_data = mask.read(out_shape=(1, tile_size, tile_size), window=window)
