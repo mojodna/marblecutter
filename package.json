@@ -1,0 +1,26 @@
+{
+  "name": "oam-dynamic-tiler",
+  "version": "1.0.0",
+  "description": "This is a standalone (Python / Flask) and Lambda-based dynamic tiler for S3-hosted GeoTIFFs.",
+  "main": "index.js",
+  "bin": {
+    "oam-dynamic-tiler": "make_a_scene.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hotosm/oam-dynamic-tiler.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hotosm/oam-dynamic-tiler/issues"
+  },
+  "homepage": "https://github.com/hotosm/oam-dynamic-tiler#readme",
+  "dependencies": {
+    "async": "^2.1.4",
+    "request": "^2.79.0"
+  }
+}

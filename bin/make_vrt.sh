@@ -2,16 +2,26 @@
 
 set -eo pipefail
 
-id=$1
+resampling_method="near"
+
+while getopts ":r:" opt; do
+  case $opt in
+    r)
+      resampling_method=$OPTARG
+      ;;
+    \?)
+      >&2 echo "Invalid option: -$OPTARG"
+      ;;
+  esac
+done
+
+shift $((OPTIND - 1))
+
+source=$1
 output=$(mktemp)
 
-if [ -z $id ]; then
-  >&2 echo "usage: $(basename $0) <scene id>"
-  exit 1
-fi
-
-if [ -z $S3_BUCKET ]; then
-  >&2 echo "S3_BUCKET must be set."
+if [ -z $source ]; then
+  >&2 echo "usage: $(basename $0) [-r resampling method] <image prefix>"
   exit 1
 fi
 
@@ -19,26 +29,18 @@ set -u
 
 PATH=$(cd $(dirname "$0"); pwd -P):$PATH
 
-zoom=$(get_zoom.py s3://${S3_BUCKET}/sources/${id}/index.tif)
+http_source=${source/s3:\/\//http:\/\/s3.amazonaws.com\/}
+zoom=$(get_zoom.py ${source})
 pixels=$[2 ** ($zoom + 8)]
-bands=$(curl -sf https://s3.amazonaws.com/${S3_BUCKET}/sources/${id}/index.json | jq .meta.bandCount)
-
-dstalpha=""
-
-if [ $bands == 3 ]; then
-  # create an alpha band
-  dstalpha="-dstalpha"
-fi
 
 gdalwarp \
-  /vsicurl/https://s3.amazonaws.com/${S3_BUCKET}/sources/${id}/index.tif \
+  /vsicurl/${http_source} \
   $output \
-  -r cubic \
+  -r $resampling_method \
   -t_srs epsg:3857 \
   -of VRT \
   -te -20037508.34 -20037508.34 20037508.34 20037508.34 \
-  -ts $pixels $pixels \
-  $dstalpha > /dev/null 2>&1
+  -ts $pixels $pixels > /dev/null 2>&1
 
 cat $output
 rm -f $output

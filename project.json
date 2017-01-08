@@ -3,13 +3,13 @@
   "name": "oam-dynamic-tiler",
   "description": "Dynamic tiling of raster data",
   "memory": 1536,
-  "timeout": 5,
+  "timeout": 15,
   "role": "arn:aws:iam::670261699094:role/tiler_lambda_function",
   "environment": {
     "S3_BUCKET": "oam-dynamic-tiler-tmp",
     "SERVER_NAME": "d38q3j81du2pst.cloudfront.net",
     "CPL_TMPDIR": "/tmp",
-    "CPL_VSIL_CURL_ALLOWED_EXTENSIONS": ".vrt,.tif,.ovr",
+    "GDAL_CACHEMAX": "512",
     "GDAL_DISABLE_READDIR_ON_OPEN": "TRUE",
     "VSI_CACHE": "TRUE",
     "VSI_CACHE_SIZE": "536870912"

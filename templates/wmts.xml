@@ -65,6 +65,7 @@
           <ows:Identifier>GoogleMapsCompatible</ows:Identifier>
           <ows:SupportedCRS>urn:ogc:def:crs:EPSG:6.18.3:3857</ows:SupportedCRS>
           <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
+          <!-- TODO make this dynamic -->
           <TileMatrix>
               <ows:Identifier>0</ows:Identifier>
               <ScaleDenominator>559082264.0287178</ScaleDenominator>

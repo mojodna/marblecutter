@@ -37,9 +37,9 @@ def handle_ioerror(error):
 
 
 @rr_cache()
-@app.route('/<id>/<int:z>/<int:x>/<int:y>.png')
-def get_tile(id, z, x, y):
-    tile = read_tile(id, Tile(x, y, z))
+@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
+def get_tile_from_scene(id, z, x, y, **kwargs):
+    tile = read_tile(id, Tile(x, y, z), **kwargs)
 
     return tile, 200, {
         'Content-Type': 'image/png'
@@ -47,9 +47,9 @@ def get_tile(id, z, x, y):
 
 
 @rr_cache()
-@app.route('/<id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-def get_scaled_tile(id, z, x, y, scale):
-    tile = read_tile(id, Tile(x, y, z), scale=scale)
+@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+def get_scaled_tile_from_scene(id, z, x, y, scale, **kwargs):
+    tile = read_tile(id, Tile(x, y, z), scale=scale, **kwargs)
 
     return tile, 200, {
         'Content-Type': 'image/png'
@@ -57,17 +57,53 @@ def get_scaled_tile(id, z, x, y, scale):
 
 
 @rr_cache()
-@app.route('/<id>')
-def meta(id):
+@app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
+def get_tile(id, z, x, y, **kwargs):
+    tile = read_tile(id, Tile(x, y, z), **kwargs)
+
+    return tile, 200, {
+        'Content-Type': 'image/png'
+    }
+
+
+@rr_cache()
+@app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+def get_scaled_tile(id, z, x, y, scale, **kwargs):
+    tile = read_tile(id, Tile(x, y, z), scale=scale, **kwargs)
+
+    return tile, 200, {
+        'Content-Type': 'image/png'
+    }
+
+
+@rr_cache()
+@app.route('/<id>/<int:scene_idx>')
+def scene_meta(id, **kwargs):
     # TODO add tiles[] to form actionable TileJSON
-    return jsonify(get_metadata(id))
+    return jsonify(get_metadata(id, **kwargs))
 
 
 @rr_cache()
-@app.route('/<id>/wmts')
-def wmts(id):
+@app.route('/<id>/<int:scene_idx>/<image_id>')
+def meta(id, **kwargs):
+    # TODO add tiles[] to form actionable TileJSON
+    return jsonify(get_metadata(id, **kwargs))
+
+
+@rr_cache()
+@app.route('/<id>/<int:scene_idx>/wmts')
+def scene_wmts(id, **kwargs):
     with app.app_context():
-        return render_template('wmts.xml', id=id, bounds=get_bounds(id), base_url=url_for('meta', id=id, _external=True)), 200, {
+        return render_template('wmts.xml', id=id, bounds=get_bounds(id, **kwargs), base_url=url_for('scene_meta', id=id, _external=True, **kwargs), **kwargs), 200, {
+            'Content-Type': 'application/xml'
+        }
+
+
+@rr_cache()
+@app.route('/<id>/<int:scene_idx>/<image_id>/wmts')
+def wmts(id, **kwargs):
+    with app.app_context():
+        return render_template('wmts.xml', id=id, bounds=get_bounds(id, **kwargs), base_url=url_for('meta', id=id, _external=True, **kwargs), **kwargs), 200, {
             'Content-Type': 'application/xml'
         }
 

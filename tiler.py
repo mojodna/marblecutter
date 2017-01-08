@@ -1,5 +1,8 @@
 # coding=utf-8
 
+from functools import partial
+import logging
+from multiprocessing.dummy import Pool
 from StringIO import StringIO
 import os
 
@@ -12,22 +15,42 @@ import requests
 
 
 S3_BUCKET = os.environ["S3_BUCKET"]
+pool = Pool(100)
 
 
 @lru_cache()
-def get_metadata(id):
-    return requests.get('https://s3.amazonaws.com/{}/sources/{}/index.json'.format(S3_BUCKET, id)).json()
+def get_metadata(id, image_id=None, scene_idx=0):
+    # TODO support alternate regions
+    if image_id:
+        return requests.get('https://s3.amazonaws.com/{}/sources/{}/{}/{}.json'.format(S3_BUCKET, id, scene_idx, image_id)).json()
+    else:
+        return requests.get('https://s3.amazonaws.com/{}/sources/{}/{}/scene.json'.format(S3_BUCKET, id, scene_idx)).json()
 
-@lru_cache()
+
+@lru_cache(maxsize=1024)
 def get_source(path):
-    with rasterio.drivers():
-        return rasterio.open(path)
+    return rasterio.open(path)
 
 
-def render_tile(meta, tile, scale=1):
-    src_tile_zoom = meta['meta']['approximateZoom']
-    src_url = meta['meta']['source']
-    # do calculations in src_tile_zoom space
+def read_window(window, src_url, mask_url=None, scale=1):
+    tile_size = 256 * scale
+
+    with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
+        src = get_source(src_url)
+        # use decimated reads to read from overviews, per https://mapbox.github.io/rasterio/topics/windowed-rw.html#decimation
+        data = src.read(out_shape=(3, tile_size, tile_size), window=window)
+
+        # TODO read the data and the mask in parallel
+        if mask_url:
+            mask = get_source(mask_url)
+            mask_data = mask.read(out_shape=(1, tile_size, tile_size), window=window)
+        else:
+            mask_data = np.full((1, tile_size, tile_size), np.iinfo(src.profile['dtype']).max, src.profile['dtype'])
+
+    return np.concatenate((data, mask_data))
+
+
+def make_window(src_tile_zoom, tile):
     dz = src_tile_zoom - tile.z
     x = 2**dz * tile.x
     y = 2**dz * tile.y
@@ -39,15 +62,59 @@ def render_tile(meta, tile, scale=1):
 
     # y, x (rows, columns)
     # window is measured in pixels at src_tile_zoom
-    window = [[top - (top - (256 * y)), top - (top - ((256 * y) + int(256 * dy)))],
-              [256 * x, (256 * x) + int(256 * dx)]]
+    return [[top - (top - (256 * y)), top - (top - ((256 * y) + int(256 * dy)))],
+            [256 * x, (256 * x) + int(256 * dx)]]
 
-    src = get_source(src_url)
-    # use decimated reads to read from overviews, per https://github.com/mapbox/rasterio/issues/710
-    data = np.empty(shape=(4, 256 * scale, 256 * scale)).astype(src.profile['dtype'])
-    data = src.read(out=data, window=window)
 
-    return data
+def read_masked_window(source, tile, scale=1):
+    return read_window(
+        make_window(source['meta']['approximateZoom'], tile),
+        source['meta'].get('source'),
+        source['meta'].get('mask'),
+        scale=scale
+    )
+
+
+def intersects(tile):
+    t = mercantile.bounds(*tile)
+
+    def _intersects(src):
+        (left, bottom, right, top) = src['bounds']
+        return not(left >= t.east or right <= t.west or top <= t.south or bottom >= t.north)
+
+    return _intersects
+
+
+def render_tile(meta, tile, scale=1):
+    src_url = meta['meta'].get('source')
+    if src_url:
+        return read_window(
+            make_window(meta['meta']['approximateZoom'], tile),
+            src_url,
+            meta['meta'].get('mask'),
+            scale=scale
+        )
+    else:
+        # optimize by filtering sources to only include those that apply to this tile
+        sources = filter(intersects(tile), meta['meta'].get('sources', []))
+
+        if len(sources) == 1:
+            return read_window(
+                make_window(sources[0]['meta']['approximateZoom'], tile),
+                sources[0]['meta']['source'],
+                sources[0]['meta'].get('mask'),
+                scale=scale
+            )
+
+        data = np.zeros(shape=(4, 256 * scale, 256 * scale)).astype(np.uint8)
+
+        # read windows in parallel and alpha composite
+        for d in pool.map(partial(read_masked_window, tile=tile, scale=scale), sources):
+            mask = d[3] > 0
+            mask = mask[np.newaxis,:]
+            data = np.where(mask, d, data)
+
+        return data
 
 
 class InvalidTileRequest(Exception):
@@ -66,12 +133,12 @@ class InvalidTileRequest(Exception):
         return rv
 
 
-def get_bounds(id):
-    return get_metadata(id)['bounds']
+def get_bounds(id, **kwargs):
+    return get_metadata(id, **kwargs)['bounds']
 
 
-def read_tile(id, tile, scale=1):
-    meta = get_metadata(id)
+def read_tile(id, tile, scale=1, **kwargs):
+    meta = get_metadata(id, **kwargs)
     maxzoom = int(meta['maxzoom'])
     minzoom = int(meta['minzoom'])
 

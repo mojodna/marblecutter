@@ -13,33 +13,35 @@ from rasterio.warp import transform_bounds
 
 from get_zoom import get_zoom, get_zoom_offset
 
-S3_BUCKET = os.environ["S3_BUCKET"]
 
+def get_metadata(prefix):
+    scene = "{}.tif".format(prefix)
+    scene_vrt = "{}_warped.vrt".format(prefix)
+    mask_vrt = "{}_warped_mask.vrt".format(prefix)
 
-def get_metadata(id):
-    scene = "s3://{}/sources/{}/index.tif".format(S3_BUCKET, id)
-    scene_vrt = "s3://{}/sources/{}/index.vrt".format(S3_BUCKET, id)
-
-    with rasterio.drivers():
+    with rasterio.Env():
+        # TODO this assumes US Standard region
         with rasterio.open(scene.replace("s3://", "/vsicurl/http://s3.amazonaws.com/")) as src:
             bounds = transform_bounds(src.crs, {'init': 'epsg:4326'}, *src.bounds)
             approximate_zoom = get_zoom(scene)
             maxzoom = max(approximate_zoom + 3, 22)
-            minzoom = approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom)
+            minzoom = max(approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom), 0)
             source = scene_vrt.replace("s3://", "http://s3.amazonaws.com/")
+            mask = mask_vrt.replace("s3://", "http://s3.amazonaws.com/")
 
             return {
               "bounds": bounds,
               "maxzoom": maxzoom,
               "meta": {
                 "approximateZoom": approximate_zoom,
-                "bandCount": src.count,
                 "height": src.height,
                 "source": source,
+                "mask": mask,
                 "width": src.width,
               },
               "minzoom": minzoom,
-              "name": id,
+              # TODO provide a name
+              "name": prefix,
               "tilejson": "2.1.0"
             }
 

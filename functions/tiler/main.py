@@ -13,7 +13,6 @@ from app import app as tiler
 
 
 sentry = Client()
-FORMAT = os.environ.get("FORMAT", "png")
 
 
 def handle(event, context):
