@@ -2,6 +2,8 @@
 
 input=$1
 output=$2
+# target size in KB
+THUMBNAIL_SIZE=${THUMBNAIL_SIZE:-300}
 
 set -euo pipefail
 
@@ -59,6 +61,19 @@ perl -pe 's!(band="4"\>)!\1\n    <ColorInterp>Alpha</ColorInterp>!' $vrt | \
   perl -pe "s|/vsicurl/${http_output}|$(basename $output)|" | \
   perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
   aws s3 cp - ${output}.vrt --acl public-read
+
+# 6. create thumbnail
+>&2 echo "Generating thumbnail..."
+thumb=$(mktemp)
+height=$(rio info $vrt 2> /dev/null | jq .height)
+width=$(rio info $vrt 2> /dev/null | jq .width)
+target_pixel_area=$(bc -l <<< "$THUMBNAIL_SIZE * 1000 / 0.75")
+ratio=$(bc -l <<< "sqrt($target_pixel_area / ($width * $height))")
+target_width=$(printf "%.0f" $(bc -l <<< "$width * $ratio"))
+target_height=$(printf "%.0f" $(bc -l <<< "$height * $ratio"))
+gdal_translate -of png $vrt $thumb -outsize $target_width $target_height
+aws s3 cp $thumb ${output}_thumb.png --acl public-read
+rm -f $vrt $thumb
 
 # 7. create and upload warped VRT
 echo "Generating warped VRT..."
