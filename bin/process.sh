@@ -62,7 +62,12 @@ perl -pe 's!(band="4"\>)!\1\n    <ColorInterp>Alpha</ColorInterp>!' $vrt | \
   perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
   aws s3 cp - ${output}.vrt --acl public-read
 
-# 6. create thumbnail
+# 6. create footprint
+>&2 echo "Generating footprint..."
+rio shapes --mask --sampling 10 --precision 6 $vrt | \
+  aws s3 cp - ${output}_footprint.json --acl public-read
+
+# 7. create thumbnail
 >&2 echo "Generating thumbnail..."
 thumb=$(mktemp)
 height=$(rio info $vrt 2> /dev/null | jq .height)
@@ -75,17 +80,17 @@ gdal_translate -of png $vrt $thumb -outsize $target_width $target_height
 aws s3 cp $thumb ${output}_thumb.png --acl public-read
 rm -f $vrt $thumb
 
-# 7. create and upload warped VRT
+# 8. create and upload warped VRT
 >&2 echo "Generating warped VRT..."
 warped_vrt=$(mktemp)
 make_vrt.sh -r lanczos ${output}.tif > $warped_vrt
 aws s3 cp $warped_vrt ${output}_warped.vrt --acl public-read
 
-# 8. create and upload warped VRT for mask
+# 9. create and upload warped VRT for mask
 >&2 echo "Generating warped VRT for mask..."
 make_mask_vrt.py $warped_vrt | aws s3 cp - ${output}_warped_mask.vrt --acl public-read
 rm -f $warped_vrt
 
-# 9. create and upload metadata
+# 10. create and upload metadata
 >&2 echo "Generating metadata..."
 get_metadata.py $output | aws s3 cp - ${output}.json --acl public-read

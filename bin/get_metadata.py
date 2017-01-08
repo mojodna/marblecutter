@@ -18,6 +18,7 @@ def get_metadata(prefix):
     scene = "{}.tif".format(prefix)
     scene_vrt = "{}_warped.vrt".format(prefix)
     mask_vrt = "{}_warped_mask.vrt".format(prefix)
+    fooprint = "{}_footprint.json".format(prefix)
 
     with rasterio.Env():
         # TODO this assumes US Standard region
@@ -28,6 +29,7 @@ def get_metadata(prefix):
             minzoom = max(approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom), 0)
             source = scene_vrt.replace("s3://", "http://s3.amazonaws.com/")
             mask = mask_vrt.replace("s3://", "http://s3.amazonaws.com/")
+            footprint = footprint.replace("s3://", "http://s3.amazonaws.com/")
 
             return {
               "bounds": bounds,
@@ -35,9 +37,10 @@ def get_metadata(prefix):
               "maxzoom": maxzoom,
               "meta": {
                 "approximateZoom": approximate_zoom,
+                "footprint": footprint,
                 "height": src.height,
-                "source": source,
                 "mask": mask,
+                "source": source,
                 "width": src.width,
               },
               "minzoom": minzoom,
