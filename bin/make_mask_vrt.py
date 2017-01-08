@@ -16,8 +16,9 @@ if __name__ == "__main__":
     input = sys.argv[1]
     doc = ET.parse(sys.argv[1])
     root = doc.getroot()
-    # TODO treat remaining VRTRasterBand's ColorInterp as 'Alpha' (vs. Red)
     [root.remove(x) for x in root.findall("VRTRasterBand")[1:]]
+    color_interp = root.find("./VRTRasterBand/ColorInterp")
+    color_interp.text = "Alpha"
     band_list = doc.find(".//GDALWarpOptions/BandList")
     [band_list.remove(x) for x in band_list.findall("BandMapping")[1:]]
     root.findall("SourceDataset")
