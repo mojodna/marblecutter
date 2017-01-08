@@ -32,8 +32,9 @@ gdal_translate \
   -co NUM_THREADS=ALL_CPUS \
   $input $output
 
-height=$(rio info $input 2> /dev/null | jq .height)
-width=$(rio info $input 2> /dev/null | jq .width)
+info=$(rio info $input 2> /dev/null)
+height=$(jq .height <<< $info)
+width=$(jq .width <<< $info)
 zoom=$(get_zoom.py $input)
 overviews=""
 
