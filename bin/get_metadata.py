@@ -31,6 +31,7 @@ def get_metadata(prefix):
 
             return {
               "bounds": bounds,
+              "center": [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2, (minzoom + approximate_zoom) / 2],
               "maxzoom": maxzoom,
               "meta": {
                 "approximateZoom": approximate_zoom,
