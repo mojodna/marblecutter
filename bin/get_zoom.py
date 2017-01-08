@@ -8,7 +8,7 @@ import os
 import sys
 
 import rasterio
-from rasterio.warp import (calculate_default_transform)
+from rasterio.warp import transform_bounds
 
 
 def get_zoom_offset(width, height, approximate_zoom):
@@ -20,9 +20,13 @@ def get_zoom(input):
     input = input.replace("s3://", "/vsicurl/http://s3.amazonaws.com/")
     with rasterio.Env():
         with rasterio.open(input) as src:
-            # grab the lowest resolution dimension (assuming units are meters)
-            # TODO if units aren't meters (CRS = epsg:4326), deal
-            resolution = max((src.bounds.right - src.bounds.left) / src.width, (src.bounds.top - src.bounds.bottom) / src.height)
+            # grab the lowest resolution dimension
+            if src.crs.is_geographic:
+                # convert from degrees to "meters" (close enough for our use, esp. since we're using "meters" too)
+                bounds = transform_bounds(src.crs, "EPSG:3857", *src.bounds)
+                resolution = max((bounds[2] - bounds[0]) / src.width, (bounds[3] - bounds[1]) / src.height)
+            else:
+                resolution = max((src.bounds.right - src.bounds.left) / src.width, (src.bounds.top - src.bounds.bottom) / src.height)
 
             return int(math.ceil(math.log((2 * math.pi * 6378137) /
                                           (resolution * 256)) / math.log(2)))
