@@ -37,7 +37,7 @@ def read_window(window, src_url, mask_url=None, scale=1):
 
     with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
         src = get_source(src_url)
-        # use decimated reads to read from overviews, per https://github.com/mapbox/rasterio/issues/710
+        # use decimated reads to read from overviews, per https://mapbox.github.io/rasterio/topics/windowed-rw.html#decimation
         data = src.read(out_shape=(3, tile_size, tile_size), window=window)
 
         # TODO read the data and the mask in parallel
