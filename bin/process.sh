@@ -23,7 +23,7 @@ source=$(mktemp)
 intermediate=$(mktemp)
 
 # 1. download source
-echo "Downloading $input..."
+>&2 echo "Downloading $input..."
 if [[ $input =~ "s3://" ]]; then
   aws s3 cp $input $source
 else
@@ -31,22 +31,22 @@ else
 fi
 
 # 2. transcode + generate overviews
-echo "Transcoding..."
+>&2 echo "Transcoding..."
 transcode.sh $source $intermediate
 rm -f $source
 
 # 3. upload TIF
-echo "Uploading..."
+>&2 echo "Uploading..."
 aws s3 cp $intermediate ${output}.tif --acl public-read
 rm -f $intermediate
 
 # 4. upload mask
-echo "Uploading mask..."
+>&2 echo "Uploading mask..."
 aws s3 cp ${intermediate}.msk ${output}.tif.msk --acl public-read
 rm -f ${intermediate}.msk*
 
 # 5. create RGBA VRT (for use in QGIS, etc.)
-echo "Generating RGBA VRT..."
+>&2 echo "Generating RGBA VRT..."
 vrt=$(mktemp)
 http_output=${output/s3:\/\//http:\/\/s3.amazonaws.com\/}
 gdal_translate \
@@ -76,16 +76,16 @@ aws s3 cp $thumb ${output}_thumb.png --acl public-read
 rm -f $vrt $thumb
 
 # 7. create and upload warped VRT
-echo "Generating warped VRT..."
+>&2 echo "Generating warped VRT..."
 warped_vrt=$(mktemp)
 make_vrt.sh -r lanczos ${output}.tif > $warped_vrt
 aws s3 cp $warped_vrt ${output}_warped.vrt --acl public-read
 
 # 8. create and upload warped VRT for mask
-echo "Generating warped VRT for mask..."
+>&2 echo "Generating warped VRT for mask..."
 make_mask_vrt.py $warped_vrt | aws s3 cp - ${output}_warped_mask.vrt --acl public-read
 rm -f $warped_vrt
 
 # 9. create and upload metadata
-echo "Generating metadata..."
+>&2 echo "Generating metadata..."
 get_metadata.py $output | aws s3 cp - ${output}.json --acl public-read
