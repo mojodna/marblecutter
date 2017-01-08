@@ -22,41 +22,42 @@ RUN \
   mkdir -p /tmp/gdal-dev && \
   curl -L https://github.com/OSGeo/gdal/archive/3288b145e6e966499a961c27636f2c9ea80157c2.tar.gz | tar zxf - -C /tmp/gdal-dev --strip-components=1 && \
   cd /tmp/gdal-dev/gdal && \
-  ./configure --prefix=/usr \
-			--mandir=/usr/share/man \
-			--includedir=/usr/include/gdal \
-			--with-threads \
-			--with-grass=no \
-			--with-hide-internal-symbols=yes \
-			--with-rename-internal-libtiff-symbols=yes \
-			--with-rename-internal-libgeotiff-symbols=yes \
-			--with-libtiff=internal \
-			--with-geotiff=internal \
-			--with-webp \
-			--with-jasper \
-			--with-netcdf \
-			--with-hdf5=/usr/lib/x86_64-linux-gnu/hdf5/serial \
-			--with-xerces \
-			--with-geos \
-			--with-sqlite3 \
-			--with-curl \
-			--with-pg \
-			--with-python \
-			--with-odbc \
-			--with-ogdi \
-			--with-dods-root=/usr \
-			--with-static-proj4=yes \
-			--with-spatialite=/usr \
-			--with-cfitsio=no \
-			--with-ecw=no \
-			--with-mrsid=no \
-			--with-poppler=yes \
-			--with-openjpeg=yes \
-			--with-freexl=yes \
-			--with-libkml=yes \
-			--with-armadillo=yes \
-			--with-liblzma=yes \
-			--with-epsilon=/usr && \
+  ./configure \
+    --prefix=/usr \
+    --mandir=/usr/share/man \
+    --includedir=/usr/include/gdal \
+    --with-threads \
+    --with-grass=no \
+    --with-hide-internal-symbols=yes \
+    --with-rename-internal-libtiff-symbols=yes \
+    --with-rename-internal-libgeotiff-symbols=yes \
+    --with-libtiff=internal \
+    --with-geotiff=internal \
+    --with-webp \
+    --with-jasper \
+    --with-netcdf \
+    --with-hdf5=/usr/lib/x86_64-linux-gnu/hdf5/serial \
+    --with-xerces \
+    --with-geos \
+    --with-sqlite3 \
+    --with-curl \
+    --with-pg \
+    --with-python \
+    --with-odbc \
+    --with-ogdi \
+    --with-dods-root=/usr \
+    --with-static-proj4=yes \
+    --with-spatialite=/usr \
+    --with-cfitsio=no \
+    --with-ecw=no \
+    --with-mrsid=no \
+    --with-poppler=yes \
+    --with-openjpeg=yes \
+    --with-freexl=yes \
+    --with-libkml=yes \
+    --with-armadillo=yes \
+    --with-liblzma=yes \
+    --with-epsilon=/usr && \
   make -j $(nproc) && \
   make install && \
   cd / && \
