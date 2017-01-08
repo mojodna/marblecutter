@@ -38,38 +38,11 @@ def handle_ioerror(error):
 
 @rr_cache()
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
-def get_tile_from_scene(id, z, x, y, **kwargs):
-    tile = read_tile(id, Tile(x, y, z), **kwargs)
-
-    return tile, 200, {
-        'Content-Type': 'image/png'
-    }
-
-
-@rr_cache()
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-def get_scaled_tile_from_scene(id, z, x, y, scale, **kwargs):
-    tile = read_tile(id, Tile(x, y, z), scale=scale, **kwargs)
-
-    return tile, 200, {
-        'Content-Type': 'image/png'
-    }
-
-
-@rr_cache()
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
-def get_tile(id, z, x, y, **kwargs):
-    tile = read_tile(id, Tile(x, y, z), **kwargs)
-
-    return tile, 200, {
-        'Content-Type': 'image/png'
-    }
-
-
-@rr_cache()
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-def get_scaled_tile(id, z, x, y, scale, **kwargs):
-    tile = read_tile(id, Tile(x, y, z), scale=scale, **kwargs)
+def tile(id, z, x, y, **kwargs):
+    tile = read_tile(id, Tile(x, y, z), **kwargs)
 
     return tile, 200, {
         'Content-Type': 'image/png'
@@ -91,14 +64,6 @@ def meta(id, **kwargs):
 
 @rr_cache()
 @app.route('/<id>/<int:scene_idx>/wmts')
-def scene_wmts(id, **kwargs):
-    with app.app_context():
-        return render_template('wmts.xml', id=id, meta=get_metadata(id, **kwargs), base_url=url_for('scene_meta', id=id, _external=True, **kwargs), **kwargs), 200, {
-            'Content-Type': 'application/xml'
-        }
-
-
-@rr_cache()
 @app.route('/<id>/<int:scene_idx>/<image_id>/wmts')
 def wmts(id, **kwargs):
     with app.app_context():
