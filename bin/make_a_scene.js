@@ -44,5 +44,10 @@ async.each(process.argv.slice(2), (filename, done) => {
     throw err
   }
 
+  const approximateZooms = scene.meta.sources.map(x => x.meta.approximateZoom)
+  const avgZoom = approximateZooms.reduce((a, b) => a + b) / approximateZooms.length
+
+  scene.center = [(scene.bounds[0] + scene.bounds[2]) / 2, (scene.bounds[1] + scene.bounds[3]) / 2, Math.floor((scene.minzoom + avgZoom) / 2)]
+
   process.stdout.write(JSON.stringify(scene))
 })
