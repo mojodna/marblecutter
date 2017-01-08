@@ -55,9 +55,10 @@ def tile(id, z, x, y, **kwargs):
 def meta(id, **kwargs):
     meta = get_metadata(id, **kwargs)
 
-    meta['tiles'] = [
-        '{}/{{z}}/{{x}}/{{y}}.png'.format(url_for('meta', id=id, _external=True, **kwargs))
-    ]
+    with app.app_context():
+        meta['tiles'] = [
+            '{}/{{z}}/{{x}}/{{y}}.png'.format(url_for('meta', id=id, _external=True, **kwargs))
+        ]
 
     return jsonify(meta)
 
