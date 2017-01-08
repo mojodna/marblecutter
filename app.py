@@ -78,16 +78,15 @@ def get_scaled_tile(id, z, x, y, scale, **kwargs):
 
 @rr_cache()
 @app.route('/<id>/<int:scene_idx>')
-def scene_meta(id, **kwargs):
-    # TODO add tiles[] to form actionable TileJSON
-    return jsonify(get_metadata(id, **kwargs))
-
-
-@rr_cache()
 @app.route('/<id>/<int:scene_idx>/<image_id>')
 def meta(id, **kwargs):
-    # TODO add tiles[] to form actionable TileJSON
-    return jsonify(get_metadata(id, **kwargs))
+    meta = get_metadata(id, **kwargs)
+
+    meta['tiles'] = [
+        '{}/{{z}}/{{x}}/{{y}}.png'.format(url_for('meta', id=id, _external=True, **kwargs))
+    ]
+
+    return jsonify(meta)
 
 
 @rr_cache()
