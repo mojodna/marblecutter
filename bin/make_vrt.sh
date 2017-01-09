@@ -37,8 +37,12 @@ http_source=${source/s3:\/\//http:\/\/s3.amazonaws.com\/}
 zoom=$(get_zoom.py ${source})
 pixels=$[2 ** ($zoom + 8)]
 
+if [[ "$http_source" =~ https?:// ]]; then
+  http_source="/vsicurl/${http_source}"
+fi
+
 gdalwarp \
-  /vsicurl/${http_source} \
+  ${http_source} \
   $output \
   -r $resampling_method \
   $dstalpha \
