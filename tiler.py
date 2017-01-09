@@ -37,17 +37,25 @@ def read_window(window, src_url, mask_url=None, scale=1):
 
     with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
         src = get_source(src_url)
-        # use decimated reads to read from overviews, per https://mapbox.github.io/rasterio/topics/windowed-rw.html#decimation
-        data = src.read(out_shape=(3, tile_size, tile_size), window=window)
 
         # TODO read the data and the mask in parallel
         if mask_url:
+            data = src.read(out_shape=(3, tile_size, tile_size), window=window)
             mask = get_source(mask_url)
             mask_data = mask.read(out_shape=(1, tile_size, tile_size), window=window)
-        else:
-            mask_data = np.full((1, tile_size, tile_size), np.iinfo(src.profile['dtype']).max, src.profile['dtype'])
 
-    return np.concatenate((data, mask_data))
+            return np.concatenate((data, mask_data))
+        else:
+            if src.count == 4:
+                # alpha channel present
+                return src.read(out_shape=(4, tile_size, tile_size), window=window)
+            else:
+                # no alpha channel, create one
+                # TODO use src.bounds as an implicit mask
+                data = src.read(out_shape=(3, tile_size, tile_size), window=window)
+                mask_data = np.full((1, tile_size, tile_size), np.iinfo(src.profile['dtype']).max, src.profile['dtype'])
+
+                return np.concatenate((data, mask_data))
 
 
 def make_window(src_tile_zoom, tile):
