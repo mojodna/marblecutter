@@ -18,12 +18,24 @@ if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
   input="/vsicurl/$input"
 fi
 
-echo "Transcoding bands..."
+info=$(rio info $input 2> /dev/null)
+count=$(jq .count <<< $info)
+height=$(jq .height <<< $info)
+width=$(jq .width <<< $info)
+zoom=$(get_zoom.py $input)
+overviews=""
+mask=""
+
+if [ "$count" -eq 4 ]; then
+  mask="-mask 4"
+fi
+
+>&2 echo "Transcoding bands..."
 gdal_translate \
   -b 1 \
   -b 2 \
   -b 3 \
-  -mask 4 \
+  $mask \
   -co TILED=yes \
   -co COMPRESS=JPEG \
   -co PHOTOMETRIC=YCbCr \
@@ -31,12 +43,6 @@ gdal_translate \
   -co BLOCKYSIZE=512 \
   -co NUM_THREADS=ALL_CPUS \
   $input $output
-
-info=$(rio info $input 2> /dev/null)
-height=$(jq .height <<< $info)
-width=$(jq .width <<< $info)
-zoom=$(get_zoom.py $input)
-overviews=""
 
 for z in $(seq 1 $zoom); do
   if [ $[$height / $[2 ** $[$z + 1]]] -lt 1 ]; then
@@ -46,7 +52,7 @@ for z in $(seq 1 $zoom); do
   overviews="${overviews} $[2 ** $z]"
 done
 
-echo "Adding overviews..."
+>&2 echo "Adding overviews..."
 gdaladdo \
   -r lanczos \
   --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
@@ -59,14 +65,16 @@ gdaladdo \
   $output \
   $overviews
 
-echo "Adding overviews to mask..."
-gdaladdo \
-  --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
-  --config TILED_OVERVIEW yes \
-  --config COMPRESS_OVERVIEW DEFLATE \
-  --config BLOCKXSIZE_OVERVIEW 512 \
-  --config BLOCKYSIZE_OVERVIEW 512 \
-  --config SPARSE_OK_OVERVIEW yes \
-  --config NUM_THREADS_OVERVIEW ALL_CPUS \
-  $output.msk \
-  $overviews
+if [ "$mask" != "" ]; then
+  >&2 echo "Adding overviews to mask..."
+  gdaladdo \
+    --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
+    --config TILED_OVERVIEW yes \
+    --config COMPRESS_OVERVIEW DEFLATE \
+    --config BLOCKXSIZE_OVERVIEW 512 \
+    --config BLOCKYSIZE_OVERVIEW 512 \
+    --config SPARSE_OK_OVERVIEW yes \
+    --config NUM_THREADS_OVERVIEW ALL_CPUS \
+    $output.msk \
+    $overviews
+fi

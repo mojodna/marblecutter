@@ -3,9 +3,13 @@
 set -eo pipefail
 
 resampling_method="near"
+dstalpha=""
 
-while getopts ":r:" opt; do
+while getopts ":r:a" opt; do
   case $opt in
+    a)
+      dstalpha="-dstalpha"
+      ;;
     r)
       resampling_method=$OPTARG
       ;;
@@ -37,6 +41,7 @@ gdalwarp \
   /vsicurl/${http_source} \
   $output \
   -r $resampling_method \
+  $dstalpha \
   -t_srs epsg:3857 \
   -of VRT \
   -te -20037508.34 -20037508.34 20037508.34 20037508.34 \
