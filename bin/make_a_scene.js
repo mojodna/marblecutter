@@ -35,6 +35,7 @@ async.each(process.argv.slice(2), (filename, done) => {
     scene.bounds[3] = Math.max(scene.bounds[3], body.bounds[3])
     scene.minzoom = Math.min(scene.minzoom, body.minzoom)
     scene.maxzoom = Math.max(scene.maxzoom, body.maxzoom)
+    delete body.tilejson
     scene.meta.sources.push(body)
 
     return done()
