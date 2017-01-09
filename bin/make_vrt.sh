@@ -25,7 +25,7 @@ source=$1
 output=$(mktemp)
 
 if [ -z $source ]; then
-  >&2 echo "usage: $(basename $0) [-r resampling method] <image prefix>"
+  >&2 echo "usage: $(basename $0) [-r resampling method] [-a] <image prefix>"
   exit 1
 fi
 
