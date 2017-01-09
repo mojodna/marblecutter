@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import division
 
 from functools import partial
 import logging
@@ -12,6 +13,7 @@ import numpy as np
 from PIL import Image
 import rasterio
 import requests
+from rio_color import operations
 
 
 S3_BUCKET = os.environ["S3_BUCKET"]
@@ -161,8 +163,23 @@ def read_tile(id, tile, scale=1, **kwargs):
     if not ne.y <= tile.y <= sw.y:
         raise InvalidTileRequest('Invalid y coordinate: {} outside [{}, {}]'.format(tile.y, sw.y, ne.y))
 
+    # TODO render_tile should always return data as float32 in (0..1) range
     data = render_tile(meta, tile, scale=scale)
-    imgarr = np.ma.transpose(data, [1, 2, 0]).astype(np.byte)
+    alpha = (np.array([data[3]]) * 1.0 / np.iinfo(data.dtype).max).astype(np.float32)
+    floats = (data[0:3] * 1.0 / np.iinfo(data.dtype).max).astype(np.float32)
+    # data = operations.sigmoidal(floats, 50, 0.16)
+
+    # default values from rio color atmo
+    for func in operations.parse_operations('gamma g 0.99, gamma b 0.97, sigmoidal rgb 10 0.15'):
+        floats = func(floats)
+
+    # imgarr = np.ma.transpose(data, [1, 2, 0]).astype(np.uint8)
+    # rescale
+    target_dtype = np.uint8
+    # imgarr = (np.ma.transpose(data, [1, 2, 0]) * (np.iinfo(target_dtype).max / np.iinfo(data.dtype).max)).astype(target_dtype)
+    imgarr = (np.ma.transpose(np.concatenate((floats, alpha)), [1, 2, 0]) * np.iinfo(target_dtype).max).astype(target_dtype)
+
+    print(imgarr)
 
     out = StringIO()
     im = Image.fromarray(imgarr, 'RGBA')

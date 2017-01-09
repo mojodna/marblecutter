@@ -9,3 +9,4 @@ Pillow
 https://github.com/mojodna/rasterio/archive/1.0a5+nogil.tar.gz
 raven
 requests
+rio-color
