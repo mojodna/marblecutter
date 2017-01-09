@@ -18,7 +18,7 @@ def get_metadata(prefix):
     scene = "{}.tif".format(prefix)
     scene_vrt = "{}_warped.vrt".format(prefix)
     mask_vrt = "{}_warped_mask.vrt".format(prefix)
-    fooprint = "{}_footprint.json".format(prefix)
+    footprint = "{}_footprint.json".format(prefix)
 
     with rasterio.Env():
         # TODO this assumes US Standard region
@@ -57,6 +57,6 @@ if __name__ == "__main__":
     input = sys.argv[1]
     try:
         print(json.dumps(get_metadata(input)))
-    except (IOError, rasterio._err.CPLE_HttpResponse):
+    except (IOError, rasterio._err.CPLE_HttpResponseError):
         print("Unable to open '{}'.".format(input), file=sys.stderr)
         exit(1)
