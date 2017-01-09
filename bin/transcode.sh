@@ -45,11 +45,12 @@ gdal_translate \
   $input $output
 
 for z in $(seq 1 $zoom); do
-  if [ $[$height / $[2 ** $[$z + 1]]] -lt 1 ]; then
+  overviews="${overviews} $[2 ** $z]"
+
+  # stop when overviews fit within a single block (even if they cross)
+  if [ $[$height / $[2 ** $[$z + 1]]] -lt 512 ]; then
     break
   fi
-
-  overviews="${overviews} $[2 ** $z]"
 done
 
 >&2 echo "Adding overviews..."
