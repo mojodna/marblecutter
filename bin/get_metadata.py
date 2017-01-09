@@ -6,6 +6,7 @@ from __future__ import print_function
 import json
 import math
 import os
+import re
 import sys
 
 import click
@@ -25,17 +26,16 @@ def get_metadata(include_mask, prefix):
     footprint = "{}_footprint.json".format(prefix)
 
     with rasterio.Env():
-        input = scene.replace("s3://", "/vsicurl/http://s3.amazonaws.com/")
+        input = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", scene)
         try:
-            # TODO this assumes US Standard region
             with rasterio.open(input) as src:
                 bounds = transform_bounds(src.crs, {'init': 'epsg:4326'}, *src.bounds)
                 approximate_zoom = get_zoom(scene)
                 maxzoom = max(approximate_zoom + 3, 22)
                 minzoom = max(approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom), 0)
-                source = scene_vrt.replace("s3://", "http://s3.amazonaws.com/")
-                mask = mask_vrt.replace("s3://", "http://s3.amazonaws.com/")
-                footprint = footprint.replace("s3://", "http://s3.amazonaws.com/")
+                source = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", scene_vrt)
+                mask = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", mask_vrt)
+                footprint = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", footprint)
 
                 meta = {
                   "bounds": bounds,

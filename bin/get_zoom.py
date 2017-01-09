@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import math
 import os
+import re
 import sys
 
 import rasterio
@@ -17,7 +18,7 @@ def get_zoom_offset(width, height, approximate_zoom):
 
 
 def get_zoom(input):
-    input = input.replace("s3://", "/vsicurl/http://s3.amazonaws.com/")
+    input = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", input)
     with rasterio.Env():
         with rasterio.open(input) as src:
             # grab the lowest resolution dimension

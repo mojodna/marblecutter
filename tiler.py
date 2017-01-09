@@ -20,11 +20,10 @@ pool = Pool(100)
 
 @lru_cache()
 def get_metadata(id, image_id=None, scene_idx=0):
-    # TODO support alternate regions
     if image_id:
-        return requests.get('https://s3.amazonaws.com/{}/sources/{}/{}/{}.json'.format(S3_BUCKET, id, scene_idx, image_id)).json()
+        return requests.get('http://{}.s3.amazonaws.com/sources/{}/{}/{}.json'.format(S3_BUCKET, id, scene_idx, image_id)).json()
     else:
-        return requests.get('https://s3.amazonaws.com/{}/sources/{}/{}/scene.json'.format(S3_BUCKET, id, scene_idx)).json()
+        return requests.get('http://{}.s3.amazonaws.com/sources/{}/{}/scene.json'.format(S3_BUCKET, id, scene_idx)).json()
 
 
 @lru_cache(maxsize=1024)

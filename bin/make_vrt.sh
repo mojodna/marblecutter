@@ -33,7 +33,7 @@ set -u
 
 PATH=$(cd $(dirname "$0"); pwd -P):$PATH
 
-http_source=${source/s3:\/\//http:\/\/s3.amazonaws.com\/}
+http_source=$(sed 's|s3://\([^/]*\)/|http://\1.s3.amazonaws.com/|' <<< $source)
 zoom=$(get_zoom.py ${source})
 pixels=$[2 ** ($zoom + 8)]
 
