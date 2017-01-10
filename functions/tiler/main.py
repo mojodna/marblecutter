@@ -21,7 +21,7 @@ def handle(event, context):
     # better)
     # see http://werkzeug.pocoo.org/docs/0.11/test/#environment-building
     # see http://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-create-api-as-simple-proxy-for-lambda.html#api-gateway-create-api-as-simple-proxy-for-lambda-test
-    with tiler.test_request_context():
+    with tiler.app_context(), tiler.test_request_context():
         try:
             (endpoint, args) = tiler.url_map.bind("", path_info=event["path"]).match()
         except NotFound:
@@ -38,7 +38,11 @@ def handle(event, context):
                 status_code = rsp[1] if 1 < len(rsp) else 200
                 headers = rsp[2] if 2 < len(rsp) else {}
             else:
-                data = rsp.get_data()
+                if rsp.is_streamed:
+                    data = bytearray()
+                    [data.extend(x) for x in rsp.response]
+                else:
+                    data = rsp.get_data()
                 status_code = rsp.status_code
                 headers = dict(rsp.headers)
 

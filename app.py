@@ -87,10 +87,7 @@ def favicon():
     return '', 404
 
 
-@app.route('/static/<path:path>')
-def static(path):
-    # this is specifically for the Lambda adapter, since it doesn't yet dispatch requests through Flask
-    app.send_static_file(path)
+static = app.send_static_file
 
 
 app.wsgi_app = DispatcherMiddleware(None, {
