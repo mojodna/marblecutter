@@ -78,6 +78,15 @@ def favicon():
     return '', 404
 
 
+@app.route('/<id>/<int:scene_idx>/preview')
+@app.route('/<id>/<int:scene_idx>/<image_id>/preview')
+def preview(id, **kwargs):
+    with app.app_context():
+        return render_template('preview.html', tilejson_url=url_for('meta', id=id, _external=True, **kwargs), **kwargs), 200, {
+            'Content-Type': 'text/html'
+        }
+
+
 app.wsgi_app = DispatcherMiddleware(None, {
     app.config['APPLICATION_ROOT']: app.wsgi_app
 })
