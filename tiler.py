@@ -6,7 +6,7 @@ from multiprocessing.dummy import Pool
 from StringIO import StringIO
 import os
 
-from cachetools.func import lru_cache
+from cachetools.func import lru_cache, ttl_cache
 import mercantile
 import numpy as np
 from PIL import Image
@@ -18,7 +18,7 @@ S3_BUCKET = os.environ["S3_BUCKET"]
 pool = Pool(100)
 
 
-@lru_cache()
+@ttl_cache(ttl=300)
 def get_metadata(id, image_id=None, scene_idx=0):
     if image_id:
         return requests.get('http://{}.s3.amazonaws.com/sources/{}/{}/{}.json'.format(S3_BUCKET, id, scene_idx, image_id)).json()
