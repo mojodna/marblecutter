@@ -163,20 +163,31 @@ def read_tile(id, tile, scale=1, **kwargs):
     if not ne.y <= tile.y <= sw.y:
         raise InvalidTileRequest('Invalid y coordinate: {} outside [{}, {}]'.format(tile.y, sw.y, ne.y))
 
-    # TODO render_tile should always return data as float32 in (0..1) range
     data = render_tile(meta, tile, scale=scale)
-    floats = (data * 1.0 / np.iinfo(data.dtype).max).astype(np.float32)
-    # data = operations.sigmoidal(floats, 50, 0.16)
+
+    # 8-bit per pixel
+    target_dtype = np.uint8
 
     # default values from rio color atmo
-    for func in operations.parse_operations('gamma g 0.99, gamma b 0.97, sigmoidal rgb 10 0.15'):
-        floats = func(floats)
+    ops = meta['meta'].get('operations')
+    if ops:
+        # scale to (0..1)
+        floats = (data * 1.0 / np.iinfo(data.dtype).max).astype(np.float32)
 
-    # imgarr = np.ma.transpose(data, [1, 2, 0]).astype(np.uint8)
-    # rescale
-    target_dtype = np.uint8
-    # imgarr = (np.ma.transpose(data, [1, 2, 0]) * (np.iinfo(target_dtype).max / np.iinfo(data.dtype).max)).astype(target_dtype)
-    imgarr = (np.ma.transpose(floats, [1, 2, 0]) * np.iinfo(target_dtype).max).astype(target_dtype)
+        for func in operations.parse_operations(ops):
+            floats = func(floats)
+
+        # scale back to uint8
+        data = (floats * np.iinfo(target_dtype).max).astype(target_dtype)
+
+    if data.dtype != target_dtype:
+        # rescale
+        try:
+            data = (data * (np.iinfo(target_dtype).max / np.iinfo(data.dtype)).max).astype(target_dtype)
+        except:
+            raise Exception('Not enough information to rescale; source is "{}""'.format(data.dtype))
+
+    imgarr = np.ma.transpose(data, [1, 2, 0])
 
     out = StringIO()
     im = Image.fromarray(imgarr, 'RGBA')
