@@ -52,9 +52,9 @@ def read_window(window, src_url, mask_url=None, scale=1):
                 # no alpha channel, create one
                 # TODO use src.bounds as an implicit mask
                 data = src.read(out_shape=(3, tile_size, tile_size), window=window)
-                mask_data = np.full((1, tile_size, tile_size), np.iinfo(src.profile['dtype']).max, src.profile['dtype'])
+                alpha = np.full((1, tile_size, tile_size), np.iinfo(data.dtype).max, data.dtype)
 
-                return np.concatenate((data, mask_data))
+                return np.concatenate((data, alpha))
 
 
 def make_window(src_tile_zoom, tile):
