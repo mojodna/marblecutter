@@ -29,8 +29,8 @@ def get_zoom(input):
             else:
                 resolution = max((src.bounds.right - src.bounds.left) / src.width, (src.bounds.top - src.bounds.bottom) / src.height)
 
-            return int(math.ceil(math.log((2 * math.pi * 6378137) /
-                                          (resolution * 256)) / math.log(2)))
+            return min(22, int(math.ceil(math.log((2 * math.pi * 6378137) /
+                                                  (resolution * 256)) / math.log(2))))
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:

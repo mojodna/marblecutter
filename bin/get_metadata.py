@@ -31,7 +31,7 @@ def get_metadata(include_mask, prefix):
             with rasterio.open(input) as src:
                 bounds = transform_bounds(src.crs, {'init': 'epsg:4326'}, *src.bounds)
                 approximate_zoom = get_zoom(scene)
-                maxzoom = max(approximate_zoom + 3, 22)
+                maxzoom = approximate_zoom + 3
                 minzoom = max(approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom), 0)
                 source = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", scene_vrt)
                 mask = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", mask_vrt)
