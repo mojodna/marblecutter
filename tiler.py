@@ -178,8 +178,6 @@ def read_tile(id, tile, scale=1, **kwargs):
     # imgarr = (np.ma.transpose(data, [1, 2, 0]) * (np.iinfo(target_dtype).max / np.iinfo(data.dtype).max)).astype(target_dtype)
     imgarr = (np.ma.transpose(floats, [1, 2, 0]) * np.iinfo(target_dtype).max).astype(target_dtype)
 
-    print(imgarr)
-
     out = StringIO()
     im = Image.fromarray(imgarr, 'RGBA')
     im.save(out, 'png')
