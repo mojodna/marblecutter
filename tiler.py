@@ -165,8 +165,7 @@ def read_tile(id, tile, scale=1, **kwargs):
 
     # TODO render_tile should always return data as float32 in (0..1) range
     data = render_tile(meta, tile, scale=scale)
-    alpha = (np.array([data[3]]) * 1.0 / np.iinfo(data.dtype).max).astype(np.float32)
-    floats = (data[0:3] * 1.0 / np.iinfo(data.dtype).max).astype(np.float32)
+    floats = (data * 1.0 / np.iinfo(data.dtype).max).astype(np.float32)
     # data = operations.sigmoidal(floats, 50, 0.16)
 
     # default values from rio color atmo
@@ -177,7 +176,7 @@ def read_tile(id, tile, scale=1, **kwargs):
     # rescale
     target_dtype = np.uint8
     # imgarr = (np.ma.transpose(data, [1, 2, 0]) * (np.iinfo(target_dtype).max / np.iinfo(data.dtype).max)).astype(target_dtype)
-    imgarr = (np.ma.transpose(np.concatenate((floats, alpha)), [1, 2, 0]) * np.iinfo(target_dtype).max).astype(target_dtype)
+    imgarr = (np.ma.transpose(floats, [1, 2, 0]) * np.iinfo(target_dtype).max).astype(target_dtype)
 
     print(imgarr)
 
