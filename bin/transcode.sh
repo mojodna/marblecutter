@@ -48,7 +48,7 @@ for z in $(seq 1 $zoom); do
   overviews="${overviews} $[2 ** $z]"
 
   # stop when overviews fit within a single block (even if they cross)
-  if [ $[$height / $[2 ** $[$z + 1]]] -lt 512 ]; then
+  if [ $[$height / $[2 ** $[$z]]] -lt 512 ] && [ $[$width / $[2 ** $[$z]]] -lt 512 ]; then
     break
   fi
 done
