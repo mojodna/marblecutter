@@ -73,11 +73,6 @@ def wmts(id, **kwargs):
         }
 
 
-@app.route('/favicon.ico')
-def favicon():
-    return '', 404
-
-
 @app.route('/<id>/<int:scene_idx>/preview')
 @app.route('/<id>/<int:scene_idx>/<image_id>/preview')
 def preview(id, **kwargs):
@@ -85,6 +80,17 @@ def preview(id, **kwargs):
         return render_template('preview.html', tilejson_url=url_for('meta', id=id, _external=True, **kwargs), **kwargs), 200, {
             'Content-Type': 'text/html'
         }
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 404
+
+
+@app.route('/static/<path:path>')
+def static(path):
+    # this is specifically for the Lambda adapter, since it doesn't yet dispatch requests through Flask
+    app.send_static_file(path)
 
 
 app.wsgi_app = DispatcherMiddleware(None, {
