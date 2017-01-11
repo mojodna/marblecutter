@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import division
 
 from functools import partial
 import logging
@@ -12,6 +13,7 @@ import numpy as np
 from PIL import Image
 import rasterio
 import requests
+from rio_color import operations
 
 
 S3_BUCKET = os.environ["S3_BUCKET"]
@@ -162,7 +164,30 @@ def read_tile(id, tile, scale=1, **kwargs):
         raise InvalidTileRequest('Invalid y coordinate: {} outside [{}, {}]'.format(tile.y, sw.y, ne.y))
 
     data = render_tile(meta, tile, scale=scale)
-    imgarr = np.ma.transpose(data, [1, 2, 0]).astype(np.byte)
+
+    # 8-bit per pixel
+    target_dtype = np.uint8
+
+    # default values from rio color atmo
+    ops = meta['meta'].get('operations')
+    if ops:
+        # scale to (0..1)
+        floats = (data * 1.0 / np.iinfo(data.dtype).max).astype(np.float32)
+
+        for func in operations.parse_operations(ops):
+            floats = func(floats)
+
+        # scale back to uint8
+        data = (floats * np.iinfo(target_dtype).max).astype(target_dtype)
+
+    if data.dtype != target_dtype:
+        # rescale
+        try:
+            data = (data * (np.iinfo(target_dtype).max / np.iinfo(data.dtype)).max).astype(target_dtype)
+        except:
+            raise Exception('Not enough information to rescale; source is "{}""'.format(data.dtype))
+
+    imgarr = np.ma.transpose(data, [1, 2, 0])
 
     out = StringIO()
     im = Image.fromarray(imgarr, 'RGBA')
