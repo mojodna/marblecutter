@@ -7,6 +7,7 @@
   "role": "arn:aws:iam::670261699094:role/tiler_lambda_function",
   "environment": {
     "S3_BUCKET": "oam-dynamic-tiler-tmp",
+    "S3_PREFIX": "sources/",
     "SERVER_NAME": "d38q3j81du2pst.cloudfront.net",
     "CPL_TMPDIR": "/tmp",
     "GDAL_CACHEMAX": "512",

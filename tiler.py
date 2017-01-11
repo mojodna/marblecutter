@@ -17,15 +17,27 @@ from rio_color import operations
 
 
 S3_BUCKET = os.environ["S3_BUCKET"]
+S3_PREFIX = os.environ.get("S3_PREFIX", "")
 pool = Pool(100)
+
+
+# normalize prefix
+if S3_PREFIX == "/":
+    S3_PREFIX = ""
+
+if not S3_PREFIX.endswith("/"):
+    S3_PREFIX += "/"
+
+if S3_PREFIX.startswith("/"):
+    S3_PREFIX = S3_PREFIX[1:]
 
 
 @ttl_cache(ttl=300)
 def get_metadata(id, image_id=None, scene_idx=0):
     if image_id:
-        return requests.get('http://{}.s3.amazonaws.com/sources/{}/{}/{}.json'.format(S3_BUCKET, id, scene_idx, image_id)).json()
+        return requests.get('http://{}.s3.amazonaws.com/{}{}/{}/{}.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx, image_id)).json()
     else:
-        return requests.get('http://{}.s3.amazonaws.com/sources/{}/{}/scene.json'.format(S3_BUCKET, id, scene_idx)).json()
+        return requests.get('http://{}.s3.amazonaws.com/{}{}/{}/scene.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx)).json()
 
 
 @lru_cache(maxsize=1024)
