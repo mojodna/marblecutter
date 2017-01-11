@@ -133,6 +133,7 @@ RUN \
     jinja2/defaults.pyc \
     jinja2/environment.pyc \
     jinja2/exceptions.pyc \
+    jinja2/ext.pyc \
     jinja2/filters.pyc \
     jinja2/idtracking.pyc \
     jinja2/__init__.pyc \
