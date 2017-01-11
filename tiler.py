@@ -195,7 +195,7 @@ def read_tile(id, tile, scale=1, **kwargs):
     if data.dtype != target_dtype:
         # rescale
         try:
-            data = (data * (np.iinfo(target_dtype).max / np.iinfo(data.dtype)).max).astype(target_dtype)
+            data = (data * (np.iinfo(target_dtype).max / np.iinfo(data.dtype).max)).astype(target_dtype)
         except:
             raise Exception('Not enough information to rescale; source is "{}""'.format(data.dtype))
 
