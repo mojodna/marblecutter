@@ -64,4 +64,4 @@ COPY . /var/task
 # touch start
 # python app.py
 # # load stuff
-# find /tmp/virtualenv/lib/python2.7/site-packages -type f -anewer start
+# find /tmp/virtualenv/lib/python2.7/site-packages -type f -anewer start | sort
