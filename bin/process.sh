@@ -7,6 +7,30 @@ THUMBNAIL_SIZE=${THUMBNAIL_SIZE:-300}
 
 set -euo pipefail
 
+to_clean=()
+
+function cleanup() {
+  for f in ${to_clean[@]}; do
+    rm -f "${f}"
+  done
+}
+
+function cleanup_on_failure() {
+  s3_outputs=(${output}.tif ${output}.tif.msk ${output}_footprint.json ${output}.vrt ${output}_thumb.png ${output}_warped.vrt ${output}_warped_mask.vrt ${output}.json)
+
+  set +e
+  for x in ${s3_outputs[@]}; do
+    aws s3 rm $x 2> /dev/null
+  done
+  set -e
+
+  cleanup
+}
+
+trap cleanup EXIT
+trap cleanup_on_failure INT
+trap cleanup_on_failure ERR
+
 if [ -z $input ] || [ -z $output ]; then
   # input is an HTTP-accessible GDAL-readable image
   # output is an S3 URI w/o extensions
@@ -20,7 +44,10 @@ fi
 
 PATH=$(cd $(dirname "$0"); pwd -P):$PATH
 source=$(mktemp)
-intermediate=$(mktemp)
+base=$source
+to_clean+=($source)
+intermediate=${base}-intermediate.tif
+to_clean+=($intermediate)
 
 # 1. download source
 >&2 echo "Downloading $input..."
@@ -48,7 +75,8 @@ if [ -f ${intermediate}.msk ]; then
 
   # 5. create RGBA VRT (for use in QGIS, etc.)
   >&2 echo "Generating RGBA VRT..."
-  vrt=$(mktemp)
+  vrt=${base}.vrt
+  to_clean+=($vrt)
   http_output=${output/s3:\/\//http:\/\/s3.amazonaws.com\/}
   gdal_translate \
     -b 1 \
@@ -72,7 +100,8 @@ else
 
   # 5. create RGB VRT (for parity)
   >&2 echo "Generating RGB VRT..."
-  vrt=$(mktemp)
+  vrt=${base}.vrt
+  to_clean+=($vrt)
   http_output=${output/s3:\/\//http:\/\/s3.amazonaws.com\/}
   gdal_translate \
     -b 1 \
@@ -92,11 +121,12 @@ else
     aws s3 cp - ${output}_footprint.json --acl public-read
 fi
 
-rm -f $intermediate ${intermediate}.msk*
+rm -f ${intermediate}*
 
 # 7. create thumbnail
 >&2 echo "Generating thumbnail..."
-thumb=$(mktemp)
+thumb=${base}_thumb.png
+to_clean+=($thumb ${thumb}.aux.xml)
 height=$(rio info $vrt 2> /dev/null | jq .height)
 width=$(rio info $vrt 2> /dev/null | jq .width)
 target_pixel_area=$(bc -l <<< "$THUMBNAIL_SIZE * 1000 / 0.75")
@@ -110,7 +140,8 @@ rm -f $vrt $thumb
 if [ "$mask" -eq 1 ]; then
   # 8. create and upload warped VRT
   >&2 echo "Generating warped VRT..."
-  warped_vrt=$(mktemp)
+  warped_vrt=${base}_warped.vrt
+  to_clean+=($warped_vrt)
   make_vrt.sh -r lanczos ${output}.tif > $warped_vrt
   aws s3 cp $warped_vrt ${output}_warped.vrt --acl public-read
 
@@ -120,7 +151,8 @@ if [ "$mask" -eq 1 ]; then
 else
   # 8. create and upload warped VRT
   >&2 echo "Generating warped VRT..."
-  warped_vrt=$(mktemp)
+  warped_vrt=${base}_warped.vrt
+  to_clean+=($warped_vrt)
   make_vrt.sh -r lanczos -a ${output}.tif > $warped_vrt
   aws s3 cp $warped_vrt ${output}_warped.vrt --acl public-read
 fi
