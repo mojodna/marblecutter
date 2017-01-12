@@ -17,7 +17,7 @@ RUN apt-get update && \
   apt-get clean
 
 RUN \
-  apt install -y --no-install-recommends debhelper dh-autoreconf autotools-dev zlib1g-dev libnetcdf-dev netcdf-bin libjasper-dev libpng-dev libjpeg-dev libgif-dev libwebp-dev libhdf4-alt-dev libhdf5-dev libpcre3-dev libpq-dev libxerces-c-dev unixodbc-dev doxygen d-shlibs libgeos-dev dh-python python-all-dev python-numpy libcurl4-gnutls-dev libsqlite3-dev libogdi3.2-dev chrpath swig patch libexpat1-dev libproj-dev libdap-dev libxml2-dev libspatialite-dev libepsilon-dev libpoppler-private-dev liblzma-dev libopenjp2-7-dev libarmadillo-dev libfreexl-dev libkml-dev liburiparser-dev && \
+  apt install -y --no-install-recommends debhelper dh-autoreconf autotools-dev zlib1g-dev libnetcdf-dev netcdf-bin libjasper-dev libpng-dev libgif-dev libwebp-dev libhdf4-alt-dev libhdf5-dev libpcre3-dev libpq-dev libxerces-c-dev unixodbc-dev doxygen d-shlibs libgeos-dev dh-python python-all-dev python-numpy libcurl4-gnutls-dev libsqlite3-dev libogdi3.2-dev chrpath swig patch libexpat1-dev libproj-dev libdap-dev libxml2-dev libspatialite-dev libepsilon-dev libpoppler-private-dev liblzma-dev libopenjp2-7-dev libarmadillo-dev libfreexl-dev libkml-dev liburiparser-dev && \
   mkdir -p /tmp/gdal-dev && \
   curl -L https://github.com/OSGeo/gdal/archive/3288b145e6e966499a961c27636f2c9ea80157c2.tar.gz | tar zxf - -C /tmp/gdal-dev --strip-components=1 && \
   cd /tmp/gdal-dev/gdal && \
@@ -34,6 +34,7 @@ RUN \
     --with-geotiff=internal \
     --with-webp \
     --with-jasper \
+    --with-jpeg=internal \
     --with-netcdf \
     --with-hdf5=/usr/lib/x86_64-linux-gnu/hdf5/serial \
     --with-xerces \

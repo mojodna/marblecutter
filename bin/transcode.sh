@@ -19,11 +19,13 @@ input=$(sed 's|s3://\([^/]*\)/|http://\1.s3.amazonaws.com/|' <<< $input)
 
 info=$(rio info $input 2> /dev/null)
 count=$(jq .count <<< $info)
+dtype=$(jq -r .dtype <<< $info)
 height=$(jq .height <<< $info)
 width=$(jq .width <<< $info)
 zoom=$(get_zoom.py $input)
 overviews=""
 mask=""
+opts=""
 
 # update info now that rasterio has read it
 if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
@@ -33,6 +35,10 @@ fi
 
 if [ "$count" -eq 4 ]; then
   mask="-mask 4"
+fi
+
+if [ "$dtype" == "uint16" ]; then
+  opts="-co NBITS=12"
 fi
 
 >&2 echo "Transcoding bands..."
@@ -47,6 +53,7 @@ gdal_translate \
   -co BLOCKXSIZE=512 \
   -co BLOCKYSIZE=512 \
   -co NUM_THREADS=ALL_CPUS \
+  $opts \
   $input $output
 
 for z in $(seq 1 $zoom); do
