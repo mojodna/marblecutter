@@ -8,7 +8,7 @@
   "environment": {
     "S3_BUCKET": "oam-dynamic-tiler-tmp",
     "S3_PREFIX": "sources/",
-    "SERVER_NAME": "d38q3j81du2pst.cloudfront.net",
+    "SERVER_NAME": "tiles.dev.openaerialmap.org",
     "CPL_TMPDIR": "/tmp",
     "GDAL_CACHEMAX": "512",
     "GDAL_DISABLE_READDIR_ON_OPEN": "TRUE",
