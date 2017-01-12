@@ -43,37 +43,29 @@ if [ -z $input ] || [ -z $output ]; then
 fi
 
 PATH=$(cd $(dirname "$0"); pwd -P):$PATH
-source=$(mktemp)
-base=$source
+base=$(mktemp)
+source=$base
 to_clean+=($source)
 intermediate=${base}-intermediate.tif
 to_clean+=($intermediate)
 
-# 1. download source
->&2 echo "Downloading $input..."
-if [[ $input =~ "s3://" ]]; then
-  aws s3 cp $input $source
-else
-  curl -sfL $input -o $source
-fi
-
-# 2. transcode + generate overviews
+# 1. transcode + generate overviews
 >&2 echo "Transcoding..."
-transcode.sh $source $intermediate
+transcode.sh $input $intermediate
 rm -f $source
 
-# 3. upload TIF
+# 2. upload TIF
 >&2 echo "Uploading..."
 aws s3 cp $intermediate ${output}.tif --acl public-read
 
 if [ -f ${intermediate}.msk ]; then
   mask=1
 
-  # 4. upload mask
+  # 3. upload mask
   >&2 echo "Uploading mask..."
   aws s3 cp ${intermediate}.msk ${output}.tif.msk --acl public-read
 
-  # 5. create RGBA VRT (for use in QGIS, etc.)
+  # 4. create RGBA VRT (for use in QGIS, etc.)
   >&2 echo "Generating RGBA VRT..."
   vrt=${base}.vrt
   to_clean+=($vrt)
@@ -91,14 +83,14 @@ if [ -f ${intermediate}.msk ]; then
     perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
     aws s3 cp - ${output}.vrt --acl public-read
 
-  # 6. create footprint
+  # 5. create footprint
   >&2 echo "Generating footprint..."
   rio shapes --mask --as-mask --sampling 100 --precision 6 $intermediate | \
     aws s3 cp - ${output}_footprint.json --acl public-read
 else
   mask=0
 
-  # 5. create RGB VRT (for parity)
+  # 3. create RGB VRT (for parity)
   >&2 echo "Generating RGB VRT..."
   vrt=${base}.vrt
   to_clean+=($vrt)
@@ -115,7 +107,7 @@ else
     perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
     aws s3 cp - ${output}.vrt --acl public-read
 
-  # 6. create footprint (bounds of image)
+  # 4. create footprint (bounds of image)
   >&2 echo "Generating footprint..."
   rio bounds $intermediate | \
     aws s3 cp - ${output}_footprint.json --acl public-read
@@ -123,7 +115,7 @@ fi
 
 rm -f ${intermediate}*
 
-# 7. create thumbnail
+# 6. create thumbnail
 >&2 echo "Generating thumbnail..."
 thumb=${base}_thumb.png
 to_clean+=($thumb ${thumb}.aux.xml)
@@ -138,18 +130,18 @@ aws s3 cp $thumb ${output}_thumb.png --acl public-read
 rm -f $vrt $thumb
 
 if [ "$mask" -eq 1 ]; then
-  # 8. create and upload warped VRT
+  # 7. create and upload warped VRT
   >&2 echo "Generating warped VRT..."
   warped_vrt=${base}_warped.vrt
   to_clean+=($warped_vrt)
   make_vrt.sh -r lanczos ${output}.tif > $warped_vrt
   aws s3 cp $warped_vrt ${output}_warped.vrt --acl public-read
 
-  # 9. create and upload warped VRT for mask
+  # 8. create and upload warped VRT for mask
   >&2 echo "Generating warped VRT for mask..."
   make_mask_vrt.py $warped_vrt | aws s3 cp - ${output}_warped_mask.vrt --acl public-read
 else
-  # 8. create and upload warped VRT
+  # 7. create and upload warped VRT
   >&2 echo "Generating warped VRT..."
   warped_vrt=${base}_warped.vrt
   to_clean+=($warped_vrt)
@@ -159,7 +151,7 @@ fi
 
 rm -f $warped_vrt
 
-# 10. create and upload metadata
+# 9. create and upload metadata
 >&2 echo "Generating metadata..."
 if [ "$mask" -eq 1 ]; then
   get_metadata.py --include-mask $output | aws s3 cp - ${output}.json --acl public-read

@@ -14,9 +14,8 @@ if [ -z $output ]; then
   output=$(basename $input)
 fi
 
-if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
-  input="/vsicurl/$input"
-fi
+# convert S3 URLs to HTTP
+input=$(sed 's|s3://\([^/]*\)/|http://\1.s3.amazonaws.com/|' <<< $input)
 
 info=$(rio info $input 2> /dev/null)
 count=$(jq .count <<< $info)
@@ -25,6 +24,12 @@ width=$(jq .width <<< $info)
 zoom=$(get_zoom.py $input)
 overviews=""
 mask=""
+
+# update info now that rasterio has read it
+if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
+  input="/vsicurl/$input"
+fi
+
 
 if [ "$count" -eq 4 ]; then
   mask="-mask 4"
