@@ -27,10 +27,6 @@ function cleanup_on_failure() {
   cleanup
 }
 
-trap cleanup EXIT
-trap cleanup_on_failure INT
-trap cleanup_on_failure ERR
-
 if [ -z $input ] || [ -z $output ]; then
   # input is an HTTP-accessible GDAL-readable image
   # output is an S3 URI w/o extensions
@@ -41,6 +37,10 @@ if [ -z $input ] || [ -z $output ]; then
   >&2 echo "usage: $(basename $0) <input> <output>"
   exit 1
 fi
+
+trap cleanup EXIT
+trap cleanup_on_failure INT
+trap cleanup_on_failure ERR
 
 PATH=$(cd $(dirname "$0"); pwd -P):$PATH
 base=$(mktemp)
