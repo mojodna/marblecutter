@@ -26,6 +26,7 @@ zoom=$(get_zoom.py $input)
 overviews=""
 mask=""
 opts=""
+overview_opts=""
 
 # update info now that rasterio has read it
 if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
@@ -38,7 +39,11 @@ if [ "$count" -eq 4 ]; then
 fi
 
 if [ "$dtype" == "uint16" ]; then
-  opts="-co NBITS=12"
+  opts="-co COMPRESS=DEFLATE -co PREDICTOR=2"
+  overview_opts="--config COMPRESS_OVERVIEW DEFLATE --config PREDICTOR_OVERVIEW 2"
+else
+  opts="-co COMPRESS=JPEG -co PHOTOMETRIC=YCbCr"
+  overview_opts="--config COMPRESS_OVERVIEW JPEG --config PHOTOMETRIC_OVERVIEW YCbCr"
 fi
 
 >&2 echo "Transcoding bands..."
@@ -48,8 +53,6 @@ gdal_translate \
   -b 3 \
   $mask \
   -co TILED=yes \
-  -co COMPRESS=JPEG \
-  -co PHOTOMETRIC=YCbCr \
   -co BLOCKXSIZE=512 \
   -co BLOCKYSIZE=512 \
   -co NUM_THREADS=ALL_CPUS \
@@ -75,6 +78,7 @@ gdaladdo \
   --config BLOCKXSIZE_OVERVIEW 512 \
   --config BLOCKYSIZE_OVERVIEW 512 \
   --config NUM_THREADS_OVERVIEW ALL_CPUS \
+  $overview_opts \
   $output \
   $overviews
 
