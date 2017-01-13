@@ -38,12 +38,12 @@ if [ "$count" -eq 4 ]; then
   mask="-mask 4"
 fi
 
-if [ "$dtype" == "uint16" ]; then
-  opts="-co COMPRESS=DEFLATE -co PREDICTOR=2"
-  overview_opts="--config COMPRESS_OVERVIEW DEFLATE --config PREDICTOR_OVERVIEW 2"
-else
+if [ "$dtype" == "uint8" ]; then
   opts="-co COMPRESS=JPEG -co PHOTOMETRIC=YCbCr"
   overview_opts="--config COMPRESS_OVERVIEW JPEG --config PHOTOMETRIC_OVERVIEW YCbCr"
+else
+  opts="-co COMPRESS=DEFLATE -co PREDICTOR=2"
+  overview_opts="--config COMPRESS_OVERVIEW DEFLATE --config PREDICTOR_OVERVIEW 2"
 fi
 
 >&2 echo "Transcoding bands..."
