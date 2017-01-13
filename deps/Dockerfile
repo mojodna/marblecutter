@@ -6,7 +6,6 @@ RUN \
   yum install -y \
     automake16 \
     libcurl-devel \
-    libjpeg-turbo-devel \
     libpng-devel
 
 # Fetch PROJ.4
@@ -38,6 +37,7 @@ RUN \
   ./configure \
     --prefix=/var/task \
     --datarootdir=/var/task/share/gdal \
+    --with-jpeg=internal \
     --without-qhull \
     --without-mrf \
     --without-grib \
