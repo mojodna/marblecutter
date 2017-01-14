@@ -21,6 +21,9 @@
   "homepage": "https://github.com/hotosm/oam-dynamic-tiler#readme",
   "dependencies": {
     "async": "^2.1.4",
-    "request": "^2.79.0"
+    "aws-sdk": "^2.7.21",
+    "epipebomb": "^1.0.0",
+    "request": "^2.79.0",
+    "yargs": "^6.6.0"
   }
 }
