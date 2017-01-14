@@ -56,7 +56,7 @@ for b in $(seq 1 $count); do
 done
 
 >&2 echo "Transcoding bands..."
-gdal_translate \
+timeout --foreground 1h gdal_translate \
   $bands \
   $mask \
   -co TILED=yes \
@@ -76,7 +76,7 @@ for z in $(seq 1 $zoom); do
 done
 
 >&2 echo "Adding overviews..."
-gdaladdo \
+timeout --foreground 1h gdaladdo \
   -r lanczos \
   --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
   --config TILED_OVERVIEW yes \
@@ -89,7 +89,7 @@ gdaladdo \
 
 if [ "$mask" != "" ]; then
   >&2 echo "Adding overviews to mask..."
-  gdaladdo \
+  timeout --foreground 1h gdaladdo \
     --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
     --config TILED_OVERVIEW yes \
     --config COMPRESS_OVERVIEW DEFLATE \
