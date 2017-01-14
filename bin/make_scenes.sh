@@ -10,6 +10,7 @@ for upload in $(aws s3 ls s3://${bucket}/ | awk '{print $2}'); do
       grep json | \
       grep -v footprint | \
       grep -v scene | \
+      grep -v meta | \
       awk "{print \"http://${bucket}.s3.amazonaws.com/${upload}${scene}\" \$4 }" | \
       xargs bin/make_a_scene.js | \
       aws s3 cp - s3://oin-hotosm/${upload}${scene}scene.json --acl public-read
