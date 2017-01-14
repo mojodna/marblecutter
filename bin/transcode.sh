@@ -80,8 +80,6 @@ gdaladdo \
   -r lanczos \
   --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
   --config TILED_OVERVIEW yes \
-  --config COMPRESS_OVERVIEW JPEG \
-  --config PHOTOMETRIC YCBCR \
   --config BLOCKXSIZE_OVERVIEW 512 \
   --config BLOCKYSIZE_OVERVIEW 512 \
   --config NUM_THREADS_OVERVIEW ALL_CPUS \
