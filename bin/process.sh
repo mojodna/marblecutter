@@ -78,7 +78,8 @@ if [ -f ${intermediate}.msk ]; then
     -of VRT \
     /vsicurl/${http_output}.tif $vrt
 
-  perl -pe 's!(band="4"\>)!\1\n    <ColorInterp>Alpha</ColorInterp>!' $vrt | \
+  cat $vrt | \
+    perl -pe 's|(band="4"\>)|$1\n    <ColorInterp>Alpha</ColorInterp>|' | \
     perl -pe "s|/vsicurl/${http_output}|$(basename $output)|" | \
     perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
     aws s3 cp - ${output}.vrt --acl public-read
