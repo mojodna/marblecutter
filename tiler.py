@@ -35,9 +35,14 @@ if S3_PREFIX.startswith("/"):
 @ttl_cache(ttl=300)
 def get_metadata(id, image_id=None, scene_idx=0):
     if image_id:
-        return requests.get('http://{}.s3.amazonaws.com/{}{}/{}/{}.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx, image_id)).json()
+        rsp = requests.get('http://{}.s3.amazonaws.com/{}{}/{}/{}.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx, image_id))
     else:
-        return requests.get('http://{}.s3.amazonaws.com/{}{}/{}/scene.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx)).json()
+        rsp = requests.get('http://{}.s3.amazonaws.com/{}{}/{}/scene.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx))
+
+    if not rsp.ok:
+        raise InvalidTileRequest()
+
+    return rsp.json()
 
 
 @lru_cache(maxsize=1024)
