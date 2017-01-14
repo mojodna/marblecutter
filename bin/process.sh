@@ -116,8 +116,9 @@ rm -f ${intermediate}*
 >&2 echo "Generating thumbnail..."
 thumb=${base}_thumb.png
 to_clean+=($thumb ${thumb}.aux.xml)
-height=$(rio info $vrt 2> /dev/null | jq .height)
-width=$(rio info $vrt 2> /dev/null | jq .width)
+info=$(rio info $vrt 2> /dev/null)
+height=$(jq .height <<< $info)
+width=$(jq .width <<< $info)
 target_pixel_area=$(bc -l <<< "$THUMBNAIL_SIZE * 1000 / 0.75")
 ratio=$(bc -l <<< "sqrt($target_pixel_area / ($width * $height))")
 target_width=$(printf "%.0f" $(bc -l <<< "$width * $ratio"))
