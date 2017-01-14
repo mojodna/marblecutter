@@ -27,6 +27,7 @@ overviews=""
 mask=""
 opts=""
 overview_opts=""
+bands=""
 
 # update info now that rasterio has read it
 if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
@@ -46,11 +47,17 @@ else
   overview_opts="--config COMPRESS_OVERVIEW DEFLATE --config PREDICTOR_OVERVIEW 2"
 fi
 
+for b in $(seq 1 $count); do
+  if [ "$b" -eq 4 ]; then
+    break
+  fi
+
+  bands="$bands -b $b"
+done
+
 >&2 echo "Transcoding bands..."
 gdal_translate \
-  -b 1 \
-  -b 2 \
-  -b 3 \
+  $bands \
   $mask \
   -co TILED=yes \
   -co BLOCKXSIZE=512 \

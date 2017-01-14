@@ -96,9 +96,6 @@ else
   to_clean+=($vrt)
   http_output=${output/s3:\/\//http:\/\/s3.amazonaws.com\/}
   gdal_translate \
-    -b 1 \
-    -b 2 \
-    -b 3 \
     -of VRT \
     /vsicurl/${http_output}.tif $vrt
 
