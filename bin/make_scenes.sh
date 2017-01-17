@@ -13,6 +13,6 @@ for upload in $(aws s3 ls s3://${bucket}/ | awk '{print $2}'); do
       grep -v meta | \
       awk "{print \"http://${bucket}.s3.amazonaws.com/${upload}${scene}\" \$4 }" | \
       xargs bin/make_a_scene.js | \
-      aws s3 cp - s3://oin-hotosm/${upload}${scene}scene.json --acl public-read
+      aws s3 cp - s3://${bucket}/${upload}${scene}scene.json --acl public-read
   done
 done
