@@ -13,7 +13,6 @@ venv
 *.json
 *.png
 *.pyc
-*Dockerfile
 .dockerignore
 .gitignore
 *.md
