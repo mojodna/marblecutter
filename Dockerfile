@@ -16,7 +16,7 @@ RUN apt-get update && \
     python-setuptools && \
   apt-get clean
 
-COPY requirements.txt /app/requirements.txt
+COPY requirements.txt /opt/oam-dynamic-tiler/requirements.txt
 
 WORKDIR /opt/oam-dynamic-tiler
 
