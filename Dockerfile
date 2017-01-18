@@ -32,13 +32,10 @@ ENV GDAL_CACHEMAX 512
 ENV GDAL_DISABLE_READDIR_ON_OPEN TRUE
 ENV VSI_CACHE TRUE
 ENV VSI_CACHE_SIZE 536870912
-EXPOSE 8000
 
 COPY . /app
 
-# USER nobody
-
-# this should be oam-dynamic-tiler-tools
-
 # TODO put this in oam-dynamic-tiler-server
+# USER nobody
+# EXPOSE 8000
 # ENTRYPOINT ["gunicorn", "-k", "gevent", "-b", "0.0.0.0", "--access-logfile", "-", "app:app"]
