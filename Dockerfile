@@ -18,14 +18,14 @@ RUN apt-get update && \
 
 COPY requirements.txt /app/requirements.txt
 
-WORKDIR /app
+WORKDIR /opt/oam-dynamic-tiler
 
 RUN pip install -U numpy && \
   pip install -Ur requirements.txt && \
   pip install -U awscli && \
   rm -rf /root/.cache
 
-ENV PATH=/app/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH=/opt/oam-dynamic-tiler/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV CPL_TMPDIR /tmp
 ENV CPL_VSIL_CURL_ALLOWED_EXTENSIONS .vrt,.tif,.ovr,.msk
 ENV GDAL_CACHEMAX 512
@@ -33,7 +33,7 @@ ENV GDAL_DISABLE_READDIR_ON_OPEN TRUE
 ENV VSI_CACHE TRUE
 ENV VSI_CACHE_SIZE 536870912
 
-COPY . /app
+COPY . /opt/oam-dynamic-tiler
 
 # TODO put this in oam-dynamic-tiler-server
 # USER nobody
