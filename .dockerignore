@@ -11,6 +11,7 @@ venv
 *.yml
 *.vrt
 *.json
+!package.json
 *.png
 *.pyc
 .dockerignore

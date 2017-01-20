@@ -16,6 +16,8 @@
     "async": "^2.1.4",
     "aws-sdk": "^2.7.21",
     "epipebomb": "^1.0.0",
+    "gdal": "^0.9.4",
+    "oin-meta-generator": "github:mojodna/oin-meta-generator#integration",
     "request": "^2.79.0",
     "yargs": "^6.6.0"
   }

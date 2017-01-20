@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# capture arguments (we'll pass them to oin-meta-generator)
+args=("${@:1:$[$#-2]}")
+shift $[$#-2]
+
 input=$1
 output=$2
 # target size in KB
@@ -27,7 +31,7 @@ function cleanup_on_failure() {
   cleanup
 }
 
-if [ -z $input ] || [ -z $output ]; then
+if [[ -z "$input" || -z "$output" ]]; then
   # input is an HTTP-accessible GDAL-readable image
   # output is an S3 URI w/o extensions
   # e.g.:
@@ -42,17 +46,23 @@ trap cleanup EXIT
 trap cleanup_on_failure INT
 trap cleanup_on_failure ERR
 
-PATH=$(cd $(dirname "$0"); pwd -P):$PATH
+__dirname=$(cd $(dirname "$0"); pwd -P)
+PATH=$__dirname:${__dirname}/../node_modules/.bin:$PATH
 base=$(mktemp)
 source=$base
 to_clean+=($source)
 intermediate=${base}-intermediate.tif
 to_clean+=($intermediate)
+http_output=${output/s3:\/\//http:\/\/s3.amazonaws.com\/}
 
 # 1. transcode + generate overviews
 >&2 echo "Transcoding..."
 transcode.sh $input $intermediate
 rm -f $source
+
+# 2. generate metadata
+>&2 echo "Generating OIN metadata..."
+metadata=$(oin-meta-generator -u "${http_output}.tif" -m "thumbnail=${output}_thumb.png" -m "tms=${output}/{z}/{x}/{y}.png" -m "wmts=${output}/wmts" "${args[@]}" $intermediate)
 
 # 2. upload TIF
 >&2 echo "Uploading..."
@@ -95,7 +105,6 @@ else
   >&2 echo "Generating RGB VRT..."
   vrt=${base}.vrt
   to_clean+=($vrt)
-  http_output=${output/s3:\/\//http:\/\/s3.amazonaws.com\/}
   gdal_translate \
     -of VRT \
     /vsicurl/${http_output}.tif $vrt
@@ -157,3 +166,6 @@ if [ "$mask" -eq 1 ]; then
 else
   get_metadata.py $output | aws s3 cp - ${output}.json --acl public-read
 fi
+
+# 10. Upload OIN metadata
+aws s3 cp - ${output}_meta.json --acl public-read <<< $metadata
