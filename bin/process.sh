@@ -53,7 +53,7 @@ source=$base
 to_clean+=($source)
 intermediate=${base}-intermediate.tif
 to_clean+=($intermediate)
-http_output=${output/s3:\/\//http:\/\/s3.amazonaws.com\/}
+http_output=$(sed 's|s3://\([^/]*\)/|http://\1.s3.amazonaws.com/|' <<< $output)
 
 # 1. transcode + generate overviews
 >&2 echo "Transcoding..."
