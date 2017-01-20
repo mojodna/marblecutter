@@ -8,6 +8,7 @@ input=$1
 output=$2
 # target size in KB
 THUMBNAIL_SIZE=${THUMBNAIL_SIZE:-300}
+TILER_BASE_URL=${TILER_BASE_URL:-http://tiles.openaerialmap.org}
 
 set -euo pipefail
 
@@ -54,6 +55,7 @@ to_clean+=($source)
 intermediate=${base}-intermediate.tif
 to_clean+=($intermediate)
 http_output=$(sed 's|s3://\([^/]*\)/|http://\1.s3.amazonaws.com/|' <<< $output)
+tiler_url=$(sed "s|s3://[^/]*|${TILER_BASE_URL}|" <<< $output)
 
 # 1. transcode + generate overviews
 >&2 echo "Transcoding..."
@@ -62,7 +64,7 @@ rm -f $source
 
 # 2. generate metadata
 >&2 echo "Generating OIN metadata..."
-metadata=$(oin-meta-generator -u "${http_output}.tif" -m "thumbnail=${output}_thumb.png" -m "tms=${output}/{z}/{x}/{y}.png" -m "wmts=${output}/wmts" "${args[@]}" $intermediate)
+metadata=$(oin-meta-generator -u "${http_output}.tif" -m "thumbnail=${http_output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" "${args[@]}" $intermediate)
 
 # 2. upload TIF
 >&2 echo "Uploading..."
