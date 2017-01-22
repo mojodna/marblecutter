@@ -40,7 +40,7 @@ RUN \
   npm install \
   && rm -rf /root/.npm
 
-ENV PATH=/opt/oam-dynamic-tiler/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH=/opt/oam-dynamic-tiler/bin:/opt/oam-dynamic-tiler/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV CPL_TMPDIR /tmp
 ENV CPL_VSIL_CURL_ALLOWED_EXTENSIONS .vrt,.tif,.ovr,.msk
 ENV GDAL_CACHEMAX 512
