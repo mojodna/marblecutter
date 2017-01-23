@@ -22,6 +22,8 @@ const S3 = new AWS.S3()
 const metaUrl = argv._.shift()
 const prefix = `http://oin-hotosm.s3.amazonaws.com/${argv.u}/${argv.s}/${argv.i}`
 
+console.log(prefix)
+
 request.get({
   json: true,
   uri: metaUrl
@@ -73,13 +75,32 @@ request.get({
 
       return request.get({
         json: true,
-        uri: prefix + '.json'
+        uri: `${prefix}.json`
       }, (err, rsp, meta) => {
         if (err) {
           throw err
         }
 
+        if (rsp.statusCode !== 200) {
+          throw new Error(`${prefix}.json does not exist`)
+        }
+
         meta.name = body.title
+        meta.meta.acquisitionStart = body.acquisition_start
+        meta.meta.acquisitionEnd = body.acquisition_end
+        meta.meta.platform = body.platform
+        meta.meta.provider = body.provider
+        meta.meta.uploadedAt = body.uploaded_at
+        meta.meta.oinMetadataUrl = `http://${S3_BUCKET}.s3.amazonaws.com/${argv.u}/${argv.s}/${argv.i}_meta.json`
+
+        // remove null values
+        meta = Object.keys(meta).reduce((obj, k) => {
+          if (meta[k]) {
+            obj[k] = meta[k]
+          }
+
+          return obj
+        }, {})
 
         return S3.putObject({
           Bucket: S3_BUCKET,
