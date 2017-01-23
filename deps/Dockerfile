@@ -85,6 +85,14 @@ RUN \
   zip \
     -r /tmp/task.zip \
     affine/__init__.pyc \
+    arrow/api.pyc \
+    arrow/arrow.pyc \
+    arrow/factory.pyc \
+    arrow/formatter.pyc \
+    arrow/__init__.pyc \
+    arrow/locales.pyc \
+    arrow/parser.pyc \
+    arrow/util.pyc \
     cachetools/abc.pyc \
     cachetools/cache.pyc \
     cachetools/func.pyc \
