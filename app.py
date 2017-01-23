@@ -3,6 +3,7 @@
 import os
 import logging
 
+import arrow
 from cachetools.func import rr_cache
 from flask import Flask, jsonify, render_template, url_for
 from flask_cors import CORS
@@ -42,11 +43,48 @@ def handle_ioerror(error):
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
 def tile(id, z, x, y, **kwargs):
+    meta = get_metadata(id, **kwargs)
     tile = read_tile(id, Tile(x, y, z), **kwargs)
 
-    return tile, 200, {
-        'Content-Type': 'image/png'
+    headers = {
+        'Content-Type': 'image/png',
     }
+
+    if meta['meta'].get('oinMetadataUrl'):
+        headers['X-OIN-Metadata-URL'] = meta['meta'].get('oinMetadataUrl')
+
+    if meta['meta'].get('acquisitionStart') or meta['meta'].get('acquisitionEnd'):
+        start = meta['meta'].get('acquisitionStart')
+        end = meta['meta'].get('acquisitionEnd')
+
+        if start and end:
+            start = arrow.get(start)
+            end = arrow.get(end)
+
+            capture_range = '{}-{}'.format(start.format('M/D/YYYY'), end.format('M/D/YYYY'))
+            headers['X-OIN-Acquisition-Start'] = start.format('YYYY-MM-DDTHH:mm:ssZZ')
+            headers['X-OIN-Acquisition-End'] = end.format('YYYY-MM-DDTHH:mm:ssZZ')
+        elif start:
+            start = arrow.get(start)
+
+            capture_range = start.format('M/D/YYYY')
+            headers['X-OIN-Acquisition-Start'] = start.format('YYYY-MM-DDTHH:mm:ssZZ')
+        elif end:
+            end = arrow.get(end)
+
+            capture_range = end.format('M/D/YYYY')
+            headers['X-OIN-Acquisition-End'] = end.format('YYYY-MM-DDTHH:mm:ssZZ')
+
+        # Bing Maps-compatibility (JOSM uses this)
+        headers['X-VE-TILEMETA-CaptureDatesRange'] = capture_range
+
+    if meta['meta'].get('provider'):
+        headers['X-OIN-Provider'] = meta['meta'].get('provider')
+
+    if meta['meta'].get('platform'):
+        headers['X-OIN-Platform'] = meta['meta'].get('platform')
+
+    return tile, 200, headers
 
 
 @rr_cache()
