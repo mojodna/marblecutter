@@ -40,7 +40,7 @@ def get_metadata(id, image_id=None, scene_idx=0):
         rsp = requests.get('http://{}.s3.amazonaws.com/{}{}/{}/scene.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx))
 
     if not rsp.ok:
-        raise InvalidTileRequest()
+        raise InvalidTileRequest('Could not load {}'.format(rsp.url))
 
     return rsp.json()
 
