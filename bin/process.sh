@@ -164,9 +164,9 @@ rm -f $warped_vrt
 # 9. create and upload metadata
 >&2 echo "Generating metadata..."
 if [ "$mask" -eq 1 ]; then
-  get_metadata.py --include-mask $output | aws s3 cp - ${output}.json --acl public-read
+  get_metadata.py --include-mask "${args[@]}" $output | aws s3 cp - ${output}.json --acl public-read
 else
-  get_metadata.py $output | aws s3 cp - ${output}.json --acl public-read
+  get_metadata.py "${args[@]}" $output | aws s3 cp - ${output}.json --acl public-read
 fi
 
 # 10. Upload OIN metadata
