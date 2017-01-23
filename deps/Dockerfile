@@ -56,7 +56,7 @@ RUN \
 ENV PATH /tmp/virtualenv/bin:/var/task/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN \
-  pip install -U cachetools Cython flask flask_cors jinja2 mercantile numpy pillow raven requests werkzeug && \
+  pip install -U arrow cachetools Cython flask flask_cors jinja2 mercantile numpy pillow raven requests werkzeug && \
   pip install -U --no-binary :all: https://github.com/mojodna/rasterio/archive/1.0a5+nogil.tar.gz && \
   pip install -U rio-color
 
@@ -80,7 +80,7 @@ RUN \
 WORKDIR /tmp/virtualenv/lib/python2.7/site-packages
 
 # skip the zipping (above, too) and put it in a staging directory that can be copied to a volume or output via tar on stdout
-# determined by copying the app in, touching start, exercising it, then using find /tmp/virtualenv/lib/python2.7/site-packages -type f -anewer start
+# determined by copying the app in, touching start, exercising it, then using find /tmp/virtualenv/lib/python2.7/site-packages -type f -anewer start | sort
 RUN \
   zip \
     -r /tmp/task.zip \
@@ -165,6 +165,7 @@ RUN \
     numpy/__config__.pyc \
     numpy/core/arrayprint.pyc \
     numpy/core/defchararray.pyc \
+    numpy/core/einsumfunc.pyc \
     numpy/core/fromnumeric.pyc \
     numpy/core/function_base.pyc \
     numpy/core/getlimits.pyc \
@@ -181,6 +182,7 @@ RUN \
     numpy/core/shape_base.pyc \
     numpy/core/umath.so \
     numpy/ctypeslib.pyc \
+    numpy/_distributor_init.pyc \
     numpy/fft/fftpack_lite.so \
     numpy/fft/fftpack.pyc \
     numpy/fft/helper.pyc \
