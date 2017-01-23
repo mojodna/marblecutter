@@ -10,6 +10,11 @@
         <ows:Title>OpenAerialMap</ows:Title>
         <ows:ServiceType>OGC WMTS</ows:ServiceType>
         <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
+        <ows:ServiceProvider>
+           <ows:ProviderName>OpenAerialMap</ows:ProviderName>
+           <ows:ProviderSite xlink:href="https://openaerialmap.org/" />
+           <ows:ServiceContact />
+        </ows:ServiceProvider>
     </ows:ServiceIdentification>
 
     <ows:OperationsMetadata>
@@ -43,13 +48,13 @@
 
     <Contents>
         <Layer>
-            <ows:Title>{{ id }}</ows:Title>
+            <ows:Title>{{ meta['name'] }}</ows:Title>
             <ows:Identifier>{{ id }}</ows:Identifier>
-            <ows:Abstract>OpenAerialMap</ows:Abstract>
             <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
                 <ows:LowerCorner>{{ meta['bounds'][0] }} {{ meta['bounds'][1] }}</ows:LowerCorner>
                 <ows:UpperCorner>{{ meta['bounds'][2] }} {{ meta['bounds'][3] }}</ows:UpperCorner>
             </ows:WGS84BoundingBox>
+            <ows:Metadata xlink:href="{{ meta['meta'].get('oinMetadataUrl', '') }}"/>
             <Style isDefault="true">
                 <ows:Identifier>default</ows:Identifier>
             </Style>

@@ -32,6 +32,13 @@ if S3_PREFIX.startswith("/"):
     S3_PREFIX = S3_PREFIX[1:]
 
 
+def get_id(id, image_id=None, scene_idx=0):
+    if image_id:
+        return '{}/{}/{}'.format(id, scene_idx, image_id)
+
+    return id
+
+
 @ttl_cache(ttl=300)
 def get_metadata(id, image_id=None, scene_idx=0):
     if image_id:

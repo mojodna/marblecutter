@@ -10,7 +10,7 @@ from flask_cors import CORS
 from mercantile import Tile
 from werkzeug.wsgi import DispatcherMiddleware
 
-from tiler import InvalidTileRequest, get_metadata, read_tile
+from tiler import InvalidTileRequest, get_id, get_metadata, read_tile
 
 
 APPLICATION_ROOT = os.environ.get('APPLICATION_ROOT', '')
@@ -106,7 +106,7 @@ def meta(id, **kwargs):
 @app.route('/<id>/<int:scene_idx>/<image_id>/wmts')
 def wmts(id, **kwargs):
     with app.app_context():
-        return render_template('wmts.xml', id=id, meta=get_metadata(id, **kwargs), base_url=url_for('meta', id=id, _external=True, **kwargs), **kwargs), 200, {
+        return render_template('wmts.xml', id=get_id(id, **kwargs), meta=get_metadata(id, **kwargs), base_url=url_for('meta', id=id, _external=True, **kwargs), **kwargs), 200, {
             'Content-Type': 'application/xml'
         }
 
