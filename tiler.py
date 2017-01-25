@@ -40,7 +40,7 @@ def get_id(id, image_id=None, scene_idx=0):
 
 
 @ttl_cache(ttl=300)
-def get_metadata(id, image_id=None, scene_idx=0):
+def get_metadata(id, image_id=None, scene_idx=0, **kwargs):
     if image_id:
         rsp = requests.get('http://{}.s3.amazonaws.com/{}{}/{}/{}.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx, image_id))
     else:
