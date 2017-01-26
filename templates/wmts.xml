@@ -77,8 +77,8 @@
               <TopLeftCorner>-20037508.34278925 20037508.34278925</TopLeftCorner>
               <TileWidth>256</TileWidth>
               <TileHeight>256</TileHeight>
-              <MatrixWidth>1</MatrixWidth>
-              <MatrixHeight>1</MatrixHeight>
+              <MatrixWidth>{{ 2 ** zoom }}</MatrixWidth>
+              <MatrixHeight>{{ 2 ** zoom }}</MatrixHeight>
           </TileMatrix>
         {% endfor %}
         </TileMatrixSet>
