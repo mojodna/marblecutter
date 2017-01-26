@@ -57,9 +57,20 @@ to_clean+=($intermediate)
 http_output=$(sed 's|s3://\([^/]*\)/|http://\1.s3.amazonaws.com/|' <<< $output)
 tiler_url=$(sed "s|s3://[^/]*|${TILER_BASE_URL}|" <<< $output)
 
+filename=$(basename $input)
+ext="${filename##*.}"
+
+# 0. download source (if appropriate)
+if [[ ( "$input" =~ ^s3:// || "$input" =~ s3\.amazonaws\.com ) && "$ext" =~ ^tiff? ]]; then
+  source=$input
+else
+  >&2 echo "Downloading $input..."
+  curl -sfL $input -o $source
+fi
+
 # 1. transcode + generate overviews
 >&2 echo "Transcoding..."
-transcode.sh $input $intermediate
+transcode.sh $source $intermediate
 rm -f $source
 
 # 2. generate metadata
