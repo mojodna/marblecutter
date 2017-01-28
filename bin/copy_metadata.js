@@ -61,6 +61,7 @@ request.get({
     body.properties.thumbnail = prefix + '_thumb.png'
     // replace any existing TMS info
     body.properties.tms = `http://tiles.openaerialmap.org/${argv.u}/${argv.s}/${argv.i}/{z}/{x}/{y}.png`
+    body.properties.wtms = `http://tiles.openaerialmap.org/${argv.u}/${argv.s}/${argv.i}/wmts`
 
     // write to new location
     return S3.putObject({
