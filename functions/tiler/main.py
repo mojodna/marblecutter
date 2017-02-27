@@ -8,9 +8,9 @@ from app import app as tiler
 
 
 def handle(event, context):
-    # Cloudfront isn't configured to pass Host headers, so this is the API Gateway hostname
+    # Cloudfront isn't configured to pass Host headers, so the provided Host header is the API Gateway hostname
     event['headers']['Host'] = os.environ['SERVER_NAME']
-    # (Our) Cloudfront doesn't pass X-Forwarded-Proto, so the value provided is from API Gateway
+    # Cloudfront drops X-Forwarded-Proto, so the value provided is from API Gateway
     event['headers']['X-Forwarded-Proto'] = 'http'
     return awsgi.response(tiler, event, context)
 
