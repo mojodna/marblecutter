@@ -115,7 +115,7 @@ def wmts(id, **kwargs):
 @app.route('/<id>/<int:scene_idx>/<image_id>/preview')
 def preview(id, **kwargs):
     with app.app_context():
-        return render_template('preview.html', tilejson_url=url_for('meta', id=id, _external=True, **kwargs), **kwargs), 200, {
+        return render_template('preview.html', tilejson_url=url_for('meta', id=id, _external=True, _scheme='', **kwargs), **kwargs), 200, {
             'Content-Type': 'text/html'
         }
 
