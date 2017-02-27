@@ -57,7 +57,7 @@ ENV PATH /tmp/virtualenv/bin:/var/task/bin:/usr/local/sbin:/usr/local/bin:/usr/s
 
 RUN \
   pip install -U arrow cachetools Cython flask flask_cors jinja2 mercantile numpy pillow raven requests urllib3 werkzeug && \
-  pip install -U --no-binary :all: https://github.com/mojodna/rasterio/archive/1.0a5+nogil.tar.gz && \
+  pip install -U --no-binary :all: rasterio>=1.0a6 && \
   pip install -U rio-color
 
 # Add GDAL libs to the function zip
