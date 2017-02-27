@@ -6,8 +6,7 @@ flask-cors
 mercantile
 numpy
 Pillow
-# rasterio>=1.0a5
-https://github.com/mojodna/rasterio/archive/1.0a5+nogil.tar.gz
+rasterio>=1.0a6
 raven
 requests
 rio-color
