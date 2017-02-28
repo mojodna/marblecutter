@@ -30,7 +30,8 @@ COPY requirements.txt /opt/oam-dynamic-tiler/requirements.txt
 WORKDIR /opt/oam-dynamic-tiler
 
 RUN pip install -U numpy && \
-  pip install -Ur requirements.txt && \
+  pip install -U --no-binary :all: rasterio>=1.0a6 && \
+  pip install -r requirements.txt && \
   pip install -U awscli && \
   rm -rf /root/.cache
 
