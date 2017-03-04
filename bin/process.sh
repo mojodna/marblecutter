@@ -2,6 +2,7 @@
 
 # capture arguments (we'll pass them to oin-meta-generator)
 args=("${@:1:$[$#-2]}")
+args=${args:-""}
 shift $[$#-2]
 
 input=$1
@@ -75,7 +76,11 @@ rm -f $source
 
 # 2. generate metadata
 >&2 echo "Generating OIN metadata..."
-metadata=$(oin-meta-generator -u "${http_output}.tif" -m "thumbnail=${http_output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" "${args[@]}" $intermediate)
+if [[ ${#args} -gt 0 ]]; then
+  metadata=$(oin-meta-generator -u "${http_output}.tif" -m "thumbnail=${http_output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" "${args[@]}" $intermediate)
+else
+  metadata=$(oin-meta-generator -u "${http_output}.tif" -m "thumbnail=${http_output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" $intermediate)
+fi
 
 # 2. upload TIF
 >&2 echo "Uploading..."
