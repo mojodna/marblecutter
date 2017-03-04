@@ -84,14 +84,14 @@ fi
 
 # 2. upload TIF
 >&2 echo "Uploading..."
-aws s3 cp $intermediate ${output}.tif --acl public-read
+aws s3 cp $intermediate ${output}.tif
 
 if [ -f ${intermediate}.msk ]; then
   mask=1
 
   # 3. upload mask
   >&2 echo "Uploading mask..."
-  aws s3 cp ${intermediate}.msk ${output}.tif.msk --acl public-read
+  aws s3 cp ${intermediate}.msk ${output}.tif.msk
 
   # 4. create RGBA VRT (for use in QGIS, etc.)
   >&2 echo "Generating RGBA VRT..."
@@ -110,12 +110,12 @@ if [ -f ${intermediate}.msk ]; then
     perl -pe 's|(band="4"\>)|$1\n    <ColorInterp>Alpha</ColorInterp>|' | \
     perl -pe "s|/vsicurl/${http_output}|$(basename $output)|" | \
     perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
-    aws s3 cp - ${output}.vrt --acl public-read
+    aws s3 cp - ${output}.vrt
 
   # 5. create footprint
   >&2 echo "Generating footprint..."
   rio shapes --mask --as-mask --sampling 100 --precision 6 $intermediate | \
-    aws s3 cp - ${output}_footprint.json --acl public-read
+    aws s3 cp - ${output}_footprint.json
 else
   mask=0
 
@@ -130,12 +130,12 @@ else
   cat $vrt | \
     perl -pe "s|/vsicurl/${http_output}|$(basename $output)|" | \
     perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
-    aws s3 cp - ${output}.vrt --acl public-read
+    aws s3 cp - ${output}.vrt
 
   # 4. create footprint (bounds of image)
   >&2 echo "Generating footprint..."
   rio bounds $intermediate | \
-    aws s3 cp - ${output}_footprint.json --acl public-read
+    aws s3 cp - ${output}_footprint.json
 fi
 
 rm -f ${intermediate}*
@@ -152,7 +152,7 @@ ratio=$(bc -l <<< "sqrt($target_pixel_area / ($width * $height))")
 target_width=$(printf "%.0f" $(bc -l <<< "$width * $ratio"))
 target_height=$(printf "%.0f" $(bc -l <<< "$height * $ratio"))
 gdal_translate -of png $vrt $thumb -outsize $target_width $target_height
-aws s3 cp $thumb ${output}_thumb.png --acl public-read
+aws s3 cp $thumb ${output}_thumb.png
 rm -f $vrt $thumb
 
 if [ "$mask" -eq 1 ]; then
@@ -161,18 +161,18 @@ if [ "$mask" -eq 1 ]; then
   warped_vrt=${base}_warped.vrt
   to_clean+=($warped_vrt)
   make_vrt.sh -r lanczos ${output}.tif > $warped_vrt
-  aws s3 cp $warped_vrt ${output}_warped.vrt --acl public-read
+  aws s3 cp $warped_vrt ${output}_warped.vrt
 
   # 8. create and upload warped VRT for mask
   >&2 echo "Generating warped VRT for mask..."
-  make_mask_vrt.py $warped_vrt | aws s3 cp - ${output}_warped_mask.vrt --acl public-read
+  make_mask_vrt.py $warped_vrt | aws s3 cp - ${output}_warped_mask.vrt
 else
   # 7. create and upload warped VRT
   >&2 echo "Generating warped VRT..."
   warped_vrt=${base}_warped.vrt
   to_clean+=($warped_vrt)
   make_vrt.sh -r lanczos -a ${output}.tif > $warped_vrt
-  aws s3 cp $warped_vrt ${output}_warped.vrt --acl public-read
+  aws s3 cp $warped_vrt ${output}_warped.vrt
 fi
 
 rm -f $warped_vrt
@@ -180,10 +180,10 @@ rm -f $warped_vrt
 # 9. create and upload metadata
 >&2 echo "Generating metadata..."
 if [ "$mask" -eq 1 ]; then
-  get_metadata.py --include-mask "${args[@]}" $output | aws s3 cp - ${output}.json --acl public-read
+  get_metadata.py --include-mask "${args[@]}" $output | aws s3 cp - ${output}.json
 else
-  get_metadata.py "${args[@]}" $output | aws s3 cp - ${output}.json --acl public-read
+  get_metadata.py "${args[@]}" $output | aws s3 cp - ${output}.json
 fi
 
 # 10. Upload OIN metadata
-aws s3 cp - ${output}_meta.json --acl public-read <<< $metadata
+aws s3 cp - ${output}_meta.json <<< $metadata
