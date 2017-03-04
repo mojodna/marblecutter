@@ -41,6 +41,9 @@ fi
 if [ "$dtype" == "uint8" ]; then
   opts="-co COMPRESS=JPEG -co PHOTOMETRIC=YCbCr"
   overview_opts="--config COMPRESS_OVERVIEW JPEG --config PHOTOMETRIC_OVERVIEW YCbCr"
+elif [[ "$dtype" =~ "float" ]]; then
+  opts="-co COMPRESS=DEFLATE -co PREDICTOR=3"
+  overview_opts="--config COMPRESS_OVERVIEW DEFLATE --config PREDICTOR_OVERVIEW 3"
 else
   opts="-co COMPRESS=DEFLATE -co PREDICTOR=2"
   overview_opts="--config COMPRESS_OVERVIEW DEFLATE --config PREDICTOR_OVERVIEW 2"
