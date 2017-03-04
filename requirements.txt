@@ -3,6 +3,7 @@ cachetools
 click
 flask
 flask-cors
+haversine
 mercantile
 numpy
 Pillow

@@ -8,6 +8,7 @@ import os
 import re
 import sys
 
+from haversine import haversine
 import rasterio
 from rasterio.warp import transform_bounds
 
@@ -23,14 +24,18 @@ def get_zoom(input):
         with rasterio.open(input) as src:
             # grab the lowest resolution dimension
             if src.crs.is_geographic:
-                # convert from degrees to "meters" (close enough for our use, esp. since we're using "meters" too)
-                bounds = transform_bounds(src.crs, "EPSG:3857", *src.bounds)
-                resolution = max((bounds[2] - bounds[0]) / src.width, (bounds[3] - bounds[1]) / src.height)
+                left = (src.bounds[0], (src.bounds[1] + src.bounds[3]) / 2)
+                right = (src.bounds[2], (src.bounds[1] + src.bounds[3]) / 2)
+                top = ((src.bounds[0] + src.bounds[2]) / 2, src.bounds[3])
+                bottom = ((src.bounds[0] + src.bounds[2]) / 2, src.bounds[1])
+
+                resolution = max(haversine(left, right) * 1000 / src.width, haversine(top, bottom) * 1000 / src.height)
             else:
                 resolution = max((src.bounds.right - src.bounds.left) / src.width, (src.bounds.top - src.bounds.bottom) / src.height)
 
             return min(22, int(math.ceil(math.log((2 * math.pi * 6378137) /
                                                   (resolution * 256)) / math.log(2))))
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
