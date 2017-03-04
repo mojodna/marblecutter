@@ -6,7 +6,7 @@ flask-cors
 mercantile
 numpy
 Pillow
-rasterio>=1.0a6
+rasterio[s3] >= 1.0a6 --no-binary rasterio
 raven
 requests
 rio-color
