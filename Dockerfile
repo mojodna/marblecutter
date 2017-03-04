@@ -2,6 +2,13 @@ FROM quay.io/mojodna/gdal22
 MAINTAINER Seth Fitzsimmons <seth@mojodna.net>
 
 ENV DEBIAN_FRONTEND noninteractive
+ENV PATH=/opt/oam-dynamic-tiler/bin:/opt/oam-dynamic-tiler/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV CPL_TMPDIR /tmp
+ENV CPL_VSIL_CURL_ALLOWED_EXTENSIONS .vrt,.tif,.tiff,.ovr,.msk,.jp2
+ENV GDAL_CACHEMAX 512
+ENV GDAL_DISABLE_READDIR_ON_OPEN TRUE
+ENV VSI_CACHE TRUE
+ENV VSI_CACHE_SIZE 536870912
 
 RUN apt-get update \
   && apt-get upgrade -y \
@@ -25,9 +32,9 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt /opt/oam-dynamic-tiler/requirements.txt
-
 WORKDIR /opt/oam-dynamic-tiler
+
+COPY requirements.txt /opt/oam-dynamic-tiler/requirements.txt
 
 RUN pip install -U numpy && \
   pip install -U --no-binary :all: rasterio>=1.0a6 && \
@@ -41,17 +48,4 @@ RUN \
   npm install \
   && rm -rf /root/.npm
 
-ENV PATH=/opt/oam-dynamic-tiler/bin:/opt/oam-dynamic-tiler/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ENV CPL_TMPDIR /tmp
-ENV CPL_VSIL_CURL_ALLOWED_EXTENSIONS .vrt,.tif,.tiff,.ovr,.msk,.jp2
-ENV GDAL_CACHEMAX 512
-ENV GDAL_DISABLE_READDIR_ON_OPEN TRUE
-ENV VSI_CACHE TRUE
-ENV VSI_CACHE_SIZE 536870912
-
 COPY . /opt/oam-dynamic-tiler
-
-# TODO put this in oam-dynamic-tiler-server
-# USER nobody
-# EXPOSE 8000
-# ENTRYPOINT ["gunicorn", "-k", "gevent", "-b", "0.0.0.0", "--access-logfile", "-", "app:app"]
