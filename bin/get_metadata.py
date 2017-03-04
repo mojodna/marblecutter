@@ -6,7 +6,6 @@ from __future__ import print_function
 import json
 import math
 import os
-import re
 import sys
 
 import arrow
@@ -41,21 +40,17 @@ def get_metadata(
     _,
 ):
     scene = "{}.tif".format(prefix)
-    scene_vrt = "{}_warped.vrt".format(prefix)
+    source = "{}_warped.vrt".format(prefix)
     mask_vrt = "{}_warped_mask.vrt".format(prefix)
     footprint = "{}_footprint.json".format(prefix)
 
     with rasterio.Env():
-        input = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", scene)
         try:
-            with rasterio.open(input) as src:
+            with rasterio.open(scene) as src:
                 bounds = transform_bounds(src.crs, {'init': 'epsg:4326'}, *src.bounds)
                 approximate_zoom = get_zoom(scene)
                 maxzoom = approximate_zoom + 3
                 minzoom = max(approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom), 0)
-                source = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", scene_vrt)
-                mask = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", mask_vrt)
-                footprint = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", footprint)
 
                 meta = {
                   "bounds": bounds,
@@ -74,7 +69,7 @@ def get_metadata(
                 }
 
                 if include_mask:
-                    meta["meta"]["mask"] = mask
+                    meta["meta"]["mask"] = mask_vrt
 
                 if acquisition_start:
                     meta["meta"]["acquisitionStart"] = arrow.get(acquisition_start).for_json()
@@ -93,7 +88,7 @@ def get_metadata(
 
                 print(json.dumps(meta))
         except (IOError, rasterio._err.CPLE_HttpResponseError) as e:
-            print("Unable to open '{}': {}".format(input, e), file=sys.stderr)
+            print("Unable to open '{}': {}".format(scene, e), file=sys.stderr)
             exit(1)
 
 

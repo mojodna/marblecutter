@@ -55,7 +55,7 @@ source=$base
 to_clean+=($source)
 intermediate=${base}-intermediate.tif
 to_clean+=($intermediate)
-http_output=$(sed 's|s3://\([^/]*\)/|http://\1.s3.amazonaws.com/|' <<< $output)
+gdal_output=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $output)
 tiler_url=$(sed "s|s3://[^/]*|${TILER_BASE_URL}|" <<< $output)
 
 filename=$(basename $input)
@@ -77,9 +77,9 @@ rm -f $source
 # 2. generate metadata
 >&2 echo "Generating OIN metadata..."
 if [[ ${#args} -gt 0 ]]; then
-  metadata=$(oin-meta-generator -u "${http_output}.tif" -m "thumbnail=${http_output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" "${args[@]}" $intermediate)
+  metadata=$(oin-meta-generator -u "${output}.tif" -m "thumbnail=${output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" "${args[@]}" $intermediate)
 else
-  metadata=$(oin-meta-generator -u "${http_output}.tif" -m "thumbnail=${http_output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" $intermediate)
+  metadata=$(oin-meta-generator -u "${output}.tif" -m "thumbnail=${output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" $intermediate)
 fi
 
 # 2. upload TIF
@@ -97,18 +97,17 @@ if [ -f ${intermediate}.msk ]; then
   >&2 echo "Generating RGBA VRT..."
   vrt=${base}.vrt
   to_clean+=($vrt)
-  http_output=${output/s3:\/\//http:\/\/s3.amazonaws.com\/}
   gdal_translate \
     -b 1 \
     -b 2 \
     -b 3 \
     -b mask \
     -of VRT \
-    /vsicurl/${http_output}.tif $vrt
+    ${gdal_output}.tif $vrt
 
   cat $vrt | \
     perl -pe 's|(band="4"\>)|$1\n    <ColorInterp>Alpha</ColorInterp>|' | \
-    perl -pe "s|/vsicurl/${http_output}|$(basename $output)|" | \
+    perl -pe "s|${gdal_output}|$(basename $output)|" | \
     perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
     aws s3 cp - ${output}.vrt
 
@@ -125,10 +124,10 @@ else
   to_clean+=($vrt)
   gdal_translate \
     -of VRT \
-    /vsicurl/${http_output}.tif $vrt
+    ${gdal_output}.tif $vrt
 
   cat $vrt | \
-    perl -pe "s|/vsicurl/${http_output}|$(basename $output)|" | \
+    perl -pe "s|${gdal_output}|$(basename $output)|" | \
     perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
     aws s3 cp - ${output}.vrt
 

@@ -33,16 +33,17 @@ set -u
 
 PATH=$(cd $(dirname "$0"); pwd -P):$PATH
 
-http_source=$(sed 's|s3://\([^/]*\)/|http://\1.s3.amazonaws.com/|' <<< $source)
 zoom=$(get_zoom.py ${source})
 pixels=$[2 ** ($zoom + 8)]
 
-if [[ "$http_source" =~ https?:// ]]; then
-  http_source="/vsicurl/${http_source}"
+if [[ "$source" =~ https?:// ]]; then
+  gdal_source="/vsicurl/${source}"
+elif [[ "$source" =~ s3:// ]]; then
+  gdal_source=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $source)
 fi
 
 gdalwarp \
-  ${http_source} \
+  ${gdal_source} \
   $output \
   -r $resampling_method \
   $dstalpha \
