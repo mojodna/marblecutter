@@ -14,9 +14,6 @@ if [ -z $output ]; then
   output=$(basename $input)
 fi
 
-# convert S3 URLs to HTTP
-input=$(sed 's|s3://\([^/]*\)/|http://\1.s3.amazonaws.com/|' <<< $input)
-
 info=$(rio info $input 2> /dev/null)
 count=$(jq .count <<< $info)
 dtype=$(jq -r .dtype <<< $info)
@@ -32,6 +29,8 @@ bands=""
 # update info now that rasterio has read it
 if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
   input="/vsicurl/$input"
+elif [[ $input =~ "s3://" ]]; then
+  input=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $input)
 fi
 
 

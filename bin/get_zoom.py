@@ -19,7 +19,6 @@ def get_zoom_offset(width, height, approximate_zoom):
 
 
 def get_zoom(input):
-    input = re.sub("s3://([^/]+)/", "http://\\1.s3.amazonaws.com/", input)
     with rasterio.Env():
         with rasterio.open(input) as src:
             # grab the lowest resolution dimension
