@@ -178,6 +178,8 @@ def read_tile(id, tile, scale=1, **kwargs):
     if not minzoom <= tile.z <= maxzoom:
         raise InvalidTileRequest('Invalid zoom: {} outside [{}, {}]'.format(tile.z, minzoom, maxzoom))
 
+    meta['bounds'] = np.clip(meta['bounds'], [-180, -85.05113] * 2, [180, 85.05113] * 2)
+
     sw = mercantile.tile(*meta['bounds'][0:2], zoom=tile.z)
     ne = mercantile.tile(*meta['bounds'][2:4], zoom=tile.z)
 
