@@ -62,7 +62,7 @@ filename=$(basename $input)
 ext="${filename##*.}"
 
 # 0. download source (if appropriate)
-if [[ ( "$input" =~ ^s3:// || "$input" =~ s3\.amazonaws\.com ) && "$ext" =~ ^tiff? ]]; then
+if [[ "$input" =~ ^s3:// || "$input" =~ s3\.amazonaws\.com ]]; then
   source=$input
 else
   >&2 echo "Downloading $input..."
@@ -144,6 +144,7 @@ rm -f ${intermediate}*
 thumb=${base}_thumb.png
 to_clean+=($thumb ${thumb}.aux.xml)
 info=$(rio info $vrt 2> /dev/null)
+count=$(jq .count <<< $info)
 height=$(jq .height <<< $info)
 width=$(jq .width <<< $info)
 target_pixel_area=$(bc -l <<< "$THUMBNAIL_SIZE * 1000 / 0.75")
@@ -165,12 +166,20 @@ if [ "$mask" -eq 1 ]; then
   # 8. create and upload warped VRT for mask
   >&2 echo "Generating warped VRT for mask..."
   make_mask_vrt.py $warped_vrt | aws s3 cp - ${output}_warped_mask.vrt
-else
+elif [ "$count" -eq 3 ]; then
+  # RGB; add an alpha channel
   # 7. create and upload warped VRT
   >&2 echo "Generating warped VRT..."
   warped_vrt=${base}_warped.vrt
   to_clean+=($warped_vrt)
   make_vrt.sh -r lanczos -a ${output}.tif > $warped_vrt
+  aws s3 cp $warped_vrt ${output}_warped.vrt
+else
+  # 7. create and upload warped VRT
+  >&2 echo "Generating warped VRT..."
+  warped_vrt=${base}_warped.vrt
+  to_clean+=($warped_vrt)
+  make_vrt.sh -r lanczos ${output}.tif > $warped_vrt
   aws s3 cp $warped_vrt ${output}_warped.vrt
 fi
 
@@ -186,3 +195,5 @@ fi
 
 # 10. Upload OIN metadata
 aws s3 cp - ${output}_meta.json <<< $metadata
+
+>&2 echo "Done."
