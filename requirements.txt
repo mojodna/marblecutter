@@ -5,6 +5,7 @@ click
 flask
 flask-cors
 haversine
+matplotlib
 mercantile
 numpy
 Pillow
