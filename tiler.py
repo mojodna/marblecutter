@@ -87,6 +87,10 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1):
         # TODO read the data and the mask in parallel
         if mask_url:
             data = src.read(out_shape=(src.count, tile_width, tile_height), window=window)
+            # handle masking ourselves (src.read(masked=True) doesn't use overviews)
+            data = ma.masked_values(data, src.nodata, copy=False)
+
+            # apply external masks
             mask = get_source(mask_url)
             mask_data = mask.read(out_shape=(1, tile_width, tile_height), window=window).astype(np.bool)
 
