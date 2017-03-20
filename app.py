@@ -23,6 +23,8 @@ app.config['APPLICATION_ROOT'] = APPLICATION_ROOT
 app.config['PREFERRED_URL_SCHEME'] = PREFERRED_URL_SCHEME
 app.config['SERVER_NAME'] = SERVER_NAME
 
+logging.basicConfig()
+
 
 @app.errorhandler(InvalidTileRequest)
 def handle_invalid_tile_request(error):
