@@ -36,6 +36,8 @@ fi
 
 if [ "$count" -eq 4 ]; then
   mask="-mask 4"
+else
+  mask="-mask mask"
 fi
 
 if [ "$dtype" == "uint8" ]; then

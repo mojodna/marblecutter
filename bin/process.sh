@@ -94,16 +94,27 @@ if [ -f ${intermediate}.msk ]; then
   aws s3 cp ${intermediate}.msk ${output}.tif.msk
 
   # 4. create RGBA VRT (for use in QGIS, etc.)
-  >&2 echo "Generating RGBA VRT..."
-  vrt=${base}.vrt
-  to_clean+=($vrt)
-  gdal_translate \
-    -b 1 \
-    -b 2 \
-    -b 3 \
-    -b mask \
-    -of VRT \
-    ${gdal_output}.tif $vrt
+  info=$(rio info $intermediate 2> /dev/null)
+  count=$(jq .count <<< $info)
+  if [ "$count" -eq 4 ]; then
+    >&2 echo "Generating RGBA VRT..."
+    vrt=${base}.vrt
+    to_clean+=($vrt)
+    gdal_translate \
+      -b 1 \
+      -b 2 \
+      -b 3 \
+      -b mask \
+      -of VRT \
+      ${gdal_output}.tif $vrt
+  else
+    >&2 echo "Generating VRT..."
+    vrt=${base}.vrt
+    to_clean+=($vrt)
+    gdal_translate \
+      -of VRT \
+      ${gdal_output}.tif $vrt
+  fi
 
   cat $vrt | \
     perl -pe 's|(band="4"\>)|$1\n    <ColorInterp>Alpha</ColorInterp>|' | \
