@@ -2,10 +2,14 @@
 from __future__ import division
 
 import bisect
+import logging
 from StringIO import StringIO
 
 import numpy as np
 from PIL import Image
+
+
+LOG = logging.getLogger(__name__)
 
 
 def normal(tile, (data, buffers), dx, dy):
@@ -86,6 +90,10 @@ def render_normal(tile, data, buffers, dx, dy):
     # apply the height mapping function to get the table index.
     func = np.vectorize(_height_mapping_func)
     hyps = func(data).astype(np.uint8)
+
+    # turn masked values transparent
+    if data.mask.any():
+        hyps[data.mask] = 0
 
     # Create output as a 4-channel RGBA image, each (byte) channel
     # corresponds to x, y, z, h where x, y and z are the respective

@@ -12,6 +12,7 @@ from cachetools.func import lru_cache, ttl_cache
 import boto3
 import mercantile
 import numpy as np
+import numpy.ma as ma
 from PIL import Image
 import rasterio
 import requests
@@ -85,22 +86,26 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1):
 
         # TODO read the data and the mask in parallel
         if mask_url:
-            data = src.read(out_shape=(3, tile_width, tile_height), window=window)
-            mask = get_source(mask_url)
-            mask_data = mask.read(out_shape=(1, tile_width, tile_height), window=window)
-
-            return (np.concatenate((data, mask_data)), scaled_buffers)
-        else:
-            # TODO read_masked
             data = src.read(out_shape=(src.count, tile_width, tile_height), window=window)
+            mask = get_source(mask_url)
+            mask_data = mask.read(out_shape=(1, tile_width, tile_height), window=window).astype(np.bool)
+
+            data = ma.array(data, mask=~mask_data)
+
+            return (data, scaled_buffers)
+        else:
+            data = src.read(out_shape=(src.count, tile_width, tile_height), window=window)
+
+            # handle masking ourselves (src.read(masked=True) doesn't use overviews)
+            data = ma.masked_values(data, src.nodata, copy=False)
+
             if src.count == 4:
                 # alpha channel present
                 return (data, scaled_buffers)
             elif src.count == 3:
                 # assume RGB
                 # no alpha channel, create one
-                # TODO use src.bounds as an implicit mask
-                alpha = np.full((1, tile_width, tile_height), np.iinfo(data.dtype).max, data.dtype)
+                alpha = (~data.mask * np.iinfo(data.dtype).max).astype(data.dtype)
 
                 return (np.concatenate((data, alpha)), scaled_buffers)
             else:
