@@ -1,4 +1,5 @@
 arrow
+boto3
 cachetools
 click
 flask

@@ -87,17 +87,19 @@ def get_id(id, image_id=None, scene_idx=0):
 
 @ttl_cache(ttl=300)
 def get_metadata(id, image_id=None, scene_idx=0, **kwargs):
-    # TODO support private S3 buckets
+    key = "{}{}/{}/scene.json".format(S3_PREFIX, id, scene_idx)
+
     if image_id:
-        return json.loads(S3.Object(S3_BUCKET, "{}{}/{}/{}.json".format(S3_PREFIX, id, scene_idx, image_id)).get()['Body'].read())
-        rsp = requests.get('http://{}.s3.amazonaws.com/{}{}/{}/{}.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx, image_id))
-    else:
-        rsp = requests.get('http://{}.s3.amazonaws.com/{}{}/{}/scene.json'.format(S3_BUCKET, S3_PREFIX, id, scene_idx))
+        key = "{}{}/{}/{}.json".format(S3_PREFIX, id, scene_idx, image_id)
 
-    if not rsp.ok:
-        raise InvalidTileRequest('Could not load {}'.format(rsp.url))
+    try:
+        meta = json.loads(S3.Object(S3_BUCKET, key).get()['Body'].read())
+    except:
+        raise InvalidTileRequest('Could not load s3://{}/{}'.format(S3_BUCKET, key))
 
-    return rsp.json()
+    meta['bounds'] = np.clip(meta['bounds'], [-180, -85.05113] * 2, [180, 85.05113] * 2).tolist()
+
+    return meta
 
 
 @lru_cache(maxsize=1024)
@@ -294,8 +296,6 @@ def read_tile(id, tile, renderer=normal, scale=1, **kwargs):
 
     if not minzoom <= tile.z <= maxzoom:
         raise InvalidTileRequest('Invalid zoom: {} outside [{}, {}]'.format(tile.z, minzoom, maxzoom))
-
-    meta['bounds'] = np.clip(meta['bounds'], [-180, -85.05113] * 2, [180, 85.05113] * 2)
 
     sw = mercantile.tile(*meta['bounds'][0:2], zoom=tile.z)
     ne = mercantile.tile(*meta['bounds'][2:4], zoom=tile.z)
