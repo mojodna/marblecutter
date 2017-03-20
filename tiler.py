@@ -236,9 +236,7 @@ def read_tile(id, tile, renderer=normal, scale=1, **kwargs):
     if not ne.y <= tile.y <= sw.y:
         raise InvalidTileRequest('Invalid y coordinate: {} outside [{}, {}]'.format(tile.y, sw.y, ne.y))
 
-    buffer = 0
-    if hasattr(renderer, 'buffer'):
-        buffer = renderer.buffer
+    buffer = getattr(renderer, 'buffer', 0)
 
     (data, buffers) = render_tile(meta, tile, scale=scale, buffer=buffer)
 
