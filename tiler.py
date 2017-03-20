@@ -15,7 +15,6 @@ import numpy as np
 import numpy.ma as ma
 from PIL import Image
 import rasterio
-import requests
 from rio_color import operations
 
 from hillshade import hillshade

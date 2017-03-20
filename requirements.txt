@@ -11,5 +11,4 @@ numpy
 Pillow
 rasterio[s3] >= 1.0a6 --no-binary rasterio
 raven
-requests
 rio-color

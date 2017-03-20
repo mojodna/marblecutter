@@ -4,7 +4,7 @@
   "runtime": "python",
   "hooks": {
     "build": "make -C ../../deps deps.zip && unzip -o ../../deps/deps.zip",
-    "clean": "rm -rf affine* arrow* cachetools* click* cligj* contextlib2* cycler* enum* flask Flask* flask_cors Flask_Cors* itsdangerous* lib mercantile* numpy* OleFileIO_PL* olefile* pyparsing* pytz* rasterio* raven* requests* rio_color share snuggs* PIL* Pillow* jinja2* Jinja2* markupsafe* MarkupSafe* urllib3* werkzeug* Werkzeug*"
+    "clean": "rm -rf affine* arrow* cachetools* click* cligj* contextlib2* cycler* enum* flask Flask* flask_cors Flask_Cors* itsdangerous* lib mercantile* numpy* OleFileIO_PL* olefile* pyparsing* pytz* rasterio* raven* rio_color share snuggs* PIL* Pillow* jinja2* Jinja2* markupsafe* MarkupSafe* urllib3* werkzeug* Werkzeug*"
   },
   "environment": {
   }

@@ -56,7 +56,7 @@ RUN \
 ENV PATH /tmp/virtualenv/bin:/var/task/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 RUN \
-  pip install -U arrow cachetools Cython flask flask_cors jinja2 mercantile numpy pillow raven requests urllib3 werkzeug && \
+  pip install -U arrow cachetools Cython flask flask_cors jinja2 mercantile numpy pillow raven urllib3 werkzeug && \
   pip install -U --no-binary :all: rasterio>=1.0a6 && \
   pip install -U rio-color
 
@@ -290,54 +290,6 @@ RUN \
     rasterio/transform.pyc \
     rasterio/vfs.pyc \
     rasterio/windows.pyc \
-    requests/adapters.pyc \
-    requests/api.pyc \
-    requests/auth.pyc \
-    requests/certs.pyc \
-    requests/compat.pyc \
-    requests/cookies.pyc \
-    requests/exceptions.pyc \
-    requests/hooks.pyc \
-    requests/__init__.pyc \
-    requests/_internal_utils.pyc \
-    requests/models.pyc \
-    requests/packages/chardet/__init__.pyc \
-    requests/packages/idna/core.pyc \
-    requests/packages/idna/idnadata.pyc \
-    requests/packages/idna/__init__.pyc \
-    requests/packages/idna/intranges.pyc \
-    requests/packages/idna/uts46data.pyc \
-    requests/packages/__init__.pyc \
-    requests/packages/urllib3/_collections.pyc \
-    requests/packages/urllib3/connectionpool.pyc \
-    requests/packages/urllib3/connection.pyc \
-    requests/packages/urllib3/contrib/__init__.pyc \
-    requests/packages/urllib3/contrib/pyopenssl.pyc \
-    requests/packages/urllib3/contrib/socks.pyc \
-    requests/packages/urllib3/exceptions.pyc \
-    requests/packages/urllib3/fields.pyc \
-    requests/packages/urllib3/filepost.pyc \
-    requests/packages/urllib3/__init__.pyc \
-    requests/packages/urllib3/packages/__init__.pyc \
-    requests/packages/urllib3/packages/ordered_dict.pyc \
-    requests/packages/urllib3/packages/six.pyc \
-    requests/packages/urllib3/packages/ssl_match_hostname/_implementation.pyc \
-    requests/packages/urllib3/packages/ssl_match_hostname/__init__.pyc \
-    requests/packages/urllib3/poolmanager.pyc \
-    requests/packages/urllib3/request.pyc \
-    requests/packages/urllib3/response.pyc \
-    requests/packages/urllib3/util/connection.pyc \
-    requests/packages/urllib3/util/__init__.pyc \
-    requests/packages/urllib3/util/request.pyc \
-    requests/packages/urllib3/util/response.pyc \
-    requests/packages/urllib3/util/retry.pyc \
-    requests/packages/urllib3/util/ssl_.pyc \
-    requests/packages/urllib3/util/timeout.pyc \
-    requests/packages/urllib3/util/url.pyc \
-    requests/sessions.pyc \
-    requests/status_codes.pyc \
-    requests/structures.pyc \
-    requests/utils.pyc \
     rio_color/colorspace.so \
     rio_color/__init__.pyc \
     rio_color/operations.pyc \
