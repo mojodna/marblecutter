@@ -71,8 +71,7 @@ def get_source(path):
 def get_resolution(path, scale=1):
     src = get_source(path)
 
-    # TODO affine is deprecated
-    return (src.affine.a * scale, src.affine.e * scale)
+    return (src.transform.a * scale, src.transform.e * scale)
 
 
 def read_window((window, buffers), src_url, mask_url=None, scale=1):
