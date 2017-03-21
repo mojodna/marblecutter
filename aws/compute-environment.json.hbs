@@ -1,0 +1,26 @@
+
+{
+    "computeEnvironmentName": "transcoding",
+    "type": "MANAGED",
+    "computeResources": {
+        "type": "SPOT",
+        "minvCpus": 0,
+        "maxvCpus": 10,
+        "instanceTypes": [
+            "optimal"
+        ],
+        "subnets": [
+            "subnet-ededd0b6",
+            "subnet-ecedd0b7",
+            "subnet-eeedd0b5",
+            "subnet-e0edd0bb"
+        ],
+        "securityGroupIds": [
+            "sg-9f18b1e0"
+        ],
+        "instanceRole": "arn:aws:iam::{{AWS_ACCOUNT_ID}}:instance-profile/ecsInstanceRole",
+        "bidPercentage": 25,
+        "spotIamFleetRole": "arn:aws:iam::{{AWS_ACCOUNT_ID}}:role/AmazonEC2SpotFleetRole"
+    },
+    "serviceRole": "arn:aws:iam::{{AWS_ACCOUNT_ID}}:role/service-role/AWSBatchServiceRole"
+}

@@ -1,0 +1,15 @@
+{
+    "jobDefinitionName": "transcode",
+    "type": "container",
+    "containerProperties": {
+        "image": "quay.io/mojodna/mapzen-dynamic-tiler-batch",
+        "vcpus": 1,
+        "memory": 3000,
+        "command": [
+            "Ref::input",
+            "Ref::output"
+        ],
+        "jobRoleArn": "arn:aws:iam::{{AWS_ACCOUNT_ID}}:role/transcoder",
+        "privileged": true
+    }
+}
