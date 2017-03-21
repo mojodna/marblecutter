@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import division
 
+import logging
 from StringIO import StringIO
 
 import matplotlib
@@ -10,6 +11,11 @@ from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.pyplot as plt
 import mercantile
 import numpy as np
+import numpy.ma as ma
+from rasterio import Affine
+from rasterio.crs import CRS
+from rasterio.enums import Resampling
+from rasterio.warp import reproject
 
 
 # from http://www.shadedrelief.com/web_relief/
@@ -31,6 +37,18 @@ EXAGGERATION = {
     14: 1.1,
 }
 
+RESAMPLING = {
+    5: 0.9,
+    6: 0.8,
+    7: 0.8,
+    8: 0.7,
+    9: 0.7,
+    10: 0.7,
+    11: 0.8,
+    12: 0.8,
+    13: 0.9,
+}
+
 GREY_HILLS_RAMP = {
     "red": [(0.0, 0.0, 0.0),
             (0.25, 0.0, 0.0),
@@ -47,6 +65,8 @@ GREY_HILLS_RAMP = {
 }
 
 GREY_HILLS = LinearSegmentedColormap("grey_hills", GREY_HILLS_RAMP)
+
+LOG = logging.getLogger(__name__)
 
 
 def hillshade(tile, (data, buffers), dx, dy):
@@ -67,8 +87,12 @@ def hillshade(tile, (data, buffers), dx, dy):
 hillshade.buffer = 2
 
 
-def render_hillshade(tile, data, buffers, dx, dy):
+# TODO get scale from entrypoint
+def render_hillshade(tile, data, buffers, dx, dy, scale=1, resample=True, add_slopeshade=False):
+    # TODO slopeshade addition results in excessively dark images
+
     # interpolate latitudes
+    # TODO do this earlier
     bounds = mercantile.bounds(tile.x, tile.y, tile.z)
     height = data.shape[0]
     latitudes = np.interp(np.arange(height), [0, height - 1], [bounds.north, bounds.south])
@@ -78,19 +102,105 @@ def render_hillshade(tile, data, buffers, dx, dy):
     # convert to 2d array, rotate 270º, scale data
     data = data * np.rot90(np.atleast_2d(factors), 3)
 
-    hs = _hillshade(data,
-        dx=dx,
-        dy=dy,
-        vert_exag=EXAGGERATION.get(tile.z, 1.0),
-        # azdeg=315, # which direction is the light source coming from (north-south)
-        # altdeg=45, # what angle is the light source coming from (overhead-horizon)
-    )
+    resample_factor = RESAMPLING.get(tile.z, 1.0)
+    crs = CRS({'init': 'epsg:3857'})
+    aff = Affine(dx, 0.0, -20037508.34, 0.0, dy, 20037508.34)
 
-    # scale hillshade values (0.0-1.0) to integers (0-255)
-    output = (255.0 * hs).astype(np.uint8)
+    if resample and resample_factor != 1.0:
+        # resample data according to Tom Paterson's chart
+
+        # this is the equivalent of a scale transform (I think)
+        newaff = Affine(aff.a / resample_factor, aff.b, aff.c,
+                        aff.d, aff.e / resample_factor, aff.f)
+        # create an empty target array that's the shape of the resampled tile (e.g. 80% of 260x260px)
+        resampled = np.empty(shape=(int(round(data.shape[0] * resample_factor)),
+                                 int(round(data.shape[1] * resample_factor))),
+                             dtype=data.dtype)
+        resampled_mask = np.empty(shape=(resampled.shape))
+
+        # downsample using GDAL's reprojection functionality (which gives us access to different resampling algorithms)
+        reproject(
+            data,
+            resampled,
+            src_transform=aff,
+            dst_transform=newaff,
+            src_crs=crs,
+            dst_crs=crs,
+            resampling=Resampling.bilinear,
+        )
+
+        # reproject / resample the mask so that intermediate operations can also use it
+        reproject(
+            data.mask.astype(np.uint8),
+            resampled_mask,
+            src_transform=aff,
+            dst_transform=newaff,
+            src_crs=crs,
+            dst_crs=crs,
+            resampling=Resampling.nearest,
+        )
+
+        resampled = ma.array(resampled, mask=resampled_mask)
+
+        hs = _hillshade(resampled,
+            dx=dx * scale,
+            dy=dy * scale,
+            vert_exag=EXAGGERATION.get(tile.z, 1.0),
+            # azdeg=315, # which direction is the light source coming from (north-south)
+            # altdeg=45, # what angle is the light source coming from (overhead-horizon)
+        )
+
+        if add_slopeshade:
+            ss = slopeshade(resampled,
+                dx=dx * scale,
+                dy=dy * scale,
+                vert_exag=EXAGGERATION.get(tile.z, 1.0)
+            )
+
+            hs *= ss
+
+        # scale hillshade values (0.0-1.0) to integers (0-255)
+        hs = (255.0 * hs).astype(np.uint8)
+
+        # create an empty target array that's the shape of the target tile + buffers (e.g. 260x260px)
+        resampled_hs = np.empty(shape=data.shape, dtype=hs.dtype)
+
+        # upsample (invert the previous reprojection)
+        reproject(
+            hs.data,
+            resampled_hs,
+            src_transform=newaff,
+            dst_transform=aff,
+            src_crs=crs,
+            dst_crs=crs,
+            resampling=Resampling.bilinear,
+        )
+
+        hs = ma.array(resampled_hs, mask=data.mask)
+    else:
+        hs = _hillshade(data,
+            dx=dx * scale,
+            dy=dy * scale,
+            vert_exag=EXAGGERATION.get(tile.z, 1.0),
+            # azdeg=315, # which direction is the light source coming from (north-south)
+            # altdeg=45, # what angle is the light source coming from (overhead-horizon)
+        )
+
+        if add_slopeshade:
+            ss = slopeshade(data,
+                dx=dx * scale,
+                dy=dy * scale,
+                vert_exag=EXAGGERATION.get(tile.z, 1.0)
+            )
+
+            # hs *= 0.8
+            hs *= ss
+
+        # scale hillshade values (0.0-1.0) to integers (0-255)
+        hs = (255.0 * hs).astype(np.uint8)
 
     (left_buffer, bottom_buffer, right_buffer, top_buffer) = buffers
-    return output[left_buffer:output.shape[0] - right_buffer, top_buffer:output.shape[1] - bottom_buffer]
+    return hs[left_buffer:hs.shape[0] - right_buffer, top_buffer:hs.shape[1] - bottom_buffer]
 
 
 def _hillshade(elevation, azdeg=315, altdeg=45, vert_exag=1, dx=1, dy=1, fraction=1.):
