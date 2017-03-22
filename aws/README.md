@@ -6,6 +6,8 @@ by CloudFormation).
 ## TODO
 
 * VPC subnets and security groups must be modified in
-`compute-environment.json.hbs`.
+  `compute-environment.json.hbs`.
+* The `ecsInstanceProfile` must be modified in
+  `compute-environment.json.hbs`.
 * The Docker image to use must be modified in
   `transcode-job-definition.json.hbs`.
