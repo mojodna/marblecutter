@@ -3,7 +3,7 @@ PATH := node_modules/.bin:$(PATH)
 .NOTPARALLEL:
 .ONESHELL:
 
-input := $(shell mktemp -u)
+tmp := $(shell mktemp -u)
 
 default: tools
 
@@ -25,21 +25,21 @@ node_modules/.bin/interp:
 	npm install
 
 compute-environment: node_modules/.bin/interp
-	interp < aws/$@.json.hbs > $(input)
-	aws batch create-compute-environment --cli-input-json file://$(input)
-	rm -f $(input)
+	interp < aws/$@.json.hbs > $(tmp)
+	aws batch create-compute-environment --cli-input-json file://$(tmp)
+	rm -f $(tmp)
 
 job-queue: node_modules/.bin/interp
-	interp < aws/$@.json.hbs > $(input)
-	aws batch create-job-queue --cli-input-json file://$(input)
-	rm -f $(input)
+	interp < aws/$@.json.hbs > $(tmp)
+	aws batch create-job-queue --cli-input-json file://$(tmp)
+	rm -f $(tmp)
 
 transcode-job-definition: node_modules/.bin/interp
-	interp < aws/$@.json.hbs > $(input)
-	aws batch register-job-definition --cli-input-json file://$(input)
-	rm -f $(input)
+	interp < aws/$@.json.hbs > $(tmp)
+	aws batch register-job-definition --cli-input-json file://$(tmp)
+	rm -f $(tmp)
 
 submit-job: node_modules/.bin/interp
-	interp < $(job) > $(input)
-	aws batch submit-job --cli-input-json file://$(input)
-	rm -f $(input)
+	interp < $(job) > $(tmp)
+	aws batch submit-job --cli-input-json file://$(tmp)
+	rm -f $(tmp)
