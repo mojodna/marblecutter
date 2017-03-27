@@ -125,6 +125,7 @@ if [ -f ${intermediate}.msk ]; then
   # 5. create footprint
   >&2 echo "Generating footprint..."
   rio shapes --mask --as-mask --sampling 100 --precision 6 $intermediate | \
+    perl -pe "s|${intermediate}|$(basename $output)|" | \
     aws s3 cp - ${output}_footprint.json
 else
   mask=0
