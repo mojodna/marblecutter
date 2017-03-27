@@ -13,7 +13,7 @@ import click
 import rasterio
 from rasterio.warp import transform_bounds
 
-from get_zoom import get_zoom, get_zoom_offset
+from get_zoom import get_resolution, get_zoom, get_zoom_offset
 
 
 @click.command(context_settings={
@@ -62,6 +62,7 @@ def get_metadata(
                     "height": src.height,
                     "source": source,
                     "width": src.width,
+                    "resolution": get_resolution(scene),
                   },
                   "minzoom": minzoom,
                   "name": title or source,
