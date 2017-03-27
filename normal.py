@@ -5,6 +5,7 @@ import bisect
 import logging
 from StringIO import StringIO
 
+import mercantile
 import numpy as np
 from PIL import Image
 
@@ -65,8 +66,17 @@ def _height_mapping_func(h):
 
 def render_normal(tile, data, buffers, dx, dy):
     # TODO does this exhibit problems that are addressed by adjusting heights according to latitude?
+    # TODO dx and dy are unneeded
+
+    bounds = mercantile.bounds(*tile)
+    ll = mercantile.xy(*bounds[0:2])
+    ur = mercantile.xy(*bounds[2:4])
+
+    dx = (ur[0] - ll[0]) / 256
+    dy = (ur[1] - ll[1]) / 256
+
     ygrad, xgrad = np.gradient(data, 2)
-    img = np.dstack((-1.0 / dx * xgrad, -1.0 / dy * ygrad,
+    img = np.dstack((-1.0 / dx * xgrad, 1.0 / dy * ygrad,
                         np.ones(data.shape)))
 
     # first, we normalise to unit vectors. this puts each element of img
