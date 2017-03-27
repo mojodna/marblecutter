@@ -125,7 +125,7 @@ if [ -f ${intermediate}.msk ]; then
   # 5. create footprint
   >&2 echo "Generating footprint..."
   rio shapes --mask --as-mask --sampling 100 --precision 6 --with-nodata $intermediate | \
-    perl -pe "s|${intermediate}|$(basename $output)|" | \
+    perl -pe "s|$(basename $intermediate)|$(basename $output).tif|g" | \
     aws s3 cp - ${output}_footprint.json
 else
   mask=0
@@ -146,7 +146,7 @@ else
   # 4. create footprint (bounds of image)
   >&2 echo "Generating footprint..."
   rio bounds $intermediate | \
-    perl -pe "s|${intermediate}|$(basename $output)|" | \
+    perl -pe "s|$(basename $intermediate)|$(basename $output).tif|g" | \
     aws s3 cp - ${output}_footprint.json
 fi
 
