@@ -55,14 +55,15 @@ RUN \
 
 ENV PATH /tmp/virtualenv/bin:/var/task/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
+WORKDIR /var/task
+
+COPY requirements.txt /var/task/requirements.txt
+
 RUN \
-  pip install -U arrow cachetools Cython flask flask_cors jinja2 mercantile numpy pillow raven urllib3 werkzeug && \
-  pip install -U --no-binary :all: rasterio>=1.0a6 && \
-  pip install -U rio-color
+  pip install -U numpy && \
+  pip install -r requirements.txt
 
 # Add GDAL libs to the function zip
-
-WORKDIR /var/task
 
 RUN \
   strip lib/libgdal.so.20.1.0 && \
@@ -114,6 +115,7 @@ RUN \
     click/types.pyc \
     click/_unicodefun.pyc \
     click/utils.pyc \
+    cycler.pyc \
     enum/__init__.pyc \
     flask/app.pyc \
     flask/blueprints.pyc \
@@ -134,6 +136,9 @@ RUN \
     flask/signals.pyc \
     flask/templating.pyc \
     flask/wrappers.pyc \
+    functools32/functools32.pyc \
+    functools32/__init__.pyc \
+    functools32/reprlib32.pyc \
     itsdangerous.pyc \
     jinja2/bccache.pyc \
     jinja2/_compat.pyc \
@@ -158,6 +163,116 @@ RUN \
     markupsafe/__init__.pyc \
     markupsafe/_speedups.so \
     mercantile/__init__.pyc \
+    matplotlib-2.0.0-py2.7-nspkg.pth \
+    matplotlib/afm.pyc \
+    matplotlib/artist.pyc \
+    matplotlib/axes/_axes.pyc \
+    matplotlib/axes/_base.pyc \
+    matplotlib/axes/__init__.pyc \
+    matplotlib/axes/_subplots.pyc \
+    matplotlib/axis.pyc \
+    matplotlib/backend_bases.pyc \
+    matplotlib/backends/backend_agg.pyc \
+    matplotlib/backends/_backend_agg.so \
+    matplotlib/backends/__init__.pyc \
+    matplotlib/backend_tools.pyc \
+    matplotlib/bezier.pyc \
+    matplotlib/blocking_input.pyc \
+    matplotlib/cbook.pyc \
+    matplotlib/_cm_listed.pyc \
+    matplotlib/_cm.pyc \
+    matplotlib/cm.pyc \
+    matplotlib/_cntr.so \
+    matplotlib/collections.pyc \
+    matplotlib/colorbar.pyc \
+    matplotlib/_color_data.pyc \
+    matplotlib/colors.pyc \
+    matplotlib/compat/__init__.pyc \
+    matplotlib/compat/subprocess.pyc \
+    matplotlib/container.pyc \
+    matplotlib/contour.pyc \
+    matplotlib/_contour.so \
+    matplotlib/dates.pyc \
+    matplotlib/docstring.pyc \
+    matplotlib/dviread.pyc \
+    matplotlib/figure.pyc \
+    matplotlib/fontconfig_pattern.pyc \
+    matplotlib/font_manager.pyc \
+    matplotlib/ft2font.so \
+    matplotlib/gridspec.pyc \
+    matplotlib/image.pyc \
+    matplotlib/_image.so \
+    matplotlib/__init__.pyc \
+    matplotlib/legend_handler.pyc \
+    matplotlib/legend.pyc \
+    matplotlib/.libs/libpng16-3e9b18e2.so.16.21.0 \
+    matplotlib/lines.pyc \
+    matplotlib/markers.pyc \
+    matplotlib/_mathtext_data.pyc \
+    matplotlib/mathtext.pyc \
+    matplotlib/mlab.pyc \
+    matplotlib/mpl-data/matplotlibrc \
+    matplotlib/mpl-data/stylelib/bmh.mplstyle \
+    matplotlib/mpl-data/stylelib/classic.mplstyle \
+    matplotlib/mpl-data/stylelib/dark_background.mplstyle \
+    matplotlib/mpl-data/stylelib/fivethirtyeight.mplstyle \
+    matplotlib/mpl-data/stylelib/ggplot.mplstyle \
+    matplotlib/mpl-data/stylelib/grayscale.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-bright.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-colorblind.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-darkgrid.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-dark.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-dark-palette.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-deep.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-muted.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-notebook.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-paper.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-pastel.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-poster.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-talk.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-ticks.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-whitegrid.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-white.mplstyle \
+    matplotlib/offsetbox.pyc \
+    matplotlib/patches.pyc \
+    matplotlib/path.pyc \
+    matplotlib/_path.so \
+    matplotlib/_png.so \
+    matplotlib/projections/geo.pyc \
+    matplotlib/projections/__init__.pyc \
+    matplotlib/projections/polar.pyc \
+    matplotlib/_pylab_helpers.pyc \
+    matplotlib/pyplot.pyc \
+    matplotlib/_qhull.so \
+    matplotlib/quiver.pyc \
+    matplotlib/rcsetup.pyc \
+    matplotlib/scale.pyc \
+    matplotlib/spines.pyc \
+    matplotlib/stackplot.pyc \
+    matplotlib/streamplot.pyc \
+    matplotlib/style/core.pyc \
+    matplotlib/style/__init__.pyc \
+    matplotlib/table.pyc \
+    matplotlib/texmanager.pyc \
+    matplotlib/textpath.pyc \
+    matplotlib/text.pyc \
+    matplotlib/ticker.pyc \
+    matplotlib/tight_bbox.pyc \
+    matplotlib/transforms.pyc \
+    matplotlib/tri/__init__.pyc \
+    matplotlib/_tri.so \
+    matplotlib/tri/triangulation.pyc \
+    matplotlib/tri/tricontour.pyc \
+    matplotlib/tri/trifinder.pyc \
+    matplotlib/tri/triinterpolate.pyc \
+    matplotlib/tri/tripcolor.pyc \
+    matplotlib/tri/triplot.pyc \
+    matplotlib/tri/trirefine.pyc \
+    matplotlib/tri/tritools.pyc \
+    matplotlib/units.pyc \
+    matplotlib/_version.pyc \
+    matplotlib/widgets.pyc \
     numpy/add_newdocs.pyc \
     numpy/compat/__init__.pyc \
     numpy/compat/_inspect.pyc \
@@ -269,6 +384,9 @@ RUN \
     PIL/TiffImagePlugin.pyc \
     PIL/TiffTags.pyc \
     PIL/_util.pyc \
+    _posixsubprocess.so \
+    pyparsing.py \
+    pyparsing.pyc \
     rasterio/_base.so \
     rasterio/compat.pyc \
     rasterio/control.pyc \
@@ -280,20 +398,26 @@ RUN \
     rasterio/dtypes.pyc \
     rasterio/enums.pyc \
     rasterio/env.pyc \
+    rasterio/_env.so \
     rasterio/errors.pyc \
     rasterio/_err.so \
+    rasterio/_features.so \
     rasterio/__init__.pyc \
     rasterio/io.pyc \
     rasterio/_io.so \
     rasterio/profiles.pyc \
     rasterio/sample.pyc \
+    rasterio/_shim.so \
     rasterio/transform.pyc \
     rasterio/vfs.pyc \
+    rasterio/warp.pyc \
+    rasterio/_warp.so \
     rasterio/windows.pyc \
     rio_color/colorspace.so \
     rio_color/__init__.pyc \
     rio_color/operations.pyc \
     rio_color/utils.pyc \
+    subprocess32.pyc \
     werkzeug/_compat.pyc \
     werkzeug/datastructures.pyc \
     werkzeug/debug/console.pyc \
@@ -311,7 +435,6 @@ RUN \
     werkzeug/routing.pyc \
     werkzeug/security.pyc \
     werkzeug/serving.pyc \
-    werkzeug/test.pyc \
     werkzeug/urls.pyc \
     werkzeug/utils.pyc \
     werkzeug/wrappers.pyc \
