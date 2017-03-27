@@ -146,6 +146,7 @@ else
   # 4. create footprint (bounds of image)
   >&2 echo "Generating footprint..."
   rio bounds $intermediate | \
+    perl -pe "s|${intermediate}|$(basename $output)|" | \
     aws s3 cp - ${output}_footprint.json
 fi
 
