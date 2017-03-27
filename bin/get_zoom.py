@@ -18,7 +18,7 @@ def get_zoom_offset(width, height, approximate_zoom):
                 if (height / (2 ** (x + 1))) >= 1 and (width / (2 ** (x + 1))) >= 1])
 
 
-def get_zoom(input):
+def get_resolution(input):
     with rasterio.Env():
         with rasterio.open(input) as src:
             # grab the lowest resolution dimension
@@ -28,12 +28,13 @@ def get_zoom(input):
                 top = ((src.bounds[0] + src.bounds[2]) / 2, src.bounds[3])
                 bottom = ((src.bounds[0] + src.bounds[2]) / 2, src.bounds[1])
 
-                resolution = max(haversine(left, right) * 1000 / src.width, haversine(top, bottom) * 1000 / src.height)
-            else:
-                resolution = max((src.bounds.right - src.bounds.left) / src.width, (src.bounds.top - src.bounds.bottom) / src.height)
+                return max(haversine(left, right) * 1000 / src.width, haversine(top, bottom) * 1000 / src.height)
+            return max((src.bounds.right - src.bounds.left) / src.width, (src.bounds.top - src.bounds.bottom) / src.height)
 
-            return min(22, int(math.ceil(math.log((2 * math.pi * 6378137) /
-                                                  (resolution * 256)) / math.log(2))))
+
+def get_zoom(input):
+    return min(22, int(math.ceil(math.log((2 * math.pi * 6378137) /
+                                          (get_resolution(input) * 256)) / math.log(2))))
 
 
 if __name__ == "__main__":
