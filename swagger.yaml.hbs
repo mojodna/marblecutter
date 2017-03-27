@@ -2,9 +2,7 @@
 swagger: "2.0"
 info:
   version: "2016-10-12T00:34:01Z"
-  title: "OpenAerialMap"
-host: "jp081v0r7k.execute-api.us-east-1.amazonaws.com"
-basePath: "/prod"
+  title: "Dynamic Tiler"
 schemes:
 - "https"
 paths:
@@ -22,10 +20,9 @@ paths:
         responses:
           default:
             statusCode: "200"
-        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:670261699094:function:oam-dynamic-tiler_tiler/invocations"
+        uri: "arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/arn:aws:lambda:us-east-1:{{AWS_ACCOUNT_ID}}:function:dynamic-tiler_tiler/invocations"
         passthroughBehavior: "when_no_match"
         httpMethod: "POST"
-        cacheNamespace: "0nlwk4"
         cacheKeyParameters:
         - "method.request.path.proxy"
         type: "aws_proxy"

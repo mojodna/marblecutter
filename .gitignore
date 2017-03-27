@@ -1,3 +1,4 @@
 environment.json
 venv/
 .env
+project.json
