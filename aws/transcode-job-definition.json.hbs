@@ -1,6 +1,9 @@
 {
     "jobDefinitionName": "transcode",
     "type": "container",
+    "retryStrategy": {
+        "attempts": 5
+    },
     "containerProperties": {
         "image": "quay.io/mojodna/mapzen-dynamic-tiler-batch",
         "vcpus": 1,
