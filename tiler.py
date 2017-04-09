@@ -72,10 +72,9 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
     tile_width = (256 + buffers[0] + buffers[2]) * scale
     tile_height = (256 + buffers[1] + buffers[3]) * scale
     scaled_buffers = map(lambda x: x * scale, buffers)
+    LOG.warn('window: {}'.format(window))
     LOG.warn('scaled_buffers: {}'.format(scaled_buffers))
-    # TODO we really want to use scaled buffers here
-    # tile_width = scale * 256 + scaled_buffers[0] + scaled_buffers[2]
-    # tile_height = scale * 256 + scaled_buffers[1] + scaled_buffers[3]
+    # TODO we need to do something about scaled buffers here; if scale factor is 8.0, renderer.buffer needs to be 32 (not 2)
 
     with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
         src = get_source(src_url)
@@ -85,6 +84,7 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
         LOG.warn('scale_factor: {}'.format(scale_factor))
 
         if 0.25 > scale_factor > 32:
+            # skip this layer
             return (np.ma.masked_all((src.count, tile_width, tile_height)), scaled_buffers)
 
         if scale_factor > 1:
@@ -112,11 +112,11 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
                 tile_height = _tile_height
 
                 LOG.warn('data[0].shape: {}'.format(data[0].shape))
+                LOG.warn('tile_width: {}'.format(tile_width))
 
                 x = np.arange(0, tile_width, scale_factor)
                 LOG.warn('x.shape: {}'.format(x.shape))
                 y = np.arange(0, tile_height, scale_factor)
-                # TODO this drops NODATA values; can the mask be similarly interpolated?
                 interp = RectBivariateSpline(x, y, data[0])
 
                 data = interp(
@@ -134,7 +134,7 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
 
                     data = np.ma.masked_array([data], mask=[mask])
             else:
-                data = np.ma.masked_values(data, src.nodata, copy=False)
+                data = np.ma.masked_array(data, mask=mask)
 
             # apply external masks
             mask = get_source(mask_url)
@@ -147,6 +147,7 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
 
             return (data, scaled_buffers)
         else:
+            # TODO eventually we're going to want to port the interpolation from ^^
             data = src.read(
                 out_shape=(src.count, tile_width, tile_height),
                 window=window
@@ -177,6 +178,8 @@ def make_window(src_tile_zoom, tile, buffer=0):
     top = (2**src_tile_zoom * 256) - 1
     scale = 2**dz
     left_buffer = right_buffer = top_buffer = bottom_buffer = 0
+    LOG.warn('scale (make_window): {}'.format(scale))
+    LOG.warn('effective buffer: {}'.format(buffer * scale))
 
     # y, x (rows, columns)
     # window is measured in pixels at src_tile_zoom
