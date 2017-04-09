@@ -14,7 +14,7 @@ server: tools
 	docker build --build-arg http_proxy=http://10.0.1.43:1080 -t quay.io/hotosm/oam-dynamic-tiler-server -f server/Dockerfile .
 
 deploy: project.json
-	apex deploy
+	apex deploy -l debug -E environment.json
 
 install: project.json
 
