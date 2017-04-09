@@ -80,6 +80,8 @@ RUN \
 
 WORKDIR /tmp/virtualenv/lib/python2.7/site-packages
 
+RUN find . -name \*.so -exec strip {} \;
+
 # skip the zipping (above, too) and put it in a staging directory that can be copied to a volume or output via tar on stdout
 # determined by copying the app in, touching start, exercising it, then using find /tmp/virtualenv/lib/python2.7/site-packages -type f -anewer start | sort
 RUN \
@@ -132,6 +134,7 @@ RUN \
     flask/helpers.pyc \
     flask/__init__.pyc \
     flask/json.pyc \
+    flask/logging.pyc \
     flask/sessions.pyc \
     flask/signals.pyc \
     flask/templating.pyc \
@@ -273,11 +276,21 @@ RUN \
     matplotlib/units.pyc \
     matplotlib/_version.pyc \
     matplotlib/widgets.pyc \
+    numpy/.libs/libgfortran-ed201abd.so.3.0.0 \
+    numpy/.libs/libopenblasp-r0-39a31c03.2.18.so \
+    numpy/__config__.pyc \
+    numpy/__init__.pyc \
+    numpy/_distributor_init.pyc \
+    numpy/_globals.pyc \
+    numpy/_import_tools.pyc \
     numpy/add_newdocs.pyc \
     numpy/compat/__init__.pyc \
     numpy/compat/_inspect.pyc \
     numpy/compat/py3k.pyc \
-    numpy/__config__.pyc \
+    numpy/core/__init__.pyc \
+    numpy/core/_dummy.so \
+    numpy/core/_internal.pyc \
+    numpy/core/_methods.pyc \
     numpy/core/arrayprint.pyc \
     numpy/core/defchararray.pyc \
     numpy/core/einsumfunc.pyc \
@@ -285,11 +298,8 @@ RUN \
     numpy/core/function_base.pyc \
     numpy/core/getlimits.pyc \
     numpy/core/info.pyc \
-    numpy/core/__init__.pyc \
-    numpy/core/_internal.pyc \
     numpy/core/machar.pyc \
     numpy/core/memmap.pyc \
-    numpy/core/_methods.pyc \
     numpy/core/multiarray.so \
     numpy/core/numeric.pyc \
     numpy/core/numerictypes.pyc \
@@ -297,63 +307,59 @@ RUN \
     numpy/core/shape_base.pyc \
     numpy/core/umath.so \
     numpy/ctypeslib.pyc \
-    numpy/_distributor_init.pyc \
-    numpy/fft/fftpack_lite.so \
+    numpy/dual.pyc \
+    numpy/fft/__init__.pyc \
     numpy/fft/fftpack.pyc \
+    numpy/fft/fftpack_lite.so \
     numpy/fft/helper.pyc \
     numpy/fft/info.pyc \
-    numpy/fft/__init__.pyc \
-    numpy/_globals.pyc \
-    numpy/_import_tools.pyc \
-    numpy/__init__.pyc \
+    numpy/lib/__init__.pyc \
+    numpy/lib/_datasource.pyc \
+    numpy/lib/_iotools.pyc \
+    numpy/lib/_version.pyc \
     numpy/lib/arraypad.pyc \
     numpy/lib/arraysetops.pyc \
     numpy/lib/arrayterator.pyc \
-    numpy/lib/_datasource.pyc \
     numpy/lib/financial.pyc \
     numpy/lib/format.pyc \
     numpy/lib/function_base.pyc \
     numpy/lib/index_tricks.pyc \
     numpy/lib/info.pyc \
-    numpy/lib/__init__.pyc \
-    numpy/lib/_iotools.pyc \
     numpy/lib/nanfunctions.pyc \
     numpy/lib/npyio.pyc \
     numpy/lib/polynomial.pyc \
     numpy/lib/scimath.pyc \
     numpy/lib/shape_base.pyc \
-    numpy/.libs/libgfortran-ed201abd.so.3.0.0 \
-    numpy/.libs/libopenblasp-r0-39a31c03.2.18.so \
     numpy/lib/stride_tricks.pyc \
     numpy/lib/twodim_base.pyc \
     numpy/lib/type_check.pyc \
     numpy/lib/ufunclike.pyc \
     numpy/lib/utils.pyc \
-    numpy/lib/_version.pyc \
-    numpy/linalg/info.pyc \
     numpy/linalg/__init__.pyc \
+    numpy/linalg/_umath_linalg.so \
+    numpy/linalg/info.pyc \
     numpy/linalg/lapack_lite.so \
     numpy/linalg/linalg.pyc \
-    numpy/linalg/_umath_linalg.so \
+    numpy/ma/__init__.pyc \
     numpy/ma/core.pyc \
     numpy/ma/extras.pyc \
-    numpy/ma/__init__.pyc \
-    numpy/matrixlib/defmatrix.pyc \
+    numpy/matlib.pyc \
     numpy/matrixlib/__init__.pyc \
-    numpy/polynomial/chebyshev.pyc \
-    numpy/polynomial/hermite_e.pyc \
-    numpy/polynomial/hermite.pyc \
+    numpy/matrixlib/defmatrix.pyc \
     numpy/polynomial/__init__.pyc \
+    numpy/polynomial/_polybase.pyc \
+    numpy/polynomial/chebyshev.pyc \
+    numpy/polynomial/hermite.pyc \
+    numpy/polynomial/hermite_e.pyc \
     numpy/polynomial/laguerre.pyc \
     numpy/polynomial/legendre.pyc \
-    numpy/polynomial/_polybase.pyc \
     numpy/polynomial/polynomial.pyc \
     numpy/polynomial/polyutils.pyc \
-    numpy/random/info.pyc \
     numpy/random/__init__.pyc \
+    numpy/random/info.pyc \
     numpy/random/mtrand.so \
-    numpy/testing/decorators.pyc \
     numpy/testing/__init__.pyc \
+    numpy/testing/decorators.pyc \
     numpy/testing/nosetester.pyc \
     numpy/testing/utils.pyc \
     numpy/version.pyc \
@@ -385,6 +391,29 @@ RUN \
     PIL/TiffTags.pyc \
     PIL/_util.pyc \
     _posixsubprocess.so \
+    psycopg2/.libs/libssl-cdf7ba29.so.1.0.2k \
+    psycopg2/.libs/libsasl2-e96a0dbf.so.2.0.22 \
+    psycopg2/.libs/libselinux-cf8f9094.so.1 \
+    psycopg2/.libs/libcom_err-beb60336.so.2.1 \
+    psycopg2/.libs/libkrb5support-d7ce89d4.so.0.1 \
+    psycopg2/.libs/libk5crypto-622ef25b.so.3.1 \
+    psycopg2/.libs/libgssapi_krb5-174f8956.so.2.2 \
+    psycopg2/.libs/libldap_r-2-3a9294b6.4.so.2.10.7 \
+    psycopg2/.libs/libkeyutils-1-ff31573b.2.so \
+    psycopg2/.libs/libpq-9c51d239.so.5.9 \
+    psycopg2/.libs/libz-a147dcb0.so.1.2.3 \
+    psycopg2/.libs/libkrb5-fb0d2caa.so.3.3 \
+    psycopg2/.libs/libsepol-b4f5b513.so.1 \
+    psycopg2/.libs/libcrypto-aa58ed98.so.1.0.2k \
+    psycopg2/.libs/liblber-2-14d46c3c.4.so.2.10.7 \
+    psycopg2/.libs/libresolv-2-c4c53def.5.so \
+    psycopg2/pool.pyc \
+    psycopg2/tz.pyc \
+    psycopg2/extensions.pyc \
+    psycopg2/_range.pyc \
+    psycopg2/_psycopg.so \
+    psycopg2/__init__.pyc \
+    psycopg2/_json.pyc \
     pyparsing.py \
     pyparsing.pyc \
     rasterio/_base.so \
@@ -417,6 +446,187 @@ RUN \
     rio_color/__init__.pyc \
     rio_color/operations.pyc \
     rio_color/utils.pyc \
+    scipy/special/basic.pyc \
+    scipy/special/_ufuncs_cxx.so \
+    scipy/special/lambertw.pyc \
+    scipy/special/__init__.pyc \
+    scipy/special/_ellip_harm_2.so \
+    scipy/special/_ufuncs.so \
+    scipy/special/_comb.so \
+    scipy/special/orthogonal.pyc \
+    scipy/special/_spherical_bessel.pyc \
+    scipy/special/_logsumexp.pyc \
+    scipy/special/sf_error.pyc \
+    scipy/special/specfun.so \
+    scipy/special/_ellip_harm.pyc \
+    scipy/special/spfun_stats.pyc \
+    scipy/__config__.pyc \
+    scipy/linalg/misc.pyc \
+    scipy/linalg/_procrustes.pyc \
+    scipy/linalg/decomp.pyc \
+    scipy/linalg/_decomp_polar.pyc \
+    scipy/linalg/decomp_cholesky.pyc \
+    scipy/linalg/matfuncs.pyc \
+    scipy/linalg/_decomp_update.so \
+    scipy/linalg/basic.pyc \
+    scipy/linalg/_flinalg.so \
+    scipy/linalg/_solvers.pyc \
+    scipy/linalg/cython_blas.so \
+    scipy/linalg/lapack.pyc \
+    scipy/linalg/_expm_frechet.pyc \
+    scipy/linalg/blas.pyc \
+    scipy/linalg/decomp_schur.pyc \
+    scipy/linalg/_matfuncs_sqrtm.pyc \
+    scipy/linalg/decomp_svd.pyc \
+    scipy/linalg/decomp_qr.pyc \
+    scipy/linalg/decomp_lu.pyc \
+    scipy/linalg/__init__.pyc \
+    scipy/linalg/_fblas.so \
+    scipy/linalg/_decomp_qz.pyc \
+    scipy/linalg/special_matrices.pyc \
+    scipy/linalg/_solve_toeplitz.so \
+    scipy/linalg/cython_lapack.so \
+    scipy/linalg/linalg_version.pyc \
+    scipy/linalg/_flapack.so \
+    scipy/linalg/flinalg.pyc \
+    scipy/__init__.pyc \
+    scipy/version.pyc \
+    scipy/optimize/lbfgsb.pyc \
+    scipy/optimize/_root.pyc \
+    scipy/optimize/_cobyla.so \
+    scipy/optimize/moduleTNC.so \
+    scipy/optimize/_numdiff.pyc \
+    scipy/optimize/_group_columns.so \
+    scipy/optimize/_minpack.so \
+    scipy/optimize/_differentialevolution.pyc \
+    scipy/optimize/linesearch.pyc \
+    scipy/optimize/_nnls.so \
+    scipy/optimize/tnc.pyc \
+    scipy/optimize/_trustregion_ncg.pyc \
+    scipy/optimize/_basinhopping.pyc \
+    scipy/optimize/minpack2.so \
+    scipy/optimize/_lbfgsb.so \
+    scipy/optimize/_zeros.so \
+    scipy/optimize/__init__.pyc \
+    scipy/optimize/_slsqp.so \
+    scipy/optimize/nonlin.pyc \
+    scipy/optimize/slsqp.pyc \
+    scipy/optimize/_linprog.pyc \
+    scipy/optimize/_trustregion_dogleg.pyc \
+    scipy/optimize/nnls.pyc \
+    scipy/optimize/_trustregion.pyc \
+    scipy/optimize/minpack.pyc \
+    scipy/optimize/_spectral.pyc \
+    scipy/optimize/optimize.pyc \
+    scipy/optimize/_minimize.pyc \
+    scipy/optimize/_lsq/trf.pyc \
+    scipy/optimize/_lsq/lsq_linear.pyc \
+    scipy/optimize/_lsq/givens_elimination.so \
+    scipy/optimize/_lsq/__init__.pyc \
+    scipy/optimize/_lsq/common.pyc \
+    scipy/optimize/_lsq/least_squares.pyc \
+    scipy/optimize/_lsq/dogbox.pyc \
+    scipy/optimize/_lsq/trf_linear.pyc \
+    scipy/optimize/_lsq/bvls.pyc \
+    scipy/optimize/cobyla.pyc \
+    scipy/optimize/zeros.pyc \
+    scipy/optimize/_hungarian.pyc \
+    scipy/_lib/_threadsafety.pyc \
+    scipy/_lib/_ccallback.pyc \
+    scipy/_lib/decorator.pyc \
+    scipy/_lib/__init__.pyc \
+    scipy/_lib/_util.pyc \
+    scipy/_lib/_ccallback_c.so \
+    scipy/_lib/six.pyc \
+    scipy/_lib/_version.pyc \
+    scipy/integrate/quadpack.pyc \
+    scipy/integrate/quadrature.pyc \
+    scipy/integrate/_ode.pyc \
+    scipy/integrate/_odepack.so \
+    scipy/integrate/odepack.pyc \
+    scipy/integrate/_quadpack.so \
+    scipy/integrate/vode.so \
+    scipy/integrate/__init__.pyc \
+    scipy/integrate/_dop.so \
+    scipy/integrate/lsoda.so \
+    scipy/integrate/_bvp.pyc \
+    scipy/interpolate/polyint.pyc \
+    scipy/interpolate/dfitpack.so \
+    scipy/interpolate/fitpack2.pyc \
+    scipy/interpolate/_ppoly.so \
+    scipy/interpolate/interpnd.so \
+    scipy/interpolate/_bsplines.pyc \
+    scipy/interpolate/rbf.pyc \
+    scipy/interpolate/_fitpack.so \
+    scipy/interpolate/ndgriddata.pyc \
+    scipy/interpolate/_cubic.pyc \
+    scipy/interpolate/fitpack.pyc \
+    scipy/interpolate/_bspl.so \
+    scipy/interpolate/_fitpack_impl.pyc \
+    scipy/interpolate/_pade.pyc \
+    scipy/interpolate/__init__.pyc \
+    scipy/interpolate/interpolate.pyc \
+    scipy/sparse/_csparsetools.so \
+    scipy/sparse/_sparsetools.so \
+    scipy/sparse/compressed.pyc \
+    scipy/sparse/extract.pyc \
+    scipy/sparse/base.pyc \
+    scipy/sparse/csc.pyc \
+    scipy/sparse/data.pyc \
+    scipy/sparse/dia.pyc \
+    scipy/sparse/csr.pyc \
+    scipy/sparse/__init__.pyc \
+    scipy/sparse/_matrix_io.pyc \
+    scipy/sparse/linalg/matfuncs.pyc \
+    scipy/sparse/linalg/dsolve/_superlu.so \
+    scipy/sparse/linalg/dsolve/_add_newdocs.pyc \
+    scipy/sparse/linalg/dsolve/__init__.pyc \
+    scipy/sparse/linalg/dsolve/linsolve.pyc \
+    scipy/sparse/linalg/eigen/__init__.pyc \
+    scipy/sparse/linalg/eigen/lobpcg/__init__.pyc \
+    scipy/sparse/linalg/eigen/lobpcg/lobpcg.pyc \
+    scipy/sparse/linalg/eigen/arpack/arpack.pyc \
+    scipy/sparse/linalg/eigen/arpack/_arpack.so \
+    scipy/sparse/linalg/eigen/arpack/__init__.pyc \
+    scipy/sparse/linalg/isolve/lgmres.pyc \
+    scipy/sparse/linalg/isolve/lsqr.pyc \
+    scipy/sparse/linalg/isolve/minres.pyc \
+    scipy/sparse/linalg/isolve/_iterative.so \
+    scipy/sparse/linalg/isolve/lsmr.pyc \
+    scipy/sparse/linalg/isolve/iterative.pyc \
+    scipy/sparse/linalg/isolve/utils.pyc \
+    scipy/sparse/linalg/isolve/__init__.pyc \
+    scipy/sparse/linalg/_onenormest.pyc \
+    scipy/sparse/linalg/_expm_multiply.pyc \
+    scipy/sparse/linalg/_norm.pyc \
+    scipy/sparse/linalg/interface.pyc \
+    scipy/sparse/linalg/__init__.pyc \
+    scipy/sparse/construct.pyc \
+    scipy/sparse/dok.pyc \
+    scipy/sparse/bsr.pyc \
+    scipy/sparse/coo.pyc \
+    scipy/sparse/sputils.pyc \
+    scipy/sparse/lil.pyc \
+    scipy/sparse/csgraph/_shortest_path.so \
+    scipy/sparse/csgraph/_reordering.so \
+    scipy/sparse/csgraph/_laplacian.pyc \
+    scipy/sparse/csgraph/_min_spanning_tree.so \
+    scipy/sparse/csgraph/_components.pyc \
+    scipy/sparse/csgraph/__init__.pyc \
+    scipy/sparse/csgraph/_tools.so \
+    scipy/sparse/csgraph/_validation.pyc \
+    scipy/sparse/csgraph/_traversal.so \
+    scipy/spatial/_voronoi.so \
+    scipy/spatial/qhull.so \
+    scipy/spatial/__init__.pyc \
+    scipy/spatial/distance.pyc \
+    scipy/spatial/_distance_wrap.so \
+    scipy/spatial/ckdtree.so \
+    scipy/spatial/_spherical_voronoi.pyc \
+    scipy/spatial/kdtree.pyc \
+    scipy/spatial/_hausdorff.so \
+    scipy/spatial/_procrustes.pyc \
+    scipy/spatial/_plotutils.pyc \
     subprocess32.pyc \
     werkzeug/_compat.pyc \
     werkzeug/datastructures.pyc \
@@ -440,8 +650,6 @@ RUN \
     werkzeug/wrappers.pyc \
     werkzeug/wsgi.pyc \
     urllib3/* \
-    psycopg2/* \
-    scipy/* \
     raven/* \
     contextlib2.pyc \
     flask/testing.pyc \
