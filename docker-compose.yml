@@ -3,7 +3,18 @@ services:
   web:
     build: .
     env_file: .env
-    environment:
-      SERVER_NAME: 172.16.142.145:8002
+    volumes:
+      - .:/opt/oam-dynamic-tiler/
     ports:
       - "8002:8000"
+    links:
+      - postgis
+    command: python app.py
+  postgis:
+    image: mdillon/postgis:9.6
+    environment:
+      - POSTGRES_USER=mapzen
+      - POSTGRES_PASSWORD=mapzen
+      - POSTGRES_DB=elevation
+volumes:
+  pgdata:

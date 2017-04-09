@@ -69,7 +69,14 @@ GREY_HILLS = LinearSegmentedColormap("grey_hills", GREY_HILLS_RAMP)
 LOG = logging.getLogger(__name__)
 
 
-def hillshade(tile, (data, buffers), dx, dy):
+def hillshade(tile, (data, buffers)):
+    bounds = mercantile.bounds(*tile)
+    ll = mercantile.xy(*bounds[0:2])
+    ur = mercantile.xy(*bounds[2:4])
+
+    dx = (ur[0] - ll[0]) / 256
+    dy = (ur[1] - ll[1]) / 256
+
     hs = render_hillshade(tile, data[0], buffers, dx, dy)
 
     out = StringIO()
@@ -84,11 +91,18 @@ def hillshade(tile, (data, buffers), dx, dy):
 
     return out.getvalue()
 
-hillshade.buffer = 2
+hillshade.buffer = 32 # corresponds to the max scale_factor we're willing to deal with
 
 
 # TODO get scale from entrypoint
-def render_hillshade(tile, data, buffers, dx, dy, scale=1, resample=True, add_slopeshade=False):
+def render_hillshade(tile, data, buffers, dx, dy, scale=1, resample=True, add_slopeshade=True):
+    bounds = mercantile.bounds(*tile)
+    ll = mercantile.xy(*bounds[0:2])
+    ur = mercantile.xy(*bounds[2:4])
+
+    dx = -1 * (ur[0] - ll[0]) / 256
+    dy = -1 * (ur[1] - ll[1]) / 256
+
     # TODO slopeshade addition results in excessively dark images
 
     # interpolate latitudes

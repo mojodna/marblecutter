@@ -12,10 +12,10 @@ from cachetools.func import lru_cache, ttl_cache
 import boto3
 import mercantile
 import numpy as np
-import numpy.ma as ma
 from PIL import Image
 import rasterio
 from rio_color import operations
+from scipy.interpolate import RectBivariateSpline
 
 from hillshade import hillshade
 from normal import normal
@@ -68,43 +68,94 @@ def get_source(path):
     return rasterio.open(path)
 
 
-def get_resolution(path, scale=1):
-    src = get_source(path)
-
-    return (src.transform.a * scale, src.transform.e * scale)
-
-
-def read_window((window, buffers), src_url, mask_url=None, scale=1):
+def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
     tile_width = (256 + buffers[0] + buffers[2]) * scale
     tile_height = (256 + buffers[1] + buffers[3]) * scale
     scaled_buffers = map(lambda x: x * scale, buffers)
+    LOG.warn('scaled_buffers: {}'.format(scaled_buffers))
+    # TODO we really want to use scaled buffers here
+    # tile_width = scale * 256 + scaled_buffers[0] + scaled_buffers[2]
+    # tile_height = scale * 256 + scaled_buffers[1] + scaled_buffers[3]
 
     with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
         src = get_source(src_url)
 
+        # compare window to tile_width
+        scale_factor = tile_width / (window[0][1] - window[0][0])
+        LOG.warn('scale_factor: {}'.format(scale_factor))
+
+        if 0.25 > scale_factor > 32:
+            return (np.ma.masked_all((src.count, tile_width, tile_height)), scaled_buffers)
+
+        if scale_factor > 1:
+            _tile_width = tile_width
+            _tile_height = tile_height
+            tile_width = int(tile_width / scale_factor)
+            tile_height = int(tile_height / scale_factor)
+
         # TODO read the data and the mask in parallel
         if mask_url:
-            data = src.read(out_shape=(src.count, tile_width, tile_height), window=window)
-            # handle masking ourselves (src.read(masked=True) doesn't use overviews)
-            data = ma.masked_values(data, src.nodata, copy=False)
+            data = src.read(
+                out_shape=(src.count, tile_width, tile_height),
+                window=window
+            )
+            # handle masking ourselves (src.read(masked=True) doesn't use
+            # overviews)
+            # TODO don't create a masked array; just create a mask
+            # data = np.ma.masked_values(data, src.nodata, copy=False)
+            mask = None
+            if src.nodata is not None:
+                mask = np.where(data == src.nodata, True, False)
+
+            if scale_factor > 1:
+                tile_width = _tile_width
+                tile_height = _tile_height
+
+                LOG.warn('data[0].shape: {}'.format(data[0].shape))
+
+                x = np.arange(0, tile_width, scale_factor)
+                LOG.warn('x.shape: {}'.format(x.shape))
+                y = np.arange(0, tile_height, scale_factor)
+                # TODO this drops NODATA values; can the mask be similarly interpolated?
+                interp = RectBivariateSpline(x, y, data[0])
+
+                data = interp(
+                    np.arange(0, tile_width),
+                    np.arange(0, tile_height),
+                )
+
+                if mask is not None:
+                    LOG.warn('mask[0].shape: {}'.format(mask[0].shape))
+                    interp_mask = RectBivariateSpline(x, y, mask[0])
+                    mask = interp_mask(
+                        np.arange(0, tile_width),
+                        np.arange(0, tile_height),
+                    )
+
+                    data = np.ma.masked_array([data], mask=[mask])
+            else:
+                data = np.ma.masked_values(data, src.nodata, copy=False)
 
             # apply external masks
             mask = get_source(mask_url)
-            mask_data = mask.read(out_shape=(1, tile_width, tile_height), window=window).astype(np.bool)
+            mask_data = mask.read(
+                out_shape=(1, tile_width, tile_height),
+                window=window
+            ).astype(np.bool)
 
-            data = ma.array(data, mask=~mask_data)
+            data = np.ma.array(data, mask=~mask_data)
 
             return (data, scaled_buffers)
         else:
-            data = src.read(out_shape=(src.count, tile_width, tile_height), window=window)
+            data = src.read(
+                out_shape=(src.count, tile_width, tile_height),
+                window=window
+            )
 
             # handle masking ourselves (src.read(masked=True) doesn't use overviews)
-            data = ma.masked_values(data, src.nodata, copy=False)
+            data = np.ma.masked_values(data, src.nodata, copy=False)
 
-            if src.count == 4:
-                # alpha channel present
-                return (data, scaled_buffers)
-            elif src.count == 3:
+            if src.count == 3:
                 # assume RGB
                 # no alpha channel, create one
                 alpha = (~data.mask * np.iinfo(data.dtype).max).astype(data.dtype)
@@ -153,12 +204,12 @@ def make_window(src_tile_zoom, tile, buffer=0):
     return (window, (left_buffer, bottom_buffer, right_buffer, top_buffer))
 
 
-def read_masked_window(source, tile, scale=1):
+def read_masked_window(source, tile, scale=1, buffer=0):
     return read_window(
-        make_window(source['meta']['approximateZoom'], tile),
+        make_window(source['meta']['approximateZoom'], tile, buffer=buffer),
         source['meta'].get('source'),
         source['meta'].get('mask'),
-        scale=scale
+        scale=scale,
     )
 
 
@@ -193,15 +244,36 @@ def render_tile(meta, tile, scale=1, buffer=0):
                 scale=scale
             )
 
-        data = np.zeros(shape=(4, 256 * scale, 256 * scale)).astype(np.uint8)
-        buffers = (buffer, buffer, buffer, buffer)
+        data = None
+        buffers = None
 
-        # read windows in parallel and alpha composite
-        for (d, b) in pool.map(partial(read_masked_window, tile=tile, scale=scale), sources):
-            mask = d[3] > 0
-            mask = mask[np.newaxis,:]
-            data = np.where(mask, d, data)
-            buffers = b
+        # read windows in parallel and reduce
+        for (d, b) in pool.map(partial(
+            read_masked_window,
+            tile=tile,
+            scale=scale,
+            buffer=buffer,
+        ), sources):
+            if buffers is None:
+                buffers = b
+
+            if data is None:
+                # TODO what if dtypes don't match?
+                if d.shape[0] == 1:
+                    data = d.astype(np.float32)
+                else:
+                    data = d
+            else:
+                data = np.ma.where(~d.mask, d, data)
+                data.mask = np.logical_and(data.mask, d.mask)
+
+            # TODO check resolution of d and see how it compares to the shape
+            # if it's not 1:1, convolve2d
+
+        if data is None:
+            # TODO do something better than this when no data is available
+            # how many bands should be returned?
+            raise Exception('No data available')
 
         return (data, buffers)
 
@@ -226,8 +298,8 @@ def get_bounds(id, **kwargs):
     return get_metadata(id, **kwargs)['bounds']
 
 
-def read_tile(id, tile, renderer=normal, scale=1, **kwargs):
-    meta = get_metadata(id, **kwargs)
+def read_tile(meta, tile, renderer='hillshade', scale=1, **kwargs):
+    renderer = globals()[renderer]
     maxzoom = int(meta['maxzoom'])
     minzoom = int(meta['minzoom'])
 
@@ -248,9 +320,7 @@ def read_tile(id, tile, renderer=normal, scale=1, **kwargs):
     (data, buffers) = render_tile(meta, tile, scale=scale, buffer=buffer)
 
     if data.shape[0] == 1:
-        (dx, dy) = get_resolution(meta['meta'].get('source'), scale=scale)
-        # TODO figure out what the appropriate arguments are for all output types
-        return renderer(tile, (data, buffers), dx=dx, dy=dy)
+        return renderer(tile, (data, buffers))
 
     # 8-bit per pixel
     target_dtype = np.uint8

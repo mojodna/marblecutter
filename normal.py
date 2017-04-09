@@ -13,8 +13,8 @@ from PIL import Image
 LOG = logging.getLogger(__name__)
 
 
-def normal(tile, (data, buffers), dx, dy):
-    imgarr = render_normal(tile, data[0], buffers, dx, dy)
+def normal(tile, (data, buffers)):
+    imgarr = render_normal(tile, data[0], buffers)
 
     out = StringIO()
     im = Image.fromarray(imgarr, 'RGBA')
@@ -22,7 +22,8 @@ def normal(tile, (data, buffers), dx, dy):
 
     return out.getvalue()
 
-normal.buffer = 2
+
+normal.buffer = 32
 
 
 # Generate a table of heights suitable for use as hypsometric tinting. These
@@ -64,9 +65,8 @@ def _height_mapping_func(h):
     return 255 - bisect.bisect_left(HEIGHT_TABLE, h)
 
 
-def render_normal(tile, data, buffers, dx, dy):
+def render_normal(tile, data, buffers):
     # TODO does this exhibit problems that are addressed by adjusting heights according to latitude?
-    # TODO dx and dy are unneeded
 
     bounds = mercantile.bounds(*tile)
     ll = mercantile.xy(*bounds[0:2])

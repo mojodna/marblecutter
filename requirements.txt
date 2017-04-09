@@ -9,6 +9,8 @@ matplotlib
 mercantile
 numpy
 Pillow
+psycopg2
 rasterio[s3] >= 1.0a6 --no-binary rasterio
 raven
 rio-color
+scipy

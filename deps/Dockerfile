@@ -440,6 +440,8 @@ RUN \
     werkzeug/wrappers.pyc \
     werkzeug/wsgi.pyc \
     urllib3/* \
+    psycopg2/* \
+    scipy/* \
     raven/* \
     contextlib2.pyc \
     flask/testing.pyc \
