@@ -2,6 +2,8 @@ version: '2'
 services:
   web:
     build: .
+    environment:
+      - DATABASE_URL=postgres://mapzen:mapzen@postgis/elevation
     env_file: .env
     volumes:
       - .:/opt/oam-dynamic-tiler/

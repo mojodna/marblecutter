@@ -3,6 +3,7 @@
 import math
 import os
 import logging
+import urlparse
 
 import arrow
 from cachetools.func import rr_cache
@@ -10,7 +11,7 @@ from flask import Flask, jsonify, render_template, url_for
 from flask_cors import CORS
 import mercantile
 from mercantile import Tile
-import psycopg2
+from psycopg2.pool import SimpleConnectionPool
 from werkzeug.wsgi import DispatcherMiddleware
 
 from tiler import InvalidTileRequest, get_id, get_metadata, read_tile
@@ -29,6 +30,18 @@ app.config['SERVER_NAME'] = SERVER_NAME
 LOG = logging.getLogger(__name__)
 
 logging.basicConfig()
+
+urlparse.uses_netloc.append('postgres')
+database_url = urlparse.urlparse(os.environ['DATABASE_URL'])
+pool = SimpleConnectionPool(
+    0,
+    16,
+    database=database_url.path[1:],
+    user=database_url.username,
+    password=database_url.password,
+    host=database_url.hostname,
+    port=database_url.port,
+)
 
 
 @app.errorhandler(InvalidTileRequest)
@@ -74,10 +87,7 @@ def render(z, x, y, scale=1, **kwargs):
         ORDER BY resolution DESC
     """.format(min(resolution), *bounds)
 
-    # TODO DATABASE_URL
-    conn = psycopg2.connect(
-        'host=postgis user=mapzen password=mapzen dbname=elevation'
-    )
+    conn = pool.getconn()
     cur = conn.cursor()
     cur.execute(query)
     meta = {
@@ -101,6 +111,7 @@ def render(z, x, y, scale=1, **kwargs):
             },
             'bounds': [-180, -85.05113, 180, 85.05113],
         })
+    pool.putconn(conn)
 
     tile = read_tile(meta, t, scale=scale, **kwargs)
 
