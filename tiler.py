@@ -344,7 +344,7 @@ def read_tile(meta, tile, renderer='hillshade', scale=1, **kwargs):
             'Invalid y coordinate: {} outside [{}, {}]'.format(
                 tile.y, sw.y, ne.y))
 
-    buffer = getattr(renderer.render, 'buffer', 0)
+    buffer = getattr(renderer, 'BUFFER', 0)
 
     (data, buffers) = render_tile(meta, tile, scale=scale, buffer=buffer)
 

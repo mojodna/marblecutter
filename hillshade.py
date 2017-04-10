@@ -17,6 +17,8 @@ from rasterio.crs import CRS
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
 
+BUFFER = 2 # corresponds to the max scale_factor we're willing to deal with
+
 
 # from http://www.shadedrelief.com/web_relief/
 EXAGGERATION = {
@@ -90,9 +92,6 @@ def render(tile, (data, buffers)):
     )
 
     return out.getvalue()
-
-render.buffer = 2 # corresponds to the max scale_factor we're willing to deal with
-
 
 # TODO get scale from entrypoint
 def render_hillshade(tile, data, buffers, dx, dy, scale=1, resample=True, add_slopeshade=True):
