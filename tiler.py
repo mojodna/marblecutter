@@ -1,4 +1,6 @@
+# noqa
 # coding=utf-8
+
 from __future__ import division
 
 from functools import partial
@@ -40,15 +42,9 @@ if S3_PREFIX.startswith("/"):
     S3_PREFIX = S3_PREFIX[1:]
 
 
-def get_id(id, image_id=None, scene_idx=0):
-    if image_id:
-        return '{}/{}/{}'.format(id, scene_idx, image_id)
-
-    return id
-
-
 @ttl_cache(ttl=300)
 def get_metadata(id, image_id=None, scene_idx=0, **kwargs):
+    """Get file / scene metadata."""
     key = "{}{}/{}/scene.json".format(S3_PREFIX, id, scene_idx)
 
     if image_id:
@@ -56,16 +52,19 @@ def get_metadata(id, image_id=None, scene_idx=0, **kwargs):
 
     try:
         meta = json.loads(S3.Object(S3_BUCKET, key).get()['Body'].read())
-    except:
-        raise InvalidTileRequest('Could not load s3://{}/{}'.format(S3_BUCKET, key))
+    except Exception:
+        raise InvalidTileRequest(
+            'Could not load s3://{}/{}'.format(S3_BUCKET, key))
 
-    meta['bounds'] = np.clip(meta['bounds'], [-180, -85.05113] * 2, [180, 85.05113] * 2).tolist()
+    meta['bounds'] = np.clip(
+        meta['bounds'], [-180, -85.05113] * 2, [180, 85.05113] * 2).tolist()
 
     return meta
 
 
 @lru_cache(maxsize=1024)
 def get_source(path):
+    """Cached source opening."""
     return rasterio.open(path)
 
 
@@ -75,7 +74,9 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
     scaled_buffers = map(lambda x: x * scale, buffers)
     LOG.warn('window: {}'.format(window))
     LOG.warn('scaled_buffers: {}'.format(scaled_buffers))
-    # TODO we need to do something about scaled buffers here; if scale factor is 8.0, renderer.buffer needs to be 32 (not 2)
+    # TODO we need to do something about scaled buffers here; if scale factor
+    # is 8.0, renderer.buffer needs to be 32 (not 2)
+    # add tile_width % scale_factor
 
     with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
         src = get_source(src_url)
@@ -86,7 +87,8 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
 
         if 0.25 > scale_factor > 32:
             # skip this layer
-            return (np.ma.masked_all((src.count, tile_width, tile_height)), scaled_buffers)
+            return (np.ma.masked_all(
+                (src.count, tile_width, tile_height)), scaled_buffers)
 
         if scale_factor > 1:
             _tile_width = tile_width
@@ -148,19 +150,23 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
 
             return (data, scaled_buffers)
         else:
-            # TODO eventually we're going to want to port the interpolation from ^^
+            # TODO eventually we're going to want to port the interpolation
+            # from ^^
             data = src.read(
                 out_shape=(src.count, tile_width, tile_height),
                 window=window
             )
 
-            # handle masking ourselves (src.read(masked=True) doesn't use overviews)
+            # handle masking ourselves (src.read(masked=True) doesn't use
+            # overviews)
             data = np.ma.masked_values(data, src.nodata, copy=False)
 
             if src.count == 3:
                 # assume RGB
                 # no alpha channel, create one
-                alpha = (~data.mask * np.iinfo(data.dtype).max).astype(data.dtype)
+                alpha = (
+                    ~data.mask * np.iinfo(data.dtype).max
+                ).astype(data.dtype)
 
                 return (np.concatenate((data, alpha)), scaled_buffers)
             else:
@@ -169,6 +175,7 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
 
 
 def make_window(src_tile_zoom, tile, buffer=0):
+    """Create a window in src_tile_zoom-aligned coordinates."""
     dz = src_tile_zoom - tile.z
     x = 2**dz * tile.x
     y = 2**dz * tile.y
@@ -184,8 +191,10 @@ def make_window(src_tile_zoom, tile, buffer=0):
 
     # y, x (rows, columns)
     # window is measured in pixels at src_tile_zoom
-    window = [[top - (top - (256 * y)), top - (top - ((256 * y) + int(256 * dy)))],
-            [256 * x, (256 * x) + int(256 * dx)]]
+    window = [
+        [top - (top - (256 * y)), top - (top - ((256 * y) + int(256 * dy)))],
+        [256 * x, (256 * x) + int(256 * dx)]
+    ]
 
     if buffer > 0:
         if window[1][0] > 0:
@@ -208,7 +217,7 @@ def make_window(src_tile_zoom, tile, buffer=0):
     return (window, (left_buffer, bottom_buffer, right_buffer, top_buffer))
 
 
-def read_masked_window(source, tile, scale=1, buffer=0):
+def read_masked_window(source, tile, scale=1, buffer=0): # noqa
     return read_window(
         make_window(source['meta']['approximateZoom'], tile, buffer=buffer),
         source['meta'].get('source'),
@@ -217,17 +226,23 @@ def read_masked_window(source, tile, scale=1, buffer=0):
     )
 
 
-def intersects(tile):
+def intersects(tile): # noqa
     t = mercantile.bounds(*tile)
 
     def _intersects(src):
         (left, bottom, right, top) = src['bounds']
-        return not(left >= t.east or right <= t.west or top <= t.south or bottom >= t.north)
+        return not(
+            left >= t.east or
+            right <= t.west or
+            top <= t.south or
+            bottom >= t.north
+        )
 
     return _intersects
 
 
 def render_tile(meta, tile, scale=1, buffer=0):
+    """Composite data from all sources into a single tile."""
     src_url = meta['meta'].get('source')
     if src_url:
         return read_window(
@@ -237,15 +252,20 @@ def render_tile(meta, tile, scale=1, buffer=0):
             scale=scale
         )
     else:
-        # optimize by filtering sources to only include those that apply to this tile
+        # optimize by filtering sources to only include those that apply to
+        # this tile (only used without PostGIS)
         sources = filter(intersects(tile), meta['meta'].get('sources', []))
 
         if len(sources) == 1:
             return read_window(
-                make_window(sources[0]['meta']['approximateZoom'], tile, buffer=buffer),
+                make_window(
+                    sources[0]['meta']['approximateZoom'],
+                    tile,
+                    buffer=buffer
+                ),
                 sources[0]['meta']['source'],
                 sources[0]['meta'].get('mask'),
-                scale=scale
+                scale=scale,
             )
 
         data = None
@@ -282,42 +302,49 @@ def render_tile(meta, tile, scale=1, buffer=0):
         return (data, buffers)
 
 
-class InvalidTileRequest(Exception):
+class InvalidTileRequest(Exception): # noqa
     status_code = 404
 
-    def __init__(self, message, status_code=None, payload=None):
+    def __init__(self, message, status_code=None, payload=None): # noqa
         Exception.__init__(self)
         self.message = message
         if status_code is not None:
             self.status_code = status_code
         self.payload = payload
 
-    def to_dict(self):
+    def to_dict(self): # noqa
         rv = dict(self.payload or ())
         rv['message'] = self.message
         return rv
 
 
-def get_bounds(id, **kwargs):
+def get_bounds(id, **kwargs): # noqa
     return get_metadata(id, **kwargs)['bounds']
 
 
 def read_tile(meta, tile, renderer='hillshade', scale=1, **kwargs):
+    """Fetch tile data and render as a PNG."""
     renderer = globals()[renderer]
     maxzoom = int(meta['maxzoom'])
     minzoom = int(meta['minzoom'])
 
     if not minzoom <= tile.z <= maxzoom:
-        raise InvalidTileRequest('Invalid zoom: {} outside [{}, {}]'.format(tile.z, minzoom, maxzoom))
+        raise InvalidTileRequest(
+            'Invalid zoom: {} outside [{}, {}]'.format(
+                tile.z, minzoom, maxzoom))
 
     sw = mercantile.tile(*meta['bounds'][0:2], zoom=tile.z)
     ne = mercantile.tile(*meta['bounds'][2:4], zoom=tile.z)
 
     if not sw.x <= tile.x <= ne.x:
-        raise InvalidTileRequest('Invalid x coordinate: {} outside [{}, {}]'.format(tile.x, sw.x, ne.x))
+        raise InvalidTileRequest(
+            'Invalid x coordinate: {} outside [{}, {}]'.format(
+                tile.x, sw.x, ne.x))
 
     if not ne.y <= tile.y <= sw.y:
-        raise InvalidTileRequest('Invalid y coordinate: {} outside [{}, {}]'.format(tile.y, sw.y, ne.y))
+        raise InvalidTileRequest(
+            'Invalid y coordinate: {} outside [{}, {}]'.format(
+                tile.y, sw.y, ne.y))
 
     buffer = getattr(renderer, 'buffer', 0)
 
@@ -344,9 +371,13 @@ def read_tile(meta, tile, renderer='hillshade', scale=1, **kwargs):
     if data.dtype != target_dtype:
         # rescale
         try:
-            data = (data * (np.iinfo(target_dtype).max / np.iinfo(data.dtype).max)).astype(target_dtype)
-        except:
-            raise Exception('Not enough information to rescale; source is "{}""'.format(data.dtype))
+            data = (
+                data * (np.iinfo(target_dtype).max / np.iinfo(data.dtype).max)
+            ).astype(target_dtype)
+        except Exception:
+            raise Exception(
+                'Not enough information to rescale; source is "{}""'.format(
+                    data.dtype))
 
     imgarr = np.ma.transpose(data, [1, 2, 0])
 

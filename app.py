@@ -14,7 +14,7 @@ from mercantile import Tile
 from psycopg2.pool import SimpleConnectionPool
 from werkzeug.wsgi import DispatcherMiddleware
 
-from tiler import InvalidTileRequest, get_id, get_metadata, read_tile
+from tiler import InvalidTileRequest, get_metadata, read_tile
 
 
 APPLICATION_ROOT = os.environ.get('APPLICATION_ROOT', '')
@@ -42,6 +42,13 @@ pool = SimpleConnectionPool(
     host=database_url.hostname,
     port=database_url.port,
 )
+
+
+def get_id(id, image_id=None, scene_idx=0):
+    if image_id:
+        return '{}/{}/{}'.format(id, scene_idx, image_id)
+
+    return id
 
 
 @app.errorhandler(InvalidTileRequest)
