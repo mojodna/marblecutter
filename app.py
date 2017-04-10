@@ -34,7 +34,7 @@ logging.basicConfig()
 urlparse.uses_netloc.append('postgres')
 database_url = urlparse.urlparse(os.environ['DATABASE_URL'])
 pool = SimpleConnectionPool(
-    0,
+    1,
     16,
     database=database_url.path[1:],
     user=database_url.username,
@@ -88,30 +88,32 @@ def render(z, x, y, scale=1, **kwargs):
     """.format(min(resolution), *bounds)
 
     conn = pool.getconn()
-    cur = conn.cursor()
-    cur.execute(query)
-    meta = {
-        'minzoom': 0,
-        'maxzoom': 22,
-        'bounds': [-180, -85.05113, 180, 85.05113],
-        'meta': {
-            'sources': [],
-        }
-    }
-    for row in cur.fetchall():
-        LOG.warn('scale factor for {}: {}'.format(row[0], row[4]))
-        approximate_zoom = min(22, int(math.ceil(
-            math.log((2 * math.pi * 6378137) / (row[3] * 256)) /
-            math.log(2))))
-        meta['meta']['sources'].append({
-            'meta': {
-                'approximateZoom': approximate_zoom,
-                'source': os.path.splitext(row[0])[0] + '_warped.vrt',
-                'mask': os.path.splitext(row[0])[0] + '_warped_mask.vrt',
-            },
+    try:
+        cur = conn.cursor()
+        cur.execute(query)
+        meta = {
+            'minzoom': 0,
+            'maxzoom': 22,
             'bounds': [-180, -85.05113, 180, 85.05113],
-        })
-    pool.putconn(conn)
+            'meta': {
+                'sources': [],
+            }
+        }
+        for row in cur.fetchall():
+            LOG.warn('scale factor for {}: {}'.format(row[0], row[4]))
+            approximate_zoom = min(22, int(math.ceil(
+                math.log((2 * math.pi * 6378137) / (row[3] * 256)) /
+                math.log(2))))
+            meta['meta']['sources'].append({
+                'meta': {
+                    'approximateZoom': approximate_zoom,
+                    'source': os.path.splitext(row[0])[0] + '_warped.vrt',
+                    'mask': os.path.splitext(row[0])[0] + '_warped_mask.vrt',
+                },
+                'bounds': [-180, -85.05113, 180, 85.05113],
+            })
+    finally:
+        pool.putconn(conn)
 
     tile = read_tile(meta, t, scale=scale, **kwargs)
 
