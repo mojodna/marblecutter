@@ -45,7 +45,7 @@ submit-job: node_modules/.bin/interp
 	rm -f $(tmp)
 
 deps/deps.zip: deps/Dockerfile
-		docker run --rm --entrypoint cat $$(docker build -q -f $<  .) /tmp/task.zip > $@
+		docker run --rm --entrypoint cat $$(docker build -q -f $< .) /tmp/task.zip > $@
 
 clean:
 		rm -f deps/deps.zip
