@@ -3,6 +3,7 @@ from __future__ import division
 
 from functools import partial
 import logging
+import math
 from multiprocessing.dummy import Pool
 import json
 from StringIO import StringIO
@@ -90,8 +91,8 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
         if scale_factor > 1:
             _tile_width = tile_width
             _tile_height = tile_height
-            tile_width = int(tile_width / scale_factor)
-            tile_height = int(tile_height / scale_factor)
+            tile_width = int(math.ceil(tile_width / scale_factor))
+            tile_height = int(math.ceil(tile_height / scale_factor))
 
         # TODO read the data and the mask in parallel
         if mask_url:
