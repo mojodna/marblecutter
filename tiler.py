@@ -4,6 +4,7 @@
 from __future__ import division
 
 from functools import partial
+import importlib
 import logging
 import math
 from multiprocessing.dummy import Pool
@@ -19,9 +20,6 @@ from PIL import Image
 import rasterio
 from rio_color import operations
 from scipy.interpolate import RectBivariateSpline
-
-from hillshade import hillshade
-from normal import normal
 
 
 LOG = logging.getLogger(__name__)
@@ -324,7 +322,7 @@ def get_bounds(id, **kwargs): # noqa
 
 def read_tile(meta, tile, renderer='hillshade', scale=1, **kwargs):
     """Fetch tile data and render as a PNG."""
-    renderer = globals()[renderer]
+    renderer = importlib.import_module(renderer)
     maxzoom = int(meta['maxzoom'])
     minzoom = int(meta['minzoom'])
 
@@ -346,12 +344,12 @@ def read_tile(meta, tile, renderer='hillshade', scale=1, **kwargs):
             'Invalid y coordinate: {} outside [{}, {}]'.format(
                 tile.y, sw.y, ne.y))
 
-    buffer = getattr(renderer, 'buffer', 0)
+    buffer = getattr(renderer.render, 'buffer', 0)
 
     (data, buffers) = render_tile(meta, tile, scale=scale, buffer=buffer)
 
     if data.shape[0] == 1:
-        return renderer(tile, (data, buffers))
+        return renderer.render(tile, (data, buffers))
 
     # 8-bit per pixel
     target_dtype = np.uint8

@@ -13,7 +13,7 @@ from PIL import Image
 LOG = logging.getLogger(__name__)
 
 
-def normal(tile, (data, buffers)):
+def render(tile, (data, buffers)):
     imgarr = render_normal(tile, data[0], buffers)
 
     out = StringIO()
@@ -23,7 +23,7 @@ def normal(tile, (data, buffers)):
     return out.getvalue()
 
 
-normal.buffer = 32
+render.buffer = 2
 
 
 # Generate a table of heights suitable for use as hypsometric tinting. These

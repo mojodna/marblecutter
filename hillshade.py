@@ -69,7 +69,7 @@ GREY_HILLS = LinearSegmentedColormap("grey_hills", GREY_HILLS_RAMP)
 LOG = logging.getLogger(__name__)
 
 
-def hillshade(tile, (data, buffers)):
+def render(tile, (data, buffers)):
     bounds = mercantile.bounds(*tile)
     ll = mercantile.xy(*bounds[0:2])
     ur = mercantile.xy(*bounds[2:4])
@@ -91,7 +91,7 @@ def hillshade(tile, (data, buffers)):
 
     return out.getvalue()
 
-hillshade.buffer = 32 # corresponds to the max scale_factor we're willing to deal with
+render.buffer = 2 # corresponds to the max scale_factor we're willing to deal with
 
 
 # TODO get scale from entrypoint
