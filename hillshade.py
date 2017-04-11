@@ -17,7 +17,7 @@ from rasterio.crs import CRS
 from rasterio.enums import Resampling
 from rasterio.warp import reproject
 
-BUFFER = 32 # corresponds to the max scale_factor we're willing to deal with
+BUFFER = 4
 
 
 # from http://www.shadedrelief.com/web_relief/

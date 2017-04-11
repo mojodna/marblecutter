@@ -82,24 +82,6 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
     with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
         src = get_source(src_url)
 
-        # if scale_factor <= 1:
-        # if scale_factor > 1:
-        #     LOG.warn('skipping %s', src_url)
-        #     return (np.ma.masked_all(
-        #         (src.count, target_tile_width, target_tile_height)), buffers)
-        # if scale_factor > 1:
-        #     LOG.warn('window (before): {}'.format(window))
-        #     LOG.warn('tile_width (before): {}'.format(tile_width))
-        #     window[1][0] -= int(math.ceil(scale_factor))
-        #     window[0][0] -= int(math.ceil(scale_factor))
-        #     window[1][1] += int(math.ceil(scale_factor))
-        #     window[0][1] += int(math.ceil(scale_factor))
-        #     window_width = window[1][1] - window[1][0]
-        #     window_height = window[0][1] - window[0][0]
-        #     tile_width += 2 * int(math.ceil(scale_factor))
-        #     tile_height += 2 * int(math.ceil(scale_factor))
-        #     LOG.warn('window (after): {}'.format(window))
-        #     LOG.warn('tile_width (after): {}'.format(tile_width))
 
         # TODO read the data and the mask in parallel
         if mask_url:
@@ -116,8 +98,6 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
             if scale_factor > 1:
                 tile_width = int(window_width * scale_factor)
                 tile_height = int(window_height * scale_factor)
-
-                LOG.warn('tile_width: {}'.format(tile_width))
 
                 x = np.arange(0, tile_width, scale_factor)
                 y = np.arange(0, tile_height, scale_factor)

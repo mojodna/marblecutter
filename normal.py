@@ -12,7 +12,7 @@ from PIL import Image
 
 LOG = logging.getLogger(__name__)
 
-BUFFER = 2
+BUFFER = 4
 
 
 def render(tile, (data, buffers)):
