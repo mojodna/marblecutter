@@ -67,56 +67,59 @@ def get_source(path):
 
 
 def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
-    tile_width = (256 + buffers[0] + buffers[2]) * scale
-    tile_height = (256 + buffers[1] + buffers[3]) * scale
-    scaled_buffers = map(lambda x: x * scale, buffers)
-    LOG.warn('window: {}'.format(window))
-    LOG.warn('scaled_buffers: {}'.format(scaled_buffers))
-    # TODO we need to do something about scaled buffers here; if scale factor
-    # is 8.0, renderer.buffer needs to be 32 (not 2)
-    # add tile_width % scale_factor
+    target_tile_width = (256 + buffers[0] + buffers[2]) * scale
+    target_tile_height = (256 + buffers[0] + buffers[2]) * scale
+    window_width = window[1][1] - window[1][0]
+    window_height = window[0][1] - window[0][0]
+    tile_width = int(math.ceil(min(window_width, target_tile_width)))
+    tile_height = int(math.ceil(min(window_height, target_tile_height)))
+
+    # compare window to tile width to see how much we're up/downsampling
+    scale_factor = 256 / (window_width - buffers[0] - buffers[2])
+
+    buffers = map(lambda x: int(x * scale), buffers)
 
     with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
         src = get_source(src_url)
 
-        # compare window to tile_width
-        scale_factor = tile_width / (window[0][1] - window[0][0])
-        LOG.warn('scale_factor: {}'.format(scale_factor))
-
-        if 0.25 > scale_factor > 32:
-            # skip this layer
-            return (np.ma.masked_all(
-                (src.count, tile_width, tile_height)), scaled_buffers)
-
-        if scale_factor > 1:
-            _tile_width = tile_width
-            _tile_height = tile_height
-            tile_width = int(math.ceil(tile_width / scale_factor))
-            tile_height = int(math.ceil(tile_height / scale_factor))
+        # if scale_factor <= 1:
+        # if scale_factor > 1:
+        #     LOG.warn('skipping %s', src_url)
+        #     return (np.ma.masked_all(
+        #         (src.count, target_tile_width, target_tile_height)), buffers)
+        # if scale_factor > 1:
+        #     LOG.warn('window (before): {}'.format(window))
+        #     LOG.warn('tile_width (before): {}'.format(tile_width))
+        #     window[1][0] -= int(math.ceil(scale_factor))
+        #     window[0][0] -= int(math.ceil(scale_factor))
+        #     window[1][1] += int(math.ceil(scale_factor))
+        #     window[0][1] += int(math.ceil(scale_factor))
+        #     window_width = window[1][1] - window[1][0]
+        #     window_height = window[0][1] - window[0][0]
+        #     tile_width += 2 * int(math.ceil(scale_factor))
+        #     tile_height += 2 * int(math.ceil(scale_factor))
+        #     LOG.warn('window (after): {}'.format(window))
+        #     LOG.warn('tile_width (after): {}'.format(tile_width))
 
         # TODO read the data and the mask in parallel
         if mask_url:
             data = src.read(
                 out_shape=(src.count, tile_width, tile_height),
-                window=window
+                window=window,
             )
             # handle masking ourselves (src.read(masked=True) doesn't use
             # overviews)
-            # TODO don't create a masked array; just create a mask
-            # data = np.ma.masked_values(data, src.nodata, copy=False)
             mask = None
             if src.nodata is not None:
                 mask = np.where(data == src.nodata, True, False)
 
             if scale_factor > 1:
-                tile_width = _tile_width
-                tile_height = _tile_height
+                tile_width = int(window_width * scale_factor)
+                tile_height = int(window_height * scale_factor)
 
-                LOG.warn('data[0].shape: {}'.format(data[0].shape))
                 LOG.warn('tile_width: {}'.format(tile_width))
 
                 x = np.arange(0, tile_width, scale_factor)
-                LOG.warn('x.shape: {}'.format(x.shape))
                 y = np.arange(0, tile_height, scale_factor)
                 interp = RectBivariateSpline(x, y, data[0])
 
@@ -126,33 +129,36 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
                 )
 
                 if mask is not None:
-                    LOG.warn('mask[0].shape: {}'.format(mask[0].shape))
                     interp_mask = RectBivariateSpline(x, y, mask[0])
                     mask = interp_mask(
                         np.arange(0, tile_width),
                         np.arange(0, tile_height),
                     )
 
-                    data = np.ma.masked_array([data], mask=[mask])
+                data = np.ma.masked_array([data], mask=[mask])
             else:
                 data = np.ma.masked_array(data, mask=mask)
 
             # apply external masks
             mask = get_source(mask_url)
             mask_data = mask.read(
-                out_shape=(1, tile_width, tile_height),
-                window=window
+                out_shape=(1, target_tile_width, target_tile_height),
+                window=window,
             ).astype(np.bool)
 
-            data = np.ma.array(data, mask=~mask_data)
+            offsets = map(lambda x: int(x * math.ceil(scale_factor)) - x,
+                          buffers)
+            offsets[2:] = map(lambda (x, y): x - y, zip(
+                data.shape[1:], offsets[2:]))
+            data = data[:, offsets[0]:offsets[2], offsets[1]:offsets[3]]
 
-            return (data, scaled_buffers)
+            return (np.ma.masked_array(data, mask=~mask_data), buffers)
         else:
             # TODO eventually we're going to want to port the interpolation
             # from ^^
             data = src.read(
                 out_shape=(src.count, tile_width, tile_height),
-                window=window
+                window=window,
             )
 
             # handle masking ourselves (src.read(masked=True) doesn't use
@@ -166,10 +172,10 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
                     ~data.mask * np.iinfo(data.dtype).max
                 ).astype(data.dtype)
 
-                return (np.concatenate((data, alpha)), scaled_buffers)
+                return (np.concatenate((data, alpha)), buffers)
             else:
                 # assume single-band
-                return (data, scaled_buffers)
+                return (data, buffers)
 
 
 def make_window(src_tile_zoom, tile, buffer=0):
@@ -184,14 +190,22 @@ def make_window(src_tile_zoom, tile, buffer=0):
     top = (2**src_tile_zoom * 256) - 1
     scale = 2**dz
     left_buffer = right_buffer = top_buffer = bottom_buffer = 0
-    LOG.warn('scale (make_window): {}'.format(scale))
-    LOG.warn('effective buffer: {}'.format(buffer * scale))
+
+    tile_width = 256
+    tile_height = 256
 
     # y, x (rows, columns)
     # window is measured in pixels at src_tile_zoom
     window = [
-        [top - (top - (256 * y)), top - (top - ((256 * y) + int(256 * dy)))],
-        [256 * x, (256 * x) + int(256 * dx)]
+        [
+            int(math.floor(top - (top - (tile_height * y)))),
+            int(math.ceil(
+                top - (top - ((tile_height * y) + tile_height * dy)))),
+        ],
+        [
+            int(math.floor(tile_width * x)),
+            int(math.ceil((tile_width * x) + tile_width * dx)),
+        ]
     ]
 
     if buffer > 0:
@@ -207,10 +221,10 @@ def make_window(src_tile_zoom, tile, buffer=0):
         if window[0][1] < top:
             bottom_buffer = buffer
 
-        window[0][0] -= top_buffer * scale
-        window[0][1] += bottom_buffer * scale
-        window[1][0] -= left_buffer * scale
-        window[1][1] += right_buffer * scale
+        window[0][0] -= top_buffer * math.ceil(scale)
+        window[0][1] += bottom_buffer * math.ceil(scale)
+        window[1][0] -= left_buffer * math.ceil(scale)
+        window[1][1] += right_buffer * math.ceil(scale)
 
     return (window, (left_buffer, bottom_buffer, right_buffer, top_buffer))
 
@@ -279,6 +293,12 @@ def render_tile(meta, tile, scale=1, buffer=0):
             if buffers is None:
                 buffers = b
 
+            # TODO buffers (and shapes) won't match if on the edges of the world
+            if buffers != b:
+                raise Exception(
+                    'Buffer sizes should always match: {} != {}'.format(
+                        buffers, b))
+
             if data is None:
                 # TODO what if dtypes don't match?
                 if d.shape[0] == 1:
@@ -289,8 +309,10 @@ def render_tile(meta, tile, scale=1, buffer=0):
                 data = np.ma.where(~d.mask, d, data)
                 data.mask = np.logical_and(data.mask, d.mask)
 
-            # TODO check resolution of d and see how it compares to the shape
-            # if it's not 1:1, convolve2d
+            if data.shape != d.shape:
+                raise Exception(
+                    'Data shapes should always match: {} != {}'.format(
+                        data.shape, d.shape))
 
         if data is None:
             # TODO do something better than this when no data is available
