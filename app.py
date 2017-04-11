@@ -29,7 +29,7 @@ app.config['SERVER_NAME'] = SERVER_NAME
 
 LOG = logging.getLogger(__name__)
 
-logging.basicConfig()
+logging.basicConfig(level=logging.INFO)
 
 urlparse.uses_netloc.append('postgres')
 database_url = urlparse.urlparse(os.environ['DATABASE_URL'])
