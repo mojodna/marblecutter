@@ -14,7 +14,7 @@ from mercantile import Tile
 from psycopg2.pool import SimpleConnectionPool
 from werkzeug.wsgi import DispatcherMiddleware
 
-from tiler import InvalidTileRequest, get_metadata, read_tile
+from tiler import InvalidTileRequest, NoDataException, get_metadata, read_tile
 
 
 APPLICATION_ROOT = os.environ.get('APPLICATION_ROOT', '')
@@ -55,6 +55,17 @@ def get_id(id, image_id=None, scene_idx=0):
 def handle_invalid_tile_request(error):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
+
+    return response
+
+
+@app.errorhandler(NoDataException)
+def handle_response_with_no_data(error):
+    response = jsonify({
+        'msg': 'No data available for this tile',
+    })
+    response.status_code = 404
+
     return response
 
 
@@ -73,52 +84,50 @@ def render(z, x, y, scale=1, **kwargs):
     t = Tile(x, y, z)
     bounds = mercantile.bounds(*t)
 
-    y = (bounds[3] + bounds[1]) / 2
-    m_per_degree = 111 * 1000
-    resolution = (((bounds[2] - bounds[0]) * m_per_degree) / (256 * scale),
-                  ((bounds[3] - bounds[1]) * m_per_degree *
-                   math.cos(math.radians(y))) / (256 * scale))
-
     query = """
         SELECT
             DISTINCT(url),
             filename,
             source,
             resolution,
-            resolution / {0}
+            min_zoom,
+            max_zoom,
+            priority,
+            least(22, ceil(log(2.0, ((2 * pi() * 6378137) / (resolution * 256))::numeric))) approximate_zoom
         FROM footprints
         WHERE wkb_geometry && ST_SetSRID('BOX({1} {2}, {3} {4})'::box2d, 4326)
-            -- AND (resolution >= {0} OR source = 'ETOPO1')
-            -- TODO pull in topobathy before the rest of ned19
-            AND (resolution / {0}) BETWEEN 0.5 AND 100
-        ORDER BY resolution DESC
-    """.format(min(resolution), *bounds)
+            AND {0} BETWEEN min_zoom AND max_zoom
+            -- AND source != 'ETOPO1'
+        ORDER BY PRIORITY DESC, resolution DESC
+    """.format(z, *bounds)
+
+    meta = {
+        'minzoom': 0,
+        'maxzoom': 22,
+        'bounds': [-180, -85.05113, 180, 85.05113],
+        'meta': {
+            'sources': [],
+        }
+    }
 
     conn = pool.getconn()
     try:
-        cur = conn.cursor()
-        cur.execute(query)
-        meta = {
-            'minzoom': 0,
-            'maxzoom': 22,
-            'bounds': [-180, -85.05113, 180, 85.05113],
-            'meta': {
-                'sources': [],
-            }
-        }
-        for row in cur.fetchall():
-            LOG.warn('scale factor for {}: {}'.format(row[0], row[4]))
-            approximate_zoom = min(22, int(math.ceil(
-                math.log((2 * math.pi * 6378137) / (row[3] * 256)) /
-                math.log(2))))
-            meta['meta']['sources'].append({
-                'meta': {
-                    'approximateZoom': approximate_zoom,
-                    'source': os.path.splitext(row[0])[0] + '_warped.vrt',
-                    'mask': os.path.splitext(row[0])[0] + '_warped_mask.vrt',
-                },
-                'bounds': [-180, -85.05113, 180, 85.05113],
-            })
+        with conn.cursor() as cur:
+            cur.execute(query)
+
+            LOG.warn('%s/%s/%s: %d result(s)', z, x, y, cur.rowcount)
+
+            for row in cur.fetchall():
+                meta['meta']['sources'].append({
+                    'meta': {
+                        'approximateZoom': row[7],
+                        'source': os.path.splitext(row[0])[0] + '_warped.vrt',
+                        'mask': os.path.splitext(row[0])[0] + '_warped_mask.vrt',
+                    },
+                    'minzoom': row[4],
+                    'maxzoom': row[5],
+                    'bounds': [-180, -85.05113, 180, 85.05113],
+                })
     finally:
         pool.putconn(conn)
 

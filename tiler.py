@@ -66,22 +66,25 @@ def get_source(path):
     return rasterio.open(path)
 
 
-def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
-    target_tile_width = (256 + buffers[0] + buffers[2]) * scale
-    target_tile_height = (256 + buffers[0] + buffers[2]) * scale
-    window_width = window[1][1] - window[1][0]
-    window_height = window[0][1] - window[0][0]
-    tile_width = int(math.ceil(min(window_width, target_tile_width)))
-    tile_height = int(math.ceil(min(window_height, target_tile_height)))
+def read_window((window, buffers, window_scale), src_url, mask_url=None, scale=1): # noqa
+    target_tile_width = tile_width = (256 + buffers[0] + buffers[2]) * scale
+    target_tile_height = tile_height = (256 + buffers[0] + buffers[2]) * scale
+
+    window_width = (window[1][1] - window[1][0])
+    window_height = (window[0][1] - window[0][0])
 
     # compare window to tile width to see how much we're up/downsampling
-    scale_factor = 256 / (window_width - buffers[0] - buffers[2])
+    scale_factor = math.ceil(256 / (window_width - buffers[0] - buffers[2]))
+
+    if scale_factor > 1:
+        # respect the window size so it can be interpolated cleanly
+        tile_width = int(min(window_width, target_tile_width))
+        tile_height = int(min(window_height, target_tile_height))
 
     buffers = map(lambda x: int(x * scale), buffers)
 
     with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
         src = get_source(src_url)
-
 
         # TODO read the data and the mask in parallel
         if mask_url:
@@ -89,6 +92,7 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
                 out_shape=(src.count, tile_width, tile_height),
                 window=window,
             )
+
             # handle masking ourselves (src.read(masked=True) doesn't use
             # overviews)
             mask = None
@@ -96,26 +100,30 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
                 mask = np.where(data == src.nodata, True, False)
 
             if scale_factor > 1:
-                tile_width = int(window_width * scale_factor)
-                tile_height = int(window_height * scale_factor)
-
-                x = np.arange(0, tile_width, scale_factor)
-                y = np.arange(0, tile_height, scale_factor)
+                interpolated_tile_width = int(tile_width * scale_factor * scale)
+                interpolated_tile_height = int(tile_height * scale_factor * scale)
+                x = np.arange(0, interpolated_tile_width, interpolated_tile_width / tile_width)
+                y = np.arange(0, interpolated_tile_height, interpolated_tile_height / tile_height)
                 interp = RectBivariateSpline(x, y, data[0])
 
                 data = interp(
-                    np.arange(0, tile_width),
-                    np.arange(0, tile_height),
+                    np.arange(0, interpolated_tile_width),
+                    np.arange(0, interpolated_tile_height),
                 )
 
                 if mask is not None:
                     interp_mask = RectBivariateSpline(x, y, mask[0])
                     mask = interp_mask(
-                        np.arange(0, tile_width),
-                        np.arange(0, tile_height),
+                        np.arange(0, interpolated_tile_width),
+                        np.arange(0, interpolated_tile_height),
                     )
 
-                data = np.ma.masked_array([data], mask=[mask])
+                # extra buffer (for interpolation)
+                offsets = map(lambda x: int(x / window_scale) - x, buffers)
+                offsets[2:] = map(lambda (x, y): x - y, zip(
+                    data.shape, offsets[2:]))
+
+                data = np.ma.masked_array([data], mask=[mask])[:, offsets[0]:offsets[2], offsets[1]:offsets[3]]
             else:
                 data = np.ma.masked_array(data, mask=mask)
 
@@ -125,12 +133,6 @@ def read_window((window, buffers), src_url, mask_url=None, scale=1): # noqa
                 out_shape=(1, target_tile_width, target_tile_height),
                 window=window,
             ).astype(np.bool)
-
-            offsets = map(lambda x: int(x * math.ceil(scale_factor)) - x,
-                          buffers)
-            offsets[2:] = map(lambda (x, y): x - y, zip(
-                data.shape[1:], offsets[2:]))
-            data = data[:, offsets[0]:offsets[2], offsets[1]:offsets[3]]
 
             return (np.ma.masked_array(data, mask=~mask_data), buffers)
         else:
@@ -206,7 +208,7 @@ def make_window(src_tile_zoom, tile, buffer=0):
         window[1][0] -= left_buffer * math.ceil(scale)
         window[1][1] += right_buffer * math.ceil(scale)
 
-    return (window, (left_buffer, bottom_buffer, right_buffer, top_buffer))
+    return (window, (left_buffer, bottom_buffer, right_buffer, top_buffer), scale)
 
 
 def read_masked_window(source, tile, scale=1, buffer=0): # noqa
@@ -297,7 +299,7 @@ def render_tile(meta, tile, scale=1, buffer=0):
         if data is None:
             # TODO do something better than this when no data is available
             # how many bands should be returned?
-            raise Exception('No data available')
+            raise NoDataException()
 
         return (data, buffers)
 
@@ -316,6 +318,10 @@ class InvalidTileRequest(Exception): # noqa
         rv = dict(self.payload or ())
         rv['message'] = self.message
         return rv
+
+
+class NoDataException(Exception): # noqa
+    pass
 
 
 def get_bounds(id, **kwargs): # noqa
