@@ -94,13 +94,16 @@ def read_window((window, buffers, window_scale), src_url, mask_url=None, scale=1
                 window=window,
             )
 
+            if src.count == 1:
+                data = data.astype(np.float32)
+
             # handle masking ourselves (src.read(masked=True) doesn't use
             # overviews)
             mask = None
             if src.nodata is not None:
                 mask = np.where(data == src.nodata, True, False)
 
-            if scale_factor > 1:
+            if src.count == 1 and scale_factor > 1:
                 interpolated_tile_width = int(tile_width * scale_factor * scale)
                 interpolated_tile_height = int(tile_height * scale_factor * scale)
                 x = np.arange(0, interpolated_tile_width, interpolated_tile_width / tile_width)
@@ -286,6 +289,7 @@ def render_tile(meta, tile, scale=1, buffer=0):
                 if d.shape[0] == 1:
                     data = d.astype(np.float32)
                 else:
+                    # pass multi-band data through
                     data = d
             else:
                 data = np.ma.where(~d.mask, d, data)
