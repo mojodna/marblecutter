@@ -1,3 +1,4 @@
+# noqa
 # coding=utf-8
 from __future__ import division
 
@@ -13,7 +14,7 @@ CONTENT_TYPE = 'image/png'
 LOG = logging.getLogger(__name__)
 
 
-def render(tile, (data, buffers)):
+def render(tile, (data, buffers)): # noqa
     # we want the output to be 3-channels R, G, B with:
     #   uheight = height + 32768.0
     #   R = int(height) / 256
@@ -23,7 +24,8 @@ def render(tile, (data, buffers)):
     # lower than any depth on Earth.
 
     # crop image since we don't care about buffers
-    pixels = data[0][buffers[0]:data.shape[0] - buffers[2], buffers[1]:data.shape[1] - buffers[3]]
+    pixels = data[0][buffers[0]:data.shape[0] - buffers[2],
+                     buffers[1]:data.shape[1] - buffers[3]]
     pixels.fill_value = 0
 
     # transform to uheight, clamping the range

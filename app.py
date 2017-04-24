@@ -1,6 +1,6 @@
+# noqa
 # coding=utf-8
 
-import math
 import os
 import logging
 import urlparse
@@ -44,7 +44,7 @@ pool = SimpleConnectionPool(
 )
 
 
-def get_id(id, image_id=None, scene_idx=0):
+def get_id(id, image_id=None, scene_idx=0): # noqa
     if image_id:
         return '{}/{}/{}'.format(id, scene_idx, image_id)
 
@@ -52,7 +52,7 @@ def get_id(id, image_id=None, scene_idx=0):
 
 
 @app.errorhandler(InvalidTileRequest)
-def handle_invalid_tile_request(error):
+def handle_invalid_tile_request(error): # noqa
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
 
@@ -60,7 +60,7 @@ def handle_invalid_tile_request(error):
 
 
 @app.errorhandler(NoDataException)
-def handle_response_with_no_data(error):
+def handle_response_with_no_data(error): # noqa
     response = jsonify({
         'msg': 'No data available for this tile',
     })
@@ -70,7 +70,8 @@ def handle_response_with_no_data(error):
 
 
 @app.errorhandler(IOError)
-def handle_ioerror(error):
+def handle_ioerror(error): # noqa
+    LOG.warn('IOError')
     LOG.warn(error)
     return '', 404
 
@@ -80,7 +81,8 @@ def handle_ioerror(error):
 @app.route('/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
 @app.route('/<renderer>/<int:z>/<int:x>/<int:y>.<ext>')
 @app.route('/<renderer>/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
-def render(z, x, y, scale=1, **kwargs):
+def render(z, x, y, scale=1, **kwargs): # noqa
+    LOG.warn('%s/%s/%s/%s scale=%d', kwargs['renderer'], z, x, y, scale)
     t = Tile(x, y, z)
     bounds = mercantile.bounds(*t)
 
@@ -93,7 +95,7 @@ def render(z, x, y, scale=1, **kwargs):
             min_zoom,
             max_zoom,
             priority,
-            least(22, ceil(log(2.0, ((2 * pi() * 6378137) / (resolution * 256))::numeric))) approximate_zoom
+            approximate_zoom
         FROM footprints
         WHERE wkb_geometry && ST_SetSRID('BOX({1} {2}, {3} {4})'::box2d, 4326)
             AND {0} BETWEEN min_zoom AND max_zoom
@@ -121,8 +123,10 @@ def render(z, x, y, scale=1, **kwargs):
                 meta['meta']['sources'].append({
                     'meta': {
                         'approximateZoom': row[7],
-                        'source': os.path.splitext(row[0])[0] + '_warped.vrt',
-                        'mask': os.path.splitext(row[0])[0] + '_warped_mask.vrt',
+                        'source': '{}_warped.vrt'.format(
+                            os.path.splitext(row[0])[0]),
+                        'mask': '{}_warped_mask.vrt'.format(
+                            os.path.splitext(row[0])[0]),
                     },
                     'minzoom': row[4],
                     'maxzoom': row[5],
@@ -140,7 +144,8 @@ def render(z, x, y, scale=1, **kwargs):
     if meta['meta'].get('oinMetadataUrl'):
         headers['X-OIN-Metadata-URL'] = meta['meta'].get('oinMetadataUrl')
 
-    if meta['meta'].get('acquisitionStart') or meta['meta'].get('acquisitionEnd'):
+    if meta['meta'].get('acquisitionStart') or \
+       meta['meta'].get('acquisitionEnd'):
         start = meta['meta'].get('acquisitionStart')
         end = meta['meta'].get('acquisitionEnd')
 
@@ -148,19 +153,24 @@ def render(z, x, y, scale=1, **kwargs):
             start = arrow.get(start)
             end = arrow.get(end)
 
-            capture_range = '{}-{}'.format(start.format('M/D/YYYY'), end.format('M/D/YYYY'))
-            headers['X-OIN-Acquisition-Start'] = start.format('YYYY-MM-DDTHH:mm:ssZZ')
-            headers['X-OIN-Acquisition-End'] = end.format('YYYY-MM-DDTHH:mm:ssZZ')
+            capture_range = '{}-{}'.format(
+                start.format('M/D/YYYY'), end.format('M/D/YYYY'))
+            headers['X-OIN-Acquisition-Start'] = start.format(
+                'YYYY-MM-DDTHH:mm:ssZZ')
+            headers['X-OIN-Acquisition-End'] = end.format(
+                'YYYY-MM-DDTHH:mm:ssZZ')
         elif start:
             start = arrow.get(start)
 
             capture_range = start.format('M/D/YYYY')
-            headers['X-OIN-Acquisition-Start'] = start.format('YYYY-MM-DDTHH:mm:ssZZ')
+            headers['X-OIN-Acquisition-Start'] = start.format(
+                'YYYY-MM-DDTHH:mm:ssZZ')
         elif end:
             end = arrow.get(end)
 
             capture_range = end.format('M/D/YYYY')
-            headers['X-OIN-Acquisition-End'] = end.format('YYYY-MM-DDTHH:mm:ssZZ')
+            headers['X-OIN-Acquisition-End'] = end.format(
+                'YYYY-MM-DDTHH:mm:ssZZ')
 
         # Bing Maps-compatibility (JOSM uses this)
         headers['X-VE-TILEMETA-CaptureDatesRange'] = capture_range
@@ -179,7 +189,7 @@ def render(z, x, y, scale=1, **kwargs):
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.<ext>')
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
-def tile(id, z, x, y, **kwargs):
+def tile(id, z, x, y, **kwargs): # noqa
     meta = get_metadata(id, **kwargs)
     (content_type, tile) = read_tile(meta, Tile(x, y, z), **kwargs)
 
@@ -190,7 +200,8 @@ def tile(id, z, x, y, **kwargs):
     if meta['meta'].get('oinMetadataUrl'):
         headers['X-OIN-Metadata-URL'] = meta['meta'].get('oinMetadataUrl')
 
-    if meta['meta'].get('acquisitionStart') or meta['meta'].get('acquisitionEnd'):
+    if meta['meta'].get('acquisitionStart') or \
+       meta['meta'].get('acquisitionEnd'):
         start = meta['meta'].get('acquisitionStart')
         end = meta['meta'].get('acquisitionEnd')
 
@@ -198,19 +209,24 @@ def tile(id, z, x, y, **kwargs):
             start = arrow.get(start)
             end = arrow.get(end)
 
-            capture_range = '{}-{}'.format(start.format('M/D/YYYY'), end.format('M/D/YYYY'))
-            headers['X-OIN-Acquisition-Start'] = start.format('YYYY-MM-DDTHH:mm:ssZZ')
-            headers['X-OIN-Acquisition-End'] = end.format('YYYY-MM-DDTHH:mm:ssZZ')
+            capture_range = '{}-{}'.format(
+                start.format('M/D/YYYY'), end.format('M/D/YYYY'))
+            headers['X-OIN-Acquisition-Start'] = start.format(
+                'YYYY-MM-DDTHH:mm:ssZZ')
+            headers['X-OIN-Acquisition-End'] = end.format(
+                'YYYY-MM-DDTHH:mm:ssZZ')
         elif start:
             start = arrow.get(start)
 
             capture_range = start.format('M/D/YYYY')
-            headers['X-OIN-Acquisition-Start'] = start.format('YYYY-MM-DDTHH:mm:ssZZ')
+            headers['X-OIN-Acquisition-Start'] = start.format(
+                'YYYY-MM-DDTHH:mm:ssZZ')
         elif end:
             end = arrow.get(end)
 
             capture_range = end.format('M/D/YYYY')
-            headers['X-OIN-Acquisition-End'] = end.format('YYYY-MM-DDTHH:mm:ssZZ')
+            headers['X-OIN-Acquisition-End'] = end.format(
+                'YYYY-MM-DDTHH:mm:ssZZ')
 
         # Bing Maps-compatibility (JOSM uses this)
         headers['X-VE-TILEMETA-CaptureDatesRange'] = capture_range
@@ -229,7 +245,7 @@ def tile(id, z, x, y, **kwargs):
 @app.route('/<renderer>/')
 @app.route('/<id>/<int:scene_idx>/')
 @app.route('/<id>/<int:scene_idx>/<image_id>/')
-def meta(**kwargs):
+def meta(**kwargs): # noqa
     meta = {
         'minzoom': 0,
         'maxzoom': 22,
@@ -238,7 +254,8 @@ def meta(**kwargs):
 
     with app.app_context():
         meta['tiles'] = [
-            '{}{{z}}/{{x}}/{{y}}.png'.format(url_for('meta', _external=True, **kwargs))
+            '{}{{z}}/{{x}}/{{y}}.png'.format(
+                url_for('meta', _external=True, **kwargs))
         ]
 
     return jsonify(meta)
@@ -246,7 +263,7 @@ def meta(**kwargs):
 
 @rr_cache()
 @app.route('/<renderer>/wmts')
-def renderer_wmts(renderer, **kwargs):
+def renderer_wmts(renderer, **kwargs): # noqa
     with app.app_context():
         meta = {
             'minzoom': 0,
@@ -257,7 +274,17 @@ def renderer_wmts(renderer, **kwargs):
         }
 
         # TODO pull the extension and content-type from the renderer module
-        return render_template('wmts.xml', id='GeoTIFF', meta=meta, base_url=url_for('meta', renderer=renderer, _external=True, **kwargs), **kwargs), 200, {
+        return render_template(
+            'wmts.xml',
+            id='GeoTIFF',  # TODO name
+            meta=meta,
+            base_url=url_for(
+                'meta',
+                renderer=renderer,
+                _external=True,
+                **kwargs
+            ), **kwargs
+        ), 200, {
             'Content-Type': 'application/xml'
         }
 
@@ -265,9 +292,19 @@ def renderer_wmts(renderer, **kwargs):
 @rr_cache()
 @app.route('/<id>/<int:scene_idx>/wmts')
 @app.route('/<id>/<int:scene_idx>/<image_id>/wmts')
-def wmts(id, **kwargs):
+def wmts(id, **kwargs): # noqa
     with app.app_context():
-        return render_template('wmts.xml', id=get_id(id, **kwargs), meta=get_metadata(id, **kwargs), base_url=url_for('meta', id=id, _external=True, **kwargs), **kwargs), 200, {
+        return render_template(
+            'wmts.xml',
+            id=get_id(id, **kwargs),
+            meta=get_metadata(id, **kwargs),
+            base_url=url_for(
+                'meta',
+                id=id,
+                _external=True,
+                **kwargs
+            ), **kwargs
+        ), 200, {
             'Content-Type': 'application/xml'
         }
 
@@ -276,15 +313,24 @@ def wmts(id, **kwargs):
 @app.route('/<renderer>/preview')
 @app.route('/<id>/<int:scene_idx>/preview')
 @app.route('/<id>/<int:scene_idx>/<image_id>/preview')
-def preview(**kwargs):
+def preview(**kwargs): # noqa
     with app.app_context():
-        return render_template('preview.html', tilejson_url=url_for('meta', _external=True, _scheme='', **kwargs), **kwargs), 200, {
+        return render_template(
+            'preview.html',
+            tilejson_url=url_for(
+                'meta',
+                _external=True,
+                _scheme='',
+                **kwargs
+            ),
+            **kwargs
+        ), 200, {
             'Content-Type': 'text/html'
         }
 
 
 @app.route('/favicon.ico')
-def favicon():
+def favicon(): # noqa
     return '', 404
 
 
