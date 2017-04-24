@@ -131,10 +131,10 @@ def render(z, x, y, scale=1, **kwargs):
     finally:
         pool.putconn(conn)
 
-    tile = read_tile(meta, t, scale=scale, **kwargs)
+    (content_type, tile) = read_tile(meta, t, scale=scale, **kwargs)
 
     headers = {
-        'Content-Type': 'image/png',
+        'Content-Type': content_type,
     }
 
     if meta['meta'].get('oinMetadataUrl'):
@@ -181,10 +181,10 @@ def render(z, x, y, scale=1, **kwargs):
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
 def tile(id, z, x, y, **kwargs):
     meta = get_metadata(id, **kwargs)
-    tile = read_tile(meta, Tile(x, y, z), **kwargs)
+    (content_type, tile) = read_tile(meta, Tile(x, y, z), **kwargs)
 
     headers = {
-        'Content-Type': 'image/png',
+        'Content-Type': content_type,
     }
 
     if meta['meta'].get('oinMetadataUrl'):

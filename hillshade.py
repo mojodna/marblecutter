@@ -91,7 +91,7 @@ def render(tile, (data, buffers)):
         format='png',
     )
 
-    return out.getvalue()
+    return ('image/png', out.getvalue())
 
 # TODO get scale from entrypoint
 def render_hillshade(tile, data, buffers, dx, dy, scale=1, resample=True, add_slopeshade=True):

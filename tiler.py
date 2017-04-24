@@ -391,4 +391,4 @@ def read_tile(meta, tile, renderer='hillshade', scale=1, **kwargs):
     im = Image.fromarray(imgarr, 'RGBA')
     im.save(out, 'png')
 
-    return out.getvalue()
+    return ('image/png', out.getvalue())

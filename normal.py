@@ -22,7 +22,7 @@ def render(tile, (data, buffers)):
     im = Image.fromarray(imgarr, 'RGBA')
     im.save(out, 'png')
 
-    return out.getvalue()
+    return ('image/png', out.getvalue())
 
 
 # Generate a table of heights suitable for use as hypsometric tinting. These
