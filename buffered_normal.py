@@ -13,6 +13,7 @@ from PIL import Image
 LOG = logging.getLogger(__name__)
 
 BUFFER = 4
+COLLAR = 2
 
 
 def render(tile, (data, buffers)):
@@ -108,4 +109,7 @@ def render_normal(tile, data, buffers):
     # corresponds to x, y, z, h where x, y and z are the respective
     # components of the normal, and h is an index into a hypsometric tint
     # table (see HEIGHT_TABLE).
-    return np.dstack((img, hyps))
+    output = np.dstack((img, hyps))
+
+    buffers = map(lambda x: x - COLLAR, buffers)
+    return output[buffers[0]:output.shape[0] - buffers[2], buffers[1]:output.shape[1] - buffers[3]]
