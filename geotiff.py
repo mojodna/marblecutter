@@ -12,8 +12,7 @@ from rasterio.io import MemoryFile
 
 BUFFER = 4
 LOG = logging.getLogger(__name__)
-# TODO use this to request the tile size
-TILE_SIZE = 1024
+SCALE = 2 # always generate 512x512 files
 
 WEB_MERCATOR_CRS = CRS({'init': 'epsg:3857'})
 

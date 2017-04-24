@@ -357,6 +357,7 @@ def read_tile(meta, tile, renderer='hillshade', scale=1, **kwargs):
                 tile.y, sw.y, ne.y))
 
     buffer = getattr(renderer, 'BUFFER', 0)
+    scale = getattr(renderer, 'SCALE', scale)
 
     (data, buffers) = render_tile(meta, tile, scale=scale, buffer=buffer)
 

@@ -10,8 +10,6 @@ from PIL import Image
 # include buffers so that interpolation occurs properly
 BUFFER = 4
 LOG = logging.getLogger(__name__)
-# TODO use this to request the tile size
-TILE_SIZE = 1024
 
 
 def render(tile, (data, buffers)):
