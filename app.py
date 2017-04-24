@@ -245,6 +245,24 @@ def meta(**kwargs):
 
 
 @rr_cache()
+@app.route('/<renderer>/wmts')
+def renderer_wmts(renderer, **kwargs):
+    with app.app_context():
+        meta = {
+            'minzoom': 0,
+            'maxzoom': 22,
+            'bounds': [-180, -85.05113, 180, 85.05113],
+            'name': 'Mapzen Elevation',
+            'meta': {}
+        }
+
+        # TODO pull the extension and content-type from the renderer module
+        return render_template('wmts.xml', id='GeoTIFF', meta=meta, base_url=url_for('meta', renderer=renderer, _external=True, **kwargs), **kwargs), 200, {
+            'Content-Type': 'application/xml'
+        }
+
+
+@rr_cache()
 @app.route('/<id>/<int:scene_idx>/wmts')
 @app.route('/<id>/<int:scene_idx>/<image_id>/wmts')
 def wmts(id, **kwargs):

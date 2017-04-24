@@ -7,12 +7,12 @@
     xsi:schemaLocation="http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd"
     version="1.0.0">
     <ows:ServiceIdentification>
-        <ows:Title>OpenAerialMap</ows:Title>
+        <ows:Title>Mapzen Elevation</ows:Title>
         <ows:ServiceType>OGC WMTS</ows:ServiceType>
         <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
         <ows:ServiceProvider>
-           <ows:ProviderName>OpenAerialMap</ows:ProviderName>
-           <ows:ProviderSite xlink:href="https://openaerialmap.org/" />
+           <ows:ProviderName>Mapzen</ows:ProviderName>
+           <ows:ProviderSite xlink:href="https://mapzen.com/" />
            <ows:ServiceContact />
         </ows:ServiceProvider>
     </ows:ServiceIdentification>
@@ -21,7 +21,7 @@
         <ows:Operation name="GetCapabilities">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="{{ base_url }}/wmts">
+                    <ows:Get xlink:href="{{ base_url }}wmts">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>RESTful</ows:Value>
@@ -34,7 +34,7 @@
         <ows:Operation name="GetTile">
             <ows:DCP>
                 <ows:HTTP>
-                    <ows:Get xlink:href="{{ base_url }}/wmts">
+                    <ows:Get xlink:href="{{ base_url }}wmts">
                         <ows:Constraint name="GetEncoding">
                             <ows:AllowedValues>
                                 <ows:Value>RESTful</ows:Value>
@@ -58,11 +58,11 @@
             <Style isDefault="true">
                 <ows:Identifier>default</ows:Identifier>
             </Style>
-            <Format>image/png</Format>
+            <Format>image/tiff</Format>
             <TileMatrixSetLink>
                 <TileMatrixSet>GoogleMapsCompatible</TileMatrixSet>
             </TileMatrixSetLink>
-            <ResourceURL format="image/png" resourceType="tile" template="{{ base_url }}/{TileMatrix}/{TileCol}/{TileRow}.png"/>
+            <ResourceURL format="image/tiff" resourceType="tile" template="{{ base_url }}{TileMatrix}/{TileCol}/{TileRow}.tif"/>
         </Layer>
         <TileMatrixSet>
           <ows:Title>GoogleMapsCompatible</ows:Title>
@@ -75,13 +75,13 @@
               <ows:Identifier>{{ zoom }}</ows:Identifier>
               <ScaleDenominator>{{ 559082264.0287178 / 2 ** zoom }}</ScaleDenominator>
               <TopLeftCorner>-20037508.34278925 20037508.34278925</TopLeftCorner>
-              <TileWidth>256</TileWidth>
-              <TileHeight>256</TileHeight>
+              <TileWidth>512</TileWidth>
+              <TileHeight>512</TileHeight>
               <MatrixWidth>{{ 2 ** zoom }}</MatrixWidth>
               <MatrixHeight>{{ 2 ** zoom }}</MatrixHeight>
           </TileMatrix>
         {% endfor %}
         </TileMatrixSet>
       </Contents>
-    <ServiceMetadataURL xlink:href="{{ base_url }}/wmts"/>
+    <ServiceMetadataURL xlink:href="{{ base_url }}wmts"/>
 </Capabilities>
