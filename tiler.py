@@ -276,7 +276,6 @@ def render_tile(meta, tile, scale=1, buffer=0):
             if buffers is None:
                 buffers = b
 
-            # TODO buffers (and shapes) won't match if on the edges of the world
             if buffers != b:
                 raise Exception(
                     'Buffer sizes should always match: {} != {}'.format(
