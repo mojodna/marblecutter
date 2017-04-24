@@ -67,6 +67,7 @@ def get_source(path):
 
 
 def read_window((window, buffers, window_scale), src_url, mask_url=None, scale=1): # noqa
+    # TODO create buffers when interpolating even if buffers = 0
     target_tile_width = tile_width = (256 + buffers[0] + buffers[2]) * scale
     target_tile_height = tile_height = (256 + buffers[1] + buffers[3]) * scale
 
