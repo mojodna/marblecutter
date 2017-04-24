@@ -76,10 +76,10 @@ def handle_ioerror(error):
 
 
 @rr_cache()
-@app.route('/<int:z>/<int:x>/<int:y>.png')
-@app.route('/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-@app.route('/<renderer>/<int:z>/<int:x>/<int:y>.png')
-@app.route('/<renderer>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route('/<int:z>/<int:x>/<int:y>.<ext>')
+@app.route('/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
+@app.route('/<renderer>/<int:z>/<int:x>/<int:y>.<ext>')
+@app.route('/<renderer>/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
 def render(z, x, y, scale=1, **kwargs):
     t = Tile(x, y, z)
     bounds = mercantile.bounds(*t)
@@ -175,10 +175,10 @@ def render(z, x, y, scale=1, **kwargs):
 
 
 @rr_cache()
-@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
-@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
-@app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
-@app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.<ext>')
+@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
+@app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.<ext>')
+@app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
 def tile(id, z, x, y, **kwargs):
     meta = get_metadata(id, **kwargs)
     (content_type, tile) = read_tile(meta, Tile(x, y, z), **kwargs)
