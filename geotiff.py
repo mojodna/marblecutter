@@ -53,4 +53,4 @@ def render(tile, (data, buffers)):
                                buffers[0]:data.shape[0] - buffers[2],
                                buffers[1]:data.shape[1] - buffers[3]])
 
-        return ('text/plain', memfile.read())
+        return ('image/tiff', memfile.read())
