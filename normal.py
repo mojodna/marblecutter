@@ -16,7 +16,10 @@ BUFFER = 4
 
 
 def render(tile, (data, buffers)):
-    imgarr = render_normal(tile, data[0], buffers)
+    output = render_normal(tile, data[0], buffers)
+
+    imgarr = output[buffers[0]:output.shape[0] - buffers[2],
+                    buffers[1]:output.shape[1] - buffers[3]]
 
     out = StringIO()
     im = Image.fromarray(imgarr, 'RGBA')
@@ -108,7 +111,4 @@ def render_normal(tile, data, buffers):
     # corresponds to x, y, z, h where x, y and z are the respective
     # components of the normal, and h is an index into a hypsometric tint
     # table (see HEIGHT_TABLE).
-    output = np.dstack((img, hyps))
-
-    (left_buffer, bottom_buffer, right_buffer, top_buffer) = buffers
-    return output[left_buffer:output.shape[0] - right_buffer, top_buffer:output.shape[1] - bottom_buffer]
+    return np.dstack((img, hyps))
