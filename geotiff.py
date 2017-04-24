@@ -2,7 +2,6 @@
 from __future__ import division
 
 import logging
-import os
 
 import mercantile
 import numpy as np
@@ -15,7 +14,6 @@ BUFFER = 4
 LOG = logging.getLogger(__name__)
 # TODO use this to request the tile size
 TILE_SIZE = 1024
-TMP_PATH = "/vsimem/tmp-{}".format(os.getpid())
 
 WEB_MERCATOR_CRS = CRS({'init': 'epsg:3857'})
 
