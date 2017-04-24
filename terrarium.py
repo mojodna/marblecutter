@@ -9,6 +9,7 @@ from PIL import Image
 
 # include buffers so that interpolation occurs properly
 BUFFER = 4
+CONTENT_TYPE = 'image/png'
 LOG = logging.getLogger(__name__)
 
 
@@ -23,7 +24,6 @@ def render(tile, (data, buffers)):
 
     # crop image since we don't care about buffers
     pixels = data[0][buffers[0]:data.shape[0] - buffers[2], buffers[1]:data.shape[1] - buffers[3]]
-    # pixels = data[0]
     pixels.fill_value = 0
 
     # transform to uheight, clamping the range
@@ -38,4 +38,4 @@ def render(tile, (data, buffers)):
     im = Image.fromarray(np.dstack((r, g, b)), 'RGB')
     im.save(out, 'png')
 
-    return ('image/png', out.getvalue())
+    return (CONTENT_TYPE, out.getvalue())

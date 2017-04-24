@@ -13,6 +13,7 @@ from PIL import Image
 LOG = logging.getLogger(__name__)
 
 BUFFER = 4
+CONTENT_TYPE = 'image/png'
 
 
 def render(tile, (data, buffers)):
@@ -25,7 +26,7 @@ def render(tile, (data, buffers)):
     im = Image.fromarray(imgarr, 'RGBA')
     im.save(out, 'png')
 
-    return ('image/png', out.getvalue())
+    return (CONTENT_TYPE, out.getvalue())
 
 
 # Generate a table of heights suitable for use as hypsometric tinting. These

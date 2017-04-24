@@ -1,3 +1,4 @@
+# noqa
 # coding=utf-8
 from __future__ import division
 
@@ -5,19 +6,20 @@ import logging
 
 import mercantile
 import numpy as np
-import rasterio
 from rasterio import transform
 from rasterio.crs import CRS
 from rasterio.io import MemoryFile
 
+# TODO validate request filenames + extensions
 BUFFER = 4
+CONTENT_TYPE = 'image/tiff'
 LOG = logging.getLogger(__name__)
-SCALE = 2 # always generate 512x512 files
+SCALE = 2  # always generate 512x512 files
 
 WEB_MERCATOR_CRS = CRS({'init': 'epsg:3857'})
 
 
-def render(tile, (data, buffers)):
+def render(tile, (data, buffers)): # noqa
     (count, width, height) = data.shape
     width -= buffers[0] + buffers[2]
     height -= buffers[1] + buffers[3]
@@ -45,7 +47,10 @@ def render(tile, (data, buffers)):
         'height': height,
         'width': width,
         'tiled': True,
-        'transform': transform.from_bounds(*mercantile.bounds(tile), width=width, height=height),
+        'transform': transform.from_bounds(
+            *mercantile.bounds(tile),
+            width=width,
+            height=height),
     }
 
     with MemoryFile() as memfile:
@@ -54,4 +59,4 @@ def render(tile, (data, buffers)):
                                buffers[0]:data.shape[0] - buffers[2],
                                buffers[1]:data.shape[1] - buffers[3]])
 
-        return ('image/tiff', memfile.read())
+        return (CONTENT_TYPE, memfile.read())

@@ -14,6 +14,7 @@ LOG = logging.getLogger(__name__)
 
 BUFFER = 4
 COLLAR = 2
+CONTENT_TYPE = 'image/png'
 
 
 def render(tile, (data, buffers)): # noqa
@@ -27,4 +28,4 @@ def render(tile, (data, buffers)): # noqa
     im = Image.fromarray(imgarr, 'RGBA')
     im.save(out, 'png')
 
-    return ('image/png', out.getvalue())
+    return (CONTENT_TYPE, out.getvalue())
