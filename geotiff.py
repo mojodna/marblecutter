@@ -19,6 +19,8 @@ WEB_MERCATOR_CRS = CRS({'init': 'epsg:3857'})
 
 def render(tile, (data, buffers)):
     (count, width, height) = data.shape
+    width -= buffers[0] + buffers[2]
+    height -= buffers[1] + buffers[3]
 
     if np.issubdtype(data.dtype, np.float):
         info = np.finfo(data.dtype)
