@@ -58,11 +58,11 @@
             <Style isDefault="true">
                 <ows:Identifier>default</ows:Identifier>
             </Style>
-            <Format>image/tiff</Format>
+            <Format>{{ content_type }}</Format>
             <TileMatrixSetLink>
                 <TileMatrixSet>GoogleMapsCompatible</TileMatrixSet>
             </TileMatrixSetLink>
-            <ResourceURL format="image/tiff" resourceType="tile" template="{{ base_url }}{TileMatrix}/{TileCol}/{TileRow}.tif"/>
+            <ResourceURL format="{{ content_type }}" resourceType="tile" template="{{ base_url }}{TileMatrix}/{TileCol}/{TileRow}@2x.{{ ext }}"/>
         </Layer>
         <TileMatrixSet>
           <ows:Title>GoogleMapsCompatible</ows:Title>

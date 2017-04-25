@@ -11,7 +11,9 @@ from PIL import Image
 # include buffers so that interpolation occurs properly
 BUFFER = 4
 CONTENT_TYPE = 'image/png'
+EXT = 'png'
 LOG = logging.getLogger(__name__)
+NAME = 'Terrarium'
 
 
 def render(tile, (data, buffers)): # noqa

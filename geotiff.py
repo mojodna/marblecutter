@@ -13,7 +13,9 @@ from rasterio.io import MemoryFile
 # TODO validate request filenames + extensions
 BUFFER = 4
 CONTENT_TYPE = 'image/tiff'
+EXT = 'tif'
 LOG = logging.getLogger(__name__)
+NAME = 'GeoTIFF'
 SCALE = 2  # always generate 512x512 files
 
 WEB_MERCATOR_CRS = CRS({'init': 'epsg:3857'})

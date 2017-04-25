@@ -14,7 +14,13 @@ from mercantile import Tile
 from psycopg2.pool import SimpleConnectionPool
 from werkzeug.wsgi import DispatcherMiddleware
 
-from tiler import InvalidTileRequest, NoDataException, get_metadata, read_tile
+from tiler import (
+    InvalidTileRequest,
+    NoDataException,
+    get_metadata,
+    get_renderer,
+    read_tile,
+)
 
 
 APPLICATION_ROOT = os.environ.get('APPLICATION_ROOT', '')
@@ -77,13 +83,17 @@ def handle_ioerror(error): # noqa
 
 
 @rr_cache()
-@app.route('/<int:z>/<int:x>/<int:y>.<ext>')
-@app.route('/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
 @app.route('/<renderer>/<int:z>/<int:x>/<int:y>.<ext>')
 @app.route('/<renderer>/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
-def render(z, x, y, scale=1, **kwargs): # noqa
-    LOG.warn('%s/%s/%s/%s scale=%d', kwargs['renderer'], z, x, y, scale)
+def render(renderer, z, x, y, ext, scale=1, **kwargs): # noqa
+    render_module = get_renderer(renderer)
+
+    if ext != render_module.EXT:
+        raise InvalidTileRequest('Invalid format; should be {}'.format(
+            render_module.EXT))
+
     t = Tile(x, y, z)
+
     bounds = mercantile.bounds(*t)
 
     query = """
@@ -135,7 +145,13 @@ def render(z, x, y, scale=1, **kwargs): # noqa
     finally:
         pool.putconn(conn)
 
-    (content_type, tile) = read_tile(meta, t, scale=scale, **kwargs)
+    (content_type, tile) = read_tile(
+        meta,
+        t,
+        renderer=renderer,
+        scale=scale,
+        **kwargs
+    )
 
     headers = {
         'Content-Type': content_type,
@@ -264,6 +280,8 @@ def meta(**kwargs): # noqa
 @rr_cache()
 @app.route('/<renderer>/wmts')
 def renderer_wmts(renderer, **kwargs): # noqa
+    render_module = get_renderer(renderer)
+
     with app.app_context():
         meta = {
             'minzoom': 0,
@@ -276,7 +294,9 @@ def renderer_wmts(renderer, **kwargs): # noqa
         # TODO pull the extension and content-type from the renderer module
         return render_template(
             'wmts.xml',
-            id='GeoTIFF',  # TODO name
+            content_type=render_module.CONTENT_TYPE,
+            ext=render_module.EXT,
+            id=render_module.NAME,
             meta=meta,
             base_url=url_for(
                 'meta',

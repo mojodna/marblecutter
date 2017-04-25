@@ -332,9 +332,12 @@ def get_bounds(id, **kwargs): # noqa
     return get_metadata(id, **kwargs)['bounds']
 
 
+def get_renderer(renderer):
+    return importlib.import_module(renderer)
+
 def read_tile(meta, tile, renderer='hillshade', scale=1, **kwargs):
     """Fetch tile data and render as a PNG."""
-    renderer = importlib.import_module(renderer)
+    renderer = get_renderer(renderer)
     maxzoom = int(meta['maxzoom'])
     minzoom = int(meta['minzoom'])
 

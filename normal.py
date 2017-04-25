@@ -14,6 +14,8 @@ LOG = logging.getLogger(__name__)
 
 BUFFER = 4
 CONTENT_TYPE = 'image/png'
+EXT = 'png'
+NAME = 'Normal'
 
 
 def render(tile, (data, buffers)):

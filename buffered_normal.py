@@ -15,6 +15,8 @@ LOG = logging.getLogger(__name__)
 BUFFER = 4
 COLLAR = 2
 CONTENT_TYPE = 'image/png'
+EXT = 'png'
+NAME = 'Buffered Normal'
 
 
 def render(tile, (data, buffers)): # noqa

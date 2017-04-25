@@ -18,6 +18,9 @@ from rasterio.enums import Resampling
 from rasterio.warp import reproject
 
 BUFFER = 4
+CONTENT_TYPE = 'image/png'
+EXT = 'png'
+NAME = 'Hillshade'
 
 
 # from http://www.shadedrelief.com/web_relief/
