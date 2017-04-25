@@ -73,7 +73,7 @@
         {% for zoom in range(meta['minzoom'], meta['maxzoom'] + 1) %}
           <TileMatrix>
               <ows:Identifier>{{ zoom }}</ows:Identifier>
-              <ScaleDenominator>{{ 559082264.0287178 / 2 ** zoom }}</ScaleDenominator>
+              <ScaleDenominator>{{ 279541132.015 / 2 ** zoom }}</ScaleDenominator>
               <TopLeftCorner>-20037508.34278925 20037508.34278925</TopLeftCorner>
               <TileWidth>512</TileWidth>
               <TileHeight>512</TileHeight>
