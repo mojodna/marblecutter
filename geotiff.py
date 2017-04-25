@@ -33,7 +33,7 @@ def render(tile, (data, buffers)): # noqa
         info = np.iinfo(data.dtype)
         predictor = 2
 
-    bounds = list(mercantile.bounds(tile))
+    bounds = mercantile.bounds(tile)
     m_bounds = mercantile.xy(*bounds[0:2]) + mercantile.xy(*bounds[2:4])
 
     # use the min value unless it's 0, in which case use the max
