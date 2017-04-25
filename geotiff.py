@@ -59,7 +59,7 @@ def render(tile, (data, buffers)): # noqa
     with MemoryFile() as memfile:
         with memfile.open(**meta) as dataset:
             dataset.write(data[:,
-                               buffers[0]:data.shape[1] - buffers[2],
-                               buffers[1]:data.shape[2] - buffers[3]])
+                               buffers[3]:data.shape[1] - buffers[1],
+                               buffers[0]:data.shape[2] - buffers[2]])
 
         return (CONTENT_TYPE, memfile.read())

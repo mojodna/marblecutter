@@ -19,8 +19,8 @@ CONTENT_TYPE = 'image/png'
 def render(tile, (data, buffers)):
     output = render_normal(tile, data[0], buffers)
 
-    imgarr = output[buffers[0]:output.shape[0] - buffers[2],
-                    buffers[1]:output.shape[1] - buffers[3]]
+    imgarr = output[buffers[3]:output.shape[0] - buffers[1],
+                    buffers[0]:output.shape[1] - buffers[2]]
 
     out = StringIO()
     im = Image.fromarray(imgarr, 'RGBA')

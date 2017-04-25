@@ -212,8 +212,7 @@ def render_hillshade(tile, data, buffers, dx, dy, scale=1, resample=True, add_sl
         # scale hillshade values (0.0-1.0) to integers (0-255)
         hs = (255.0 * hs).astype(np.uint8)
 
-    (left_buffer, bottom_buffer, right_buffer, top_buffer) = buffers
-    return hs[left_buffer:hs.shape[0] - right_buffer, top_buffer:hs.shape[1] - bottom_buffer]
+    return hs[buffers[3]:hs.shape[0] - buffers[1], buffers[0]:hs.shape[1] - buffers[2]]
 
 
 def _hillshade(elevation, azdeg=315, altdeg=45, vert_exag=1, dx=1, dy=1, fraction=1.):

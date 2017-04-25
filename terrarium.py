@@ -24,8 +24,8 @@ def render(tile, (data, buffers)): # noqa
     # lower than any depth on Earth.
 
     # crop image since we don't care about buffers
-    pixels = data[0][buffers[0]:data.shape[0] - buffers[2],
-                     buffers[1]:data.shape[1] - buffers[3]]
+    pixels = data[0][buffers[3]:data.shape[0] - buffers[1],
+                     buffers[0]:data.shape[1] - buffers[2]]
     pixels.fill_value = 0
 
     # transform to uheight, clamping the range

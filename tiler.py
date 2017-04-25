@@ -127,7 +127,7 @@ def read_window((window, buffers, window_scale), src_url, mask_url=None, scale=1
                 offsets[2:] = map(lambda (x, y): x - y, zip(
                     data.shape, offsets[2:]))
 
-                data = np.ma.masked_array([data], mask=[mask])[:, offsets[0]:offsets[2], offsets[1]:offsets[3]]
+                data = np.ma.masked_array([data], mask=[mask])[:, offsets[1]:offsets[3], offsets[0]:offsets[2]]
             else:
                 data = np.ma.masked_array(data, mask=mask)
 
@@ -207,10 +207,10 @@ def make_window(src_tile_zoom, tile, buffer=0):
         if window[0][1] < top:
             bottom_buffer = buffer
 
-        window[0][0] -= top_buffer * math.ceil(scale)
-        window[0][1] += bottom_buffer * math.ceil(scale)
         window[1][0] -= left_buffer * math.ceil(scale)
         window[1][1] += right_buffer * math.ceil(scale)
+        window[0][0] -= top_buffer * math.ceil(scale)
+        window[0][1] += bottom_buffer * math.ceil(scale)
 
     return (window, (left_buffer, bottom_buffer, right_buffer, top_buffer), scale)
 

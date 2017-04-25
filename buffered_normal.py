@@ -19,8 +19,8 @@ CONTENT_TYPE = 'image/png'
 
 def render(tile, (data, buffers)): # noqa
     buffers = map(lambda x: x - COLLAR, buffers)
-    data = data[0][buffers[0]:data.shape[1] - buffers[2],
-                   buffers[1]:data.shape[2] - buffers[3]]
+    data = data[0][buffers[3]:data.shape[1] - buffers[1],
+                   buffers[0]:data.shape[2] - buffers[2]]
 
     imgarr = render_normal(tile, data, buffers)
 
