@@ -90,7 +90,7 @@ def read_window((window, buffers, window_scale), src_url, mask_url=None, scale=1
         # TODO read the data and the mask in parallel
         if mask_url:
             data = src.read(
-                out_shape=(src.count, tile_width, tile_height),
+                out_shape=(src.count, tile_height, tile_width),
                 window=window,
             )
 
@@ -134,7 +134,7 @@ def read_window((window, buffers, window_scale), src_url, mask_url=None, scale=1
             # apply external masks
             mask = get_source(mask_url)
             mask_data = mask.read(
-                out_shape=(1, target_tile_width, target_tile_height),
+                out_shape=(1, target_tile_height, target_tile_width),
                 window=window,
             ).astype(np.bool)
 
@@ -143,7 +143,7 @@ def read_window((window, buffers, window_scale), src_url, mask_url=None, scale=1
             # TODO eventually we're going to want to port the interpolation
             # from ^^
             data = src.read(
-                out_shape=(src.count, tile_width, tile_height),
+                out_shape=(src.count, tile_height, tile_width),
                 window=window,
             )
 
