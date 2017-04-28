@@ -28,13 +28,13 @@ def render(tile, (data, buffers)): # noqa
     if buffers[0] == 0:
         # empty left
         cols = data[:, :COLLAR]
-        data = np.hstack((data, cols))
+        data = np.hstack((cols, data))
         pass
 
     if buffers[2] == 0:
         # empty right
         cols = data[:, -COLLAR:]
-        data = np.hstack((cols, data))
+        data = np.hstack((data, cols))
         pass
 
     if buffers[3] == 0:
