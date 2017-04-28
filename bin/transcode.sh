@@ -14,6 +14,20 @@ if [ -z $output ]; then
   output=$(basename $input)
 fi
 
+ext=${input##*.}
+
+if [[ "$ext" == "zip" ]]; then
+  # assume it's a zipped TIFF
+  inner_source=$(unzip -ql ${input} | grep tif | head -1 | awk '{print $4}')
+
+  if [[ -z "$inner_source" ]]; then
+    >&2 echo "Could not find a TIFF inside ${input}"
+    exit 1
+  fi
+
+  input="zip://${input}!${inner_source}"
+fi
+
 info=$(rio info $input 2> /dev/null)
 count=$(jq .count <<< $info)
 dtype=$(jq -r .dtype <<< $info)
@@ -31,6 +45,8 @@ if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
   input="/vsicurl/$input"
 elif [[ $input =~ "s3://" ]]; then
   input=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $input)
+elif [[ $input =~ "zip://" ]]; then
+  input=$(sed 's|zip://\(.*\)!\(.*\)|/vsizip/\1/\2|' <<< $input)
 fi
 
 

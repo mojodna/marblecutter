@@ -50,16 +50,15 @@ trap cleanup_on_failure ERR
 
 __dirname=$(cd $(dirname "$0"); pwd -P)
 PATH=$__dirname:${__dirname}/../node_modules/.bin:$PATH
+filename=$(basename $input)
+ext="${filename##*.}"
 base=$(mktemp)
-source=$base
+source="${base}.${ext}"
 to_clean+=($source)
 intermediate=${base}-intermediate.tif
 to_clean+=($intermediate)
 gdal_output=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $output)
 tiler_url=$(sed "s|s3://[^/]*|${TILER_BASE_URL}|" <<< $output)
-
-filename=$(basename $input)
-ext="${filename##*.}"
 
 # 0. download source (if appropriate)
 if [[ "$input" =~ ^s3:// || "$input" =~ s3\.amazonaws\.com ]]; then
