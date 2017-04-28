@@ -1,6 +1,8 @@
 # noqa
 # coding=utf-8
 
+from __future__ import division
+
 import os
 import logging
 import urlparse
@@ -93,8 +95,18 @@ def render(renderer, z, x, y, ext, scale=1, **kwargs): # noqa
             render_module.EXT))
 
     t = Tile(x, y, z)
+    buffer = getattr(render_module, 'BUFFER', 0)
 
-    bounds = mercantile.bounds(*t)
+    bounds = list(mercantile.bounds(*t))
+
+    pixel_width = (bounds[2] - bounds[0]) / 256
+    pixel_height = (bounds[3] - bounds[1]) / 256
+
+    # buffer bounds enough to cover <buffer> pixels
+    bounds[0] -= pixel_width * buffer
+    bounds[1] -= pixel_height * buffer
+    bounds[2] += pixel_width * buffer
+    bounds[3] += pixel_height * buffer
 
     query = """
         SELECT
