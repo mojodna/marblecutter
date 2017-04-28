@@ -10,8 +10,7 @@ from rasterio import transform
 from rasterio.crs import CRS
 from rasterio.io import MemoryFile
 
-# TODO validate request filenames + extensions
-BUFFER = 4
+BUFFER = 0
 CONTENT_TYPE = 'image/tiff'
 EXT = 'tif'
 LOG = logging.getLogger(__name__)
