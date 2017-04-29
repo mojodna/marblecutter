@@ -81,7 +81,7 @@ def handle_response_with_no_data(error): # noqa
 def handle_ioerror(error): # noqa
     LOG.warn('IOError')
     LOG.warn(error)
-    return '', 404
+    return '', 500
 
 
 @rr_cache()
