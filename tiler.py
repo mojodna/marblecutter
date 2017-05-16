@@ -7,7 +7,6 @@ from functools import partial
 import importlib
 import logging
 import math
-from multiprocessing.dummy import Pool
 import json
 from StringIO import StringIO
 import os
@@ -27,7 +26,6 @@ logging.basicConfig()
 S3 = boto3.resource("s3")
 S3_BUCKET = os.environ["S3_BUCKET"]
 S3_PREFIX = os.environ.get("S3_PREFIX", "")
-pool = Pool(100)
 
 # normalize prefix
 if S3_PREFIX == "/":
@@ -276,8 +274,7 @@ def render_tile(meta, tile, scale=1, buffer=0):
         data = None
         buffers = None
 
-        # read windows in parallel and reduce
-        for (d, b) in pool.map(partial(
+        for (d, b) in map(partial(
             read_masked_window,
             tile=tile,
             scale=scale,
