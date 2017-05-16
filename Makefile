@@ -13,6 +13,9 @@ tools:
 server: tools
 	docker build --build-arg http_proxy=http://10.0.1.43:1080 -t quay.io/mojodna/mapzen-dynamic-tiler-server -f server/Dockerfile .
 
+test:
+	python -m pytest -v -s
+
 deploy: project.json
 	apex deploy -l debug -E environment.json
 
