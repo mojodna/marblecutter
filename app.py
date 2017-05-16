@@ -305,7 +305,6 @@ def render(renderer, z, x, y, ext, scale=1, **kwargs): # noqa
     return tile, 200, headers
 
 
-@rr_cache()
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.<ext>')
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.<ext>')
