@@ -65,6 +65,7 @@ def get_source(path):
 
 
 def read_window((window, buffers, window_scale), src_url, mask_url=None, scale=1): # noqa
+    # TODO handle buffers here (remove it from make_window*)
     # TODO create buffers when interpolating even if buffers = 0
     target_tile_width = tile_width = (256 + buffers[0] + buffers[2]) * scale
     target_tile_height = tile_height = (256 + buffers[1] + buffers[3]) * scale
@@ -218,6 +219,86 @@ def make_window(src_tile_zoom, tile, buffer=0):
         window[0][1] += int(bottom_buffer * math.ceil(scale))
 
     return (window, (left_buffer, bottom_buffer, right_buffer, top_buffer), scale)
+
+
+from rasterio import warp
+from rasterio.windows import crop, from_bounds, shape
+
+CRS_4326 = {
+    'init': 'EPSG:4326'
+}
+
+
+def make_window_from_tile(tile, dst_crs, transform, buffer=0):
+    return make_window2(mercantile.bounds(tile), CRS_4326, dst_crs, transform, buffer=buffer, precision=2)
+
+
+def make_window2(bounds, src_crs, dst_crs, transform, buffer=0, dst_shape=(256, 256), precision=6):
+    """Replacement for make_window that doesn't assume src bounds or dst coordinates are Web Mercator-ish."""
+
+    # TODO this means that the dst CRS and transform are needed at window calculation time (instead of being pre-calculated and used for all sources)
+    # TODO (where) does reprojection need to happen?
+
+    # height and width of the CRS
+    ((left, right), (bottom, top)) = warp.transform(src_crs, dst_crs, bounds[::2], bounds[1::2])
+
+    window = from_bounds(
+        left,
+        bottom,
+        right,
+        top,
+        transform,
+        boundless=True,
+        precision=precision,
+    )
+
+    # fake the height/width and zero out start values
+    window = crop(window, window[0][1], window[1][1])
+
+    buffers = (buffer, ) * 4
+    # calculate scale before buffering
+    # TODO turn scale into a tuple
+    scale = shape(window)[0] / dst_shape[0]
+    # scale = 42
+
+    if buffer > 0:
+        x_scale = abs(transform.a) * (shape(window)[1] / dst_shape[1])
+        y_scale = abs(transform.e) * (shape(window)[0] / dst_shape[0])
+
+        left -= buffer * x_scale
+        right += buffer * x_scale
+        top += buffer * y_scale
+        bottom -= buffer * y_scale
+
+        window = from_bounds(
+            left,
+            bottom,
+            right,
+            top,
+            transform,
+            boundless=True,
+            precision=precision,
+        )
+
+        buffer_left, buffer_bottom, buffer_right, buffer_top = buffers
+
+        if window[0][0] <= 0:
+            buffer_top = 0
+
+        # if window[0][1] >= height:
+        #     buffer_bottom = 0
+
+        if window[1][0] <= 0:
+            buffer_left = 0
+
+        # if window[1][1] >= width:
+        #     buffer_right = 0
+
+        buffers = (buffer_left, buffer_bottom, buffer_right, buffer_top)
+        # zero out left/top buffers
+        window = crop(window, window[0][1], window[1][1])
+
+    return (window, buffers, scale)
 
 
 def read_masked_window(source, tile, scale=1, buffer=0): # noqa
