@@ -8,10 +8,10 @@ tmp := $(shell mktemp -u)
 default: tools
 
 tools:
-	docker build --build-arg http_proxy=http://10.0.1.43:1080 -t quay.io/hotosm/oam-dynamic-tiler-tools .
+	docker build --build-arg http_proxy=http://10.0.1.43:1080 -t quay.io/mojodna/mapzen-dynamic-tiler-batch .
 
 server: tools
-	docker build --build-arg http_proxy=http://10.0.1.43:1080 -t quay.io/hotosm/oam-dynamic-tiler-server -f server/Dockerfile .
+	docker build --build-arg http_proxy=http://10.0.1.43:1080 -t quay.io/mojodna/mapzen-dynamic-tiler-server -f server/Dockerfile .
 
 deploy: project.json
 	apex deploy -l debug -E environment.json
