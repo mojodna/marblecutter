@@ -2,12 +2,12 @@
     "jobDefinitionName": "transcode",
     "type": "container",
     "retryStrategy": {
-        "attempts": 5
+        "attempts": 3
     },
     "containerProperties": {
         "image": "quay.io/mojodna/mapzen-dynamic-tiler-batch",
         "vcpus": 1,
-        "memory": 3000,
+        "memory": 1500,
         "command": [
             "process.sh",
             "Ref::input",
