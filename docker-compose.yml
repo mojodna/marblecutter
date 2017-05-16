@@ -10,7 +10,7 @@ services:
     volumes:
       - .:/opt/oam-dynamic-tiler/
     ports:
-      - "8002:8000"
+      - "8000:8000"
     links:
       - postgis
     command: python app.py
