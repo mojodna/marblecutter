@@ -1,4 +1,4 @@
-FROM quay.io/hotosm/oam-dynamic-tiler-tools
+FROM quay.io/mojodna/mapzen-dynamic-tiler-batch
 MAINTAINER Seth Fitzsimmons <seth@mojodna.net>
 
 RUN \
