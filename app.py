@@ -199,6 +199,9 @@ def render(renderer, z, x, y, ext, scale=1, **kwargs): # noqa
     bounds[2] += pixel_width * buffer
     bounds[3] += pixel_height * buffer
 
+    # TODO refactor to generate tuples of bounds (usually 1, but possibly 2 to handle antimeridian discontinuities; this will help in the future when rendering arbitrary bboxes covering the antimeridian)
+    # https://github.com/fortyninemaps/picogeojson/blob/master/picogeojson/antimeridian.py
+
     query = """
         SELECT
             DISTINCT(url),
