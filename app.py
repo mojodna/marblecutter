@@ -215,7 +215,6 @@ def render(renderer, z, x, y, ext, scale=1, **kwargs): # noqa
         FROM footprints
         WHERE wkb_geometry && ST_SetSRID('BOX({1} {2}, {3} {4})'::box2d, 4326)
             AND {0} BETWEEN min_zoom AND max_zoom
-            -- AND source != 'ETOPO1'
         ORDER BY PRIORITY DESC, resolution DESC
     """.format(z, *bounds)
 
