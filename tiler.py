@@ -133,6 +133,7 @@ def read_window((window, buffers, window_scale), src_url, mask_url=None, scale=1
                 offsets[2:] = map(lambda (x, y): x - y, zip(
                     data.shape, offsets[2:]))
 
+                # TODO audit uses of masked arrays for sanity
                 data = np.ma.masked_array([data], mask=[mask])[:, offsets[1]:offsets[3], offsets[0]:offsets[2]]
             else:
                 data = np.ma.masked_array(data, mask=mask)

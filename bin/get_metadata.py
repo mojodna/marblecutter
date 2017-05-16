@@ -49,6 +49,7 @@ def get_metadata(
             with rasterio.open(scene) as src:
                 bounds = transform_bounds(src.crs, {'init': 'epsg:4326'}, *src.bounds)
                 approximate_zoom = get_zoom(scene)
+                # TODO tune this for DEM data instead
                 maxzoom = approximate_zoom + 3
                 minzoom = max(approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom), 0)
 

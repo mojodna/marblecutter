@@ -239,6 +239,7 @@ if __name__ == '__main__':
         print(url)
 
         # read a window from the source data
+        # TODO ask for a buffer here, get back an updated bounding box reflecting it
         window_data = read_window(src, bounds_4326)
 
         # reproject data into Skadi's CRS
