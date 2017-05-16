@@ -212,10 +212,10 @@ def make_window(src_tile_zoom, tile, buffer=0):
         if window[0][1] < top:
             bottom_buffer = buffer
 
-        window[1][0] -= left_buffer * math.ceil(scale)
-        window[1][1] += right_buffer * math.ceil(scale)
-        window[0][0] -= top_buffer * math.ceil(scale)
-        window[0][1] += bottom_buffer * math.ceil(scale)
+        window[1][0] -= int(left_buffer * math.ceil(scale))
+        window[1][1] += int(right_buffer * math.ceil(scale))
+        window[0][0] -= int(top_buffer * math.ceil(scale))
+        window[0][1] += int(bottom_buffer * math.ceil(scale))
 
     return (window, (left_buffer, bottom_buffer, right_buffer, top_buffer), scale)
 
