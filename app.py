@@ -5,6 +5,7 @@ from __future__ import division
 
 import os
 import logging
+import re
 import urlparse
 
 import arrow
@@ -21,6 +22,8 @@ from tiler import (
     NoDataException,
     get_metadata,
     get_renderer,
+    get_source,
+    make_window2,
     read_tile,
 )
 
@@ -84,7 +87,95 @@ def handle_ioerror(error): # noqa
     return '', 500
 
 
-@rr_cache()
+HALF_ARC_SEC = (1.0/3600.0)*.5
+
+def _bbox(x, y):
+    return (
+        (x - 180) - HALF_ARC_SEC,
+        (y - 90) - HALF_ARC_SEC,
+        (x - 179) + HALF_ARC_SEC,
+        (y - 89) + HALF_ARC_SEC)
+
+
+SKADI_TILE_NAME_PATTERN = re.compile('^([NS])([0-9]{2})([EW])([0-9]{3})$')
+def _parse_skadi_tile(tile_name):
+    m = SKADI_TILE_NAME_PATTERN.match(tile_name)
+    if m:
+        y = int(m.group(2))
+        x = int(m.group(4))
+        if m.group(1) == 'S':
+            y = -y
+        if m.group(3) == 'W':
+            x = -x
+        return (x + 180, y + 90)
+    return None
+
+
+@app.route('/skadi/<_>/<tile>.hgt.gz')
+def render_skadi(_, tile): # noqa
+    LOG.warn('tile: %s', tile)
+    (x, y) = _parse_skadi_tile(tile)
+
+    LOG.warn('x: %f, y: %f', x, y)
+
+    bounds = _bbox(x, y)
+
+    LOG.warn('bbox: %s', bounds)
+
+    query = """
+        SELECT
+            DISTINCT(url),
+            filename,
+            source,
+            resolution,
+            min_zoom,
+            max_zoom,
+            priority,
+            approximate_zoom
+        FROM footprints
+        WHERE wkb_geometry && ST_SetSRID('BOX({0} {1}, {2} {3})'::box2d, 4326)
+        ORDER BY PRIORITY DESC, resolution DESC
+    """.format(*bounds)
+
+    meta = {
+        'minzoom': 0,
+        'maxzoom': 22,
+        'bounds': [-180, -85.05113, 180, 85.05113],
+        'meta': {
+            'sources': [],
+        }
+    }
+
+    conn = pool.getconn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(query)
+
+            for row in cur.fetchall():
+                LOG.warn('source: %s: %s', row[2], row[0])
+
+                src = get_source(row[0])
+                # window = make_window2(bounds, {'init': 'EPSG:4326'}, src.crs, src.transform, dst_shape=(3601, 3601))
+                #
+                # LOG.warn('window: %s', window)
+
+                meta['meta']['sources'].append({
+                    'meta': {
+                        'approximateZoom': row[7],
+                        'source': '{}_warped.vrt'.format(
+                            os.path.splitext(row[0])[0]),
+                        'mask': '{}_warped_mask.vrt'.format(
+                            os.path.splitext(row[0])[0]),
+                    },
+                    'minzoom': row[4],
+                    'maxzoom': row[5],
+                    'bounds': [-180, -85.05113, 180, 85.05113],
+                })
+    finally:
+        pool.putconn(conn)
+
+    return '', 200
+
 @app.route('/<renderer>/<int:z>/<int:x>/<int:y>.<ext>')
 @app.route('/<renderer>/<int:z>/<int:x>/<int:y>@<int:scale>x.<ext>')
 def render(renderer, z, x, y, ext, scale=1, **kwargs): # noqa
