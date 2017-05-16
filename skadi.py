@@ -7,6 +7,8 @@ import multiprocessing
 import re
 
 from affine import Affine
+import mercantile
+from mercantile import Tile
 import numpy as np
 import rasterio
 from rasterio import transform
@@ -19,20 +21,23 @@ from tiler import get_source
 
 HALF_ARC_SEC = (1.0/3600.0)*.5
 SKADI_CRS = CRS.from_epsg(4326)
+WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 SOURCES = (
     "tmp/N38W123.tif",
     "tmp/ned_ca.tif", # EPSG:3310
     "s3://mapzen-dynamic-tiler-test/ned_topobathy/0/ned19_n38x50_w123x25_ca_sanfrancisco_topobathy_2010.tif",
-    "s3://mapzen-dynamic-tiler-test/ned_topobathy/0/ned19_n38x25_w123x00_ca_sanfrancisco_topobathy_2010.tif",
-    "s3://mapzen-dynamic-tiler-test/ned_topobathy/0/ned19_n38x25_w123x25_ca_sanfrancisco_topobathy_2010.tif",
+    # "s3://mapzen-dynamic-tiler-test/ned_topobathy/0/ned19_n38x25_w123x00_ca_sanfrancisco_topobathy_2010.tif",
+    # "s3://mapzen-dynamic-tiler-test/ned_topobathy/0/ned19_n38x25_w123x25_ca_sanfrancisco_topobathy_2010.tif",
     # "s3://mapzen-dynamic-tiler-test/etopo1/0/ETOPO1_Bed_g_geotiff.tif",
     # "s3://mapzen-dynamic-tiler-test/gmted/0/30N180W_20101117_gmted_mea075.tif",
     # "s3://mapzen-dynamic-tiler-test/srtm/0/N38W123.tif",
     # "s3://mapzen-dynamic-tiler-test/ned13/0/imgn39w123_13.tif",
     # "s3://mapzen-dynamic-tiler-test/ned_topobathy/0/ned19_n38x50_w123x00_ca_sanfrancisco_topobathy_2010.tif",
 )
-TARGET_HEIGHT = 3601
-TARGET_WIDTH = 3601
+# TARGET_HEIGHT = 3601
+# TARGET_WIDTH = 3601
+TARGET_HEIGHT = 512
+TARGET_WIDTH = 512
 
 
 def _bbox(x, y):
@@ -64,12 +69,18 @@ def _nodata(dtype):
         return np.finfo(dtype).min
 
 
-# TODO make CRS configurable
 def paste((data_src, src_crs, src_transform), data, bounds, resampling=Resampling.lanczos):
     """ "Reproject" src data into the correct position within a larger image"""
 
+    ((left, right), (bottom, top)) = warp.transform(SKADI_CRS, src_crs, bounds[::2], bounds[1::2])
+    bounds = (left, bottom, right, top)
+    height, width = data_src.shape[1:]
     transform_dst, _, _ = warp.calculate_default_transform(
-        SKADI_CRS, SKADI_CRS, TARGET_WIDTH, TARGET_HEIGHT, *bounds)
+        src_crs, src_crs, width, height, *bounds)
+
+    print('paste height: ', height)
+    print('paste width: ', width)
+    print('paste bounds: ', bounds)
 
     data_dst = np.empty(
         data.shape,
@@ -82,14 +93,12 @@ def paste((data_src, src_crs, src_transform), data, bounds, resampling=Resamplin
         source=data_src,
         destination=data_dst,
         src_transform=src_transform,
-        src_crs=SKADI_CRS,
+        src_crs=src_crs,
         dst_transform=transform_dst,
-        dst_crs=SKADI_CRS,
+        dst_crs=src_crs,
         dst_nodata=nodata,
         resampling=resampling,
         num_threads=multiprocessing.cpu_count(),
-        # # TODO this will effectively paste but introduces interpolation errors when pasting nodata over existing data
-        # init_dest_nodata=False,
     )
 
     if np.issubdtype(data_dst.dtype, float):
@@ -123,8 +132,11 @@ def paste((data_src, src_crs, src_transform), data, bounds, resampling=Resamplin
 def reproject((data_src, src_crs, src_transform), dst_crs, resampling=Resampling.lanczos):
     # calculate a transformation into the dst projection along with
     # resulting dimensions
-    height, width = data_src.shape[1:]
+    height, width = data.shape[1:]
     bounds = transform.array_bounds(height, width, src_transform)
+    print('height: ', height)
+    print('width: ', width)
+    print('bounds: ', bounds)
     transform_dst, width_dst, height_dst = warp.calculate_default_transform(
         src_crs, dst_crs, width, height, *bounds)
 
@@ -177,6 +189,8 @@ def read_window(src, bounds):
     # target shape, scaled
     target_shape = tuple(reversed(map(int, map(math.floor, window_size * ~scale))))
 
+    print('target_shape: ', target_shape)
+
     # read data
     data = src.read(
         out_shape=(src.count, ) + target_shape,
@@ -206,9 +220,11 @@ def read_window(src, bounds):
     return (data, src.crs, src.transform * scale)
 
 if __name__ == '__main__':
-    (x, y) = _parse_skadi_tile('N38W123')
-
-    bounds = _bbox(x, y)
+    # (x, y) = _parse_skadi_tile('N38W123')
+    #
+    # bounds = _bbox(x, y)
+    tile = Tile(324, 787, 11)
+    bounds_4326 = mercantile.bounds(tile)
 
     data = np.ma.empty(
         (1, TARGET_HEIGHT, TARGET_WIDTH),
@@ -223,23 +239,26 @@ if __name__ == '__main__':
         print(url)
 
         # read a window from the source data
-        window_data = read_window(src, bounds)
+        window_data = read_window(src, bounds_4326)
 
         # reproject data into Skadi's CRS
-        projected_data = reproject(window_data, SKADI_CRS)
+        projected_data = reproject(window_data, WEB_MERCATOR_CRS)
 
         # paste the resulting data into a common array
-        data = paste(projected_data, data, bounds)
+        data = paste(projected_data, data, bounds_4326)
+
+    ((left, right), (bottom, top)) = warp.transform(SKADI_CRS, WEB_MERCATOR_CRS, bounds_4326[::2], bounds_4326[1::2])
+    bounds_3857 = (left, bottom, right, top)
 
     profile = src.profile
     profile.update({
-        'crs': SKADI_CRS,
+        'crs': WEB_MERCATOR_CRS,
         'dtype': data.dtype,
-        'transform': transform.from_bounds(*bounds, width=TARGET_WIDTH, height=TARGET_HEIGHT),
+        'transform': transform.from_bounds(*bounds_4326, width=TARGET_WIDTH, height=TARGET_HEIGHT),
         'width': TARGET_WIDTH,
         'height': TARGET_HEIGHT,
         'nodata': data.fill_value,
     })
 
-    with rasterio.open('tmp/skadi.tif', 'w', **profile) as out:
+    with rasterio.open('tmp/3857.tif', 'w', **profile) as out:
         out.write(data.filled())
