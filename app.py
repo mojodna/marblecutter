@@ -42,6 +42,7 @@ LOG = logging.getLogger(__name__)
 
 logging.basicConfig(level=logging.INFO)
 
+urlparse.uses_netloc.append('postgis')
 urlparse.uses_netloc.append('postgres')
 database_url = urlparse.urlparse(os.environ['DATABASE_URL'])
 pool = SimpleConnectionPool(

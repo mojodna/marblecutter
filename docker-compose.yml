@@ -5,7 +5,7 @@ services:
     depends_on:
       - postgis
     environment:
-      - DATABASE_URL=postgres://mapzen:mapzen@postgis/elevation
+      - DATABASE_URL=postgis://mapzen:mapzen@postgis/elevation
     env_file: .env
     volumes:
       - .:/opt/oam-dynamic-tiler/
