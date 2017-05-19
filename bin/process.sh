@@ -44,6 +44,19 @@ if [[ -z "$input" || -z "$output" ]]; then
   exit 1
 fi
 
+# attempt to load credentials from an IAM profile if none were provided
+if [[ -z "$AWS_ACCESS_KEY_ID"  || -z "$AWS_SECRET_ACCESS_KEY" ]]; then
+  set +e
+
+  role=$(curl -sf --connect-timeout 1 http://169.254.169.254/latest/meta-data/iam/security-credentials/)
+  credentials=$(curl -sf --connect-timeout 1 http://169.254.169.254/latest/meta-data/iam/security-credentials/${role})
+  export AWS_ACCESS_KEY_ID=$(jq -r .AccessKeyId <<< $credentials)
+  export AWS_SECRET_ACCESS_KEY=$(jq -r .SecretAccessKey <<< $credentials)
+  export AWS_SESSION_TOKEN=$(jq -r .Token <<< $credentials)
+
+  set -e
+fi
+
 trap cleanup EXIT
 trap cleanup_on_failure INT
 trap cleanup_on_failure ERR
