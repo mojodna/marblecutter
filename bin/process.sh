@@ -44,6 +44,8 @@ if [[ -z "$input" || -z "$output" ]]; then
   exit 1
 fi
 
+set +u
+
 # attempt to load credentials from an IAM profile if none were provided
 if [[ -z "$AWS_ACCESS_KEY_ID"  || -z "$AWS_SECRET_ACCESS_KEY" ]]; then
   set +e
@@ -56,6 +58,8 @@ if [[ -z "$AWS_ACCESS_KEY_ID"  || -z "$AWS_SECRET_ACCESS_KEY" ]]; then
 
   set -e
 fi
+
+set -u
 
 trap cleanup EXIT
 trap cleanup_on_failure INT
