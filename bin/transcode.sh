@@ -39,6 +39,7 @@ mask=""
 opts=""
 overview_opts=""
 bands=""
+intermediate=$(mktemp --suffix ".${ext}")
 
 # update info now that rasterio has read it
 if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
@@ -84,7 +85,7 @@ timeout --foreground 1h gdal_translate \
   -co BLOCKYSIZE=512 \
   -co NUM_THREADS=ALL_CPUS \
   $opts \
-  $input $output
+  $input $intermediate
 
 for z in $(seq 1 $zoom); do
   overviews="${overviews} $[2 ** $z]"
@@ -104,8 +105,22 @@ timeout --foreground 1h gdaladdo \
   --config BLOCKYSIZE_OVERVIEW 512 \
   --config NUM_THREADS_OVERVIEW ALL_CPUS \
   $overview_opts \
-  $output \
+  $intermediate \
   $overviews
+
+>&2 echo "Creating cloud-optimized GeoTIFF..."
+timeout --foreground 1h gdal_translate \
+  $bands \
+  $mask \
+  -co TILED=yes \
+  -co BLOCKXSIZE=512 \
+  -co BLOCKYSIZE=512 \
+  -co NUM_THREADS=ALL_CPUS \
+  $opts \
+  $overview_opts \
+  -co COPY_SRC_OVERVIEWS=YES \
+  --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
+  $intermediate $output
 
 if [ "$mask" != "" ]; then
   >&2 echo "Adding overviews to mask..."
@@ -117,6 +132,20 @@ if [ "$mask" != "" ]; then
     --config BLOCKYSIZE_OVERVIEW 512 \
     --config SPARSE_OK_OVERVIEW yes \
     --config NUM_THREADS_OVERVIEW ALL_CPUS \
-    $output.msk \
+    ${intermediate}.msk \
     $overviews
+
+  >&2 echo "Creating cloud-optimized GeoTIFF (mask)..."
+  timeout --foreground 1h gdal_translate \
+    -co TILED=yes \
+    -co BLOCKXSIZE=512 \
+    -co BLOCKYSIZE=512 \
+    -co NUM_THREADS=ALL_CPUS \
+    -co COPY_SRC_OVERVIEWS=YES \
+    -co COMPRESS=DEFLATE \
+    -co PREDICTOR=2 \
+    --config GDAL_TIFF_OVR_BLOCKSIZE 512 \
+    ${intermediate}.msk ${output}.msk
 fi
+
+rm -f $intermediate ${intermediate}.msk
