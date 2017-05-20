@@ -52,7 +52,7 @@ def get_source(path):
 
 
 def get_zoom(resolution):
-    return min(22, int(math.ceil(math.log((2 * math.pi * 6378137) /
+    return min(22, int(round(math.log((2 * math.pi * 6378137) /
                                           (resolution * 256)) / math.log(2))))
 
 
