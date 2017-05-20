@@ -42,7 +42,7 @@ def format((data, (data_bounds, data_crs)), data_format):
     }
 
     with MemoryFile() as memfile:
-        with memfile.open(mode="w", **meta) as dataset:
+        with memfile.open(**meta) as dataset:
             dataset.write(data.filled())
 
         return (CONTENT_TYPE, memfile.read())
