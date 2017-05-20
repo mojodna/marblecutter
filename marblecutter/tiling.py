@@ -17,7 +17,7 @@ def render_tile(tile, transformation=None, format="png", scale=1):
     """Render a tile into Web Mercator."""
     bounds = mercantile.bounds(tile)
 
-    shape = Affine.scale(scale) * TILE_SHAPE
+    shape = map(int, Affine.scale(scale) * TILE_SHAPE)
 
     # TODO convert format to an enum
 
