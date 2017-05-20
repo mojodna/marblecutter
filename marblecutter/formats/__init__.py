@@ -6,6 +6,6 @@ from . import geotiff
 from . import png
 from . import skadi
 
-GEOTIFF = geotiff.format
+GeoTIFF = geotiff.format
 PNG = png.format
-SKADI = skadi.format
+Skadi = skadi.format

@@ -7,7 +7,7 @@ import re
 from rasterio.crs import CRS
 
 from . import render
-from .formats import SKADI
+from .formats import Skadi
 
 HALF_ARC_SEC = (1 / 3600) * .5
 SHAPE = (3601, 3601)
@@ -40,4 +40,4 @@ def render_tile(tile):
     """Render a tile into gzipped HGT."""
     bounds = _bbox(*_parse_skadi_tile(tile))
 
-    return render((bounds, SKADI_CRS), SHAPE, SKADI_CRS, SKADI)
+    return render((bounds, SKADI_CRS), SHAPE, SKADI_CRS, format=Skadi)
