@@ -10,7 +10,8 @@ mercantile
 numpy
 Pillow
 psycopg2
-rasterio[s3] >= 1.0a6 --no-binary rasterio
+# rasterio[s3] >= 1.0a6 --no-binary rasterio
+https://github.com/mojodna/rasterio/archive/integration.tar.gz
 raven
 rio-color
 scipy
