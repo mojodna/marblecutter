@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import absolute_import, print_function
 
+import logging
 import multiprocessing
 import os
 import urlparse
@@ -24,6 +25,8 @@ pool = SimpleConnectionPool(
     port=database_url.port,
 )
 
+LOG = logging.getLogger(__name__)
+
 
 def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     """Composite data from sources into a single raster covering bounds, but in the target CRS."""
@@ -39,9 +42,7 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     for (url, source_name, resolution) in sources:
         src = get_source(url)
 
-        print()
-        print(url)
-        print()
+        LOG.info("Compositing %s...", url)
 
         # read a window from the source data
         # TODO ask for a buffer here, get back an updated bounding box reflecting it
@@ -67,6 +68,8 @@ def get_sources(bounds, resolution):
     from . import get_zoom
 
     zoom = get_zoom(resolution)
+
+    LOG.info("Resolution: %f; equivalent zoom: %d", resolution, zoom)
 
     query = """
         SELECT
