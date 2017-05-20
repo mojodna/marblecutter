@@ -23,8 +23,8 @@ def format((data, (data_bounds, data_crs)), data_format):
         predictor = 2
 
     meta = {
-        "blockxsize": 256,
-        "blockysize": 256,
+        "blockxsize": 512,
+        "blockysize": 512,
         "compress": "deflate",
         "count": count,
         "crs": data_crs,
