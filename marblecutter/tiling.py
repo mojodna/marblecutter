@@ -13,7 +13,7 @@ WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
 
 
-def render_tile(tile, transformation=None, format="png", scale=1):
+def render_tile(tile, transformation=None, format="png", scale=1, buffer=0):
     """Render a tile into Web Mercator."""
     bounds = mercantile.bounds(tile)
 
@@ -21,4 +21,4 @@ def render_tile(tile, transformation=None, format="png", scale=1):
 
     # TODO convert format to an enum
 
-    return render((bounds, WGS84_CRS), shape, WEB_MERCATOR_CRS, format=format, transformation=transformation)
+    return render((bounds, WGS84_CRS), shape, WEB_MERCATOR_CRS, format=format, transformation=transformation, buffer=buffer)

@@ -100,10 +100,14 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     return (data, (window_bounds, src.crs))
 
 
-def render((bounds, bounds_crs), shape, target_crs, format, transformation=None):
+def render((bounds, bounds_crs), shape, target_crs, format, transformation=None, buffer=0):
     """Render data intersecting bounds into shape using an optional transformation."""
     resolution = get_resolution((bounds, bounds_crs), shape)
     resolution_m = get_resolution_in_meters((bounds, bounds_crs), shape)
+
+    # apply buffer
+    shape = map(lambda dim: dim + (2 * buffer), shape)
+    bounds = map(lambda (i, p): p - (buffer * resolution) if i < 2 else p + (buffer * resolution), enumerate(bounds))
 
     sources = mosaic.get_sources(bounds, resolution_m)
 
