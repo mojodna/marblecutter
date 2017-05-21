@@ -74,9 +74,9 @@ def get_sources(bounds, resolution):
     """
     from . import get_zoom
 
-    zoom = get_zoom(resolution)
+    zoom = get_zoom(max(resolution))
 
-    LOG.info("Resolution: %f; equivalent zoom: %d", resolution, zoom)
+    LOG.info("Resolution: %s; equivalent zoom: %d", resolution, zoom)
 
     query = """
         SELECT

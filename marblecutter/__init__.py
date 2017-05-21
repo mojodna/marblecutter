@@ -32,8 +32,7 @@ def _nodata(dtype):
 
 
 def get_resolution((bounds, crs), (height, width)):
-    # grab the lowest resolution dimension
-    return max((bounds[2] - bounds[0]) / width, (bounds[3] - bounds[1]) / height)
+    return ((bounds[2] - bounds[0]) / width, (bounds[3] - bounds[1]) / height)
 
 
 def get_resolution_in_meters((bounds, crs), (height, width)):
@@ -44,9 +43,9 @@ def get_resolution_in_meters((bounds, crs), (height, width)):
         top = ((bounds[0] + bounds[2]) / 2, bounds[3])
         bottom = ((bounds[0] + bounds[2]) / 2, bounds[1])
 
-        return max(haversine(left, right) * 1000 / width, haversine(top, bottom) * 1000 / height)
+        return (haversine(left, right) * 1000 / width, haversine(top, bottom) * 1000 / height)
 
-    return max((bounds[2] - bounds[0]) / width, (bounds[3] - bounds[1]) / height)
+    return ((bounds[2] - bounds[0]) / width, (bounds[3] - bounds[1]) / height)
 
 
 @lru_cache(maxsize=1024)
@@ -107,7 +106,7 @@ def render((bounds, bounds_crs), shape, target_crs, format, transformation=None,
 
     # apply buffer
     shape = map(lambda dim: dim + (2 * buffer), shape)
-    bounds = map(lambda (i, p): p - (buffer * resolution) if i < 2 else p + (buffer * resolution), enumerate(bounds))
+    bounds = map(lambda (i, p): p - (buffer * resolution[i % 2]) if i < 2 else p + (buffer * resolution[i % 2]), enumerate(bounds))
 
     sources = mosaic.get_sources(bounds, resolution_m)
 
