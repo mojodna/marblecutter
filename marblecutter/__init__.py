@@ -115,7 +115,7 @@ def render((bounds, bounds_crs), shape, target_crs, format, transformation=None,
     data_format = "raw"
 
     if transformation:
-        (data, data_format) = apply_transformation(transformation)
+        (data, data_format) = transformation((data, (data_bounds, data_crs)))
 
     buffered = False
     if buffered:
