@@ -44,8 +44,6 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     ((left, right), (bottom, top)) = warp.transform(bounds_crs, target_crs, bounds[::2], bounds[1::2])
     canvas_bounds = (left, bottom, right, top)
 
-    print("canvas bounds:", canvas_bounds)
-
     # TODO run this in reverse order, only proceeding if nodata pixels still exist
     for (url, source_name, resolution) in sources:
         src = get_source(url)
