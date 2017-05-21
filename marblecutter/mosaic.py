@@ -1,14 +1,16 @@
 # noqa
 # coding=utf-8
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import logging
 import multiprocessing
 import os
 import urlparse
 
+from affine import Affine
 import numpy as np
 from psycopg2.pool import SimpleConnectionPool
+from rasterio import transform
 from rasterio import warp
 from rasterio.warp import Resampling
 
@@ -39,6 +41,12 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     )
     canvas.mask = True
 
+    ((left, right), (bottom, top)) = warp.transform(bounds_crs, target_crs, bounds[::2], bounds[1::2])
+    canvas_bounds = (left, bottom, right, top)
+
+    print("canvas bounds:", canvas_bounds)
+
+    # TODO run this in reverse order, only proceeding if nodata pixels still exist
     for (url, source_name, resolution) in sources:
         src = get_source(url)
 
@@ -51,12 +59,9 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
 
         # paste (and reproject) the resulting data onto a canvas
         # TODO NamedTuple for data (data + bounds)
-        canvas = paste(window_data, (canvas, (bounds, bounds_crs)))
+        canvas = paste(window_data, (canvas, (canvas_bounds, target_crs)))
 
-    ((left, right), (bottom, top)) = warp.transform(bounds_crs, target_crs, bounds[::2], bounds[1::2])
-    target_bounds = (left, bottom, right, top)
-
-    return (canvas, (target_bounds, target_crs))
+    return (canvas, (canvas_bounds, target_crs))
 
 
 def get_sources(bounds, resolution):
@@ -93,38 +98,38 @@ def get_sources(bounds, resolution):
         pool.putconn(conn)
 
 
-def paste((data_src, src_crs, src_transform), (canvas, (canvas_bounds, canvas_bounds_crs)), resampling=Resampling.lanczos):
+def paste((src_data, (src_bounds, src_crs)), (canvas, (canvas_bounds, canvas_bounds_crs)), resampling=Resampling.lanczos):
     """ "Reproject" src data into the correct position within a larger image"""
     from . import _mask, _nodata
 
-    ((left, right), (bottom, top)) = warp.transform(canvas_bounds_crs, src_crs, canvas_bounds[::2], canvas_bounds[1::2])
-    bounds_src = (left, bottom, right, top)
-    height, width = canvas.shape[1:]
-    transform_dst, _, _ = warp.calculate_default_transform(
-        src_crs, canvas_bounds_crs, width, height, *bounds_src)
+    src_height, src_width = src_data.shape[1:]
+    canvas_height, canvas_width = canvas.shape[1:]
 
-    data_dst = np.empty(
+    src_transform = transform.from_bounds(*src_bounds, width=src_width, height=src_height)
+    canvas_transform = transform.from_bounds(*canvas_bounds, width=canvas_width, height=canvas_height)
+
+    dst_data = np.empty(
         canvas.shape,
         dtype=canvas.dtype,
     )
 
-    nodata = _nodata(data_dst.dtype)
+    nodata = _nodata(dst_data.dtype)
 
     warp.reproject(
-        source=data_src,
-        destination=data_dst,
+        source=src_data,
+        destination=dst_data,
         src_transform=src_transform,
         src_crs=src_crs,
-        dst_transform=transform_dst,
+        dst_transform=canvas_transform,
         dst_crs=canvas_bounds_crs,
         dst_nodata=nodata,
         resampling=resampling,
         num_threads=multiprocessing.cpu_count(),
     )
 
-    data_dst = _mask(data_dst, nodata)
+    dst_data = _mask(dst_data, nodata)
 
-    canvas = np.ma.where(data_dst.mask, canvas, data_dst)
+    canvas = np.ma.where(dst_data.mask, canvas, dst_data)
     canvas.fill_value = nodata
 
     return canvas

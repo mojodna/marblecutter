@@ -10,7 +10,6 @@ from cachetools.func import lru_cache
 from haversine import haversine
 import numpy as np
 import rasterio
-from rasterio import transform
 from rasterio import warp
 from rasterio import windows
 from rasterio.warp import Resampling
@@ -82,16 +81,15 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
         # TODO test this with NED 1/9
         # some datasets use the min value but report an alternate nodata value
         # mask = np.where((data == src.nodata) | (data == _nodata(data.dtype)), True, False)
-        if np.issubdtype(data.dtype, float):
-            data = np.ma.masked_values(data, src.nodata, copy=False)
-        else:
-            data = np.ma.masked_equal(data, src.nodata, copy=False)
+        data = _mask(data, src.nodata)
     else:
         data = np.ma.masked_array(data, mask=False)
 
     data = data.astype(np.float32)
 
-    return (data, src.crs, src.transform * scale)
+    window_bounds = windows.bounds(window_src, src.transform)
+
+    return (data, (window_bounds, src.crs))
 
 
 def render((bounds, bounds_crs), shape, target_crs, format, transformation=None):

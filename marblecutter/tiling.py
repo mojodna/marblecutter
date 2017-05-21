@@ -21,4 +21,4 @@ def render_tile(tile, transformation=None, format="png", scale=1):
 
     # TODO convert format to an enum
 
-    return render((bounds, WGS84_CRS), shape, WEB_MERCATOR_CRS, format, transformation)
+    return render((bounds, WGS84_CRS), shape, WEB_MERCATOR_CRS, format=format, transformation=transformation)
