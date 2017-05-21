@@ -57,6 +57,8 @@ def get_zoom(resolution):
 
 
 def read_window(src, (bounds, bounds_crs), (height, width)):
+    # NOTE: this produces slightly different horizontal pixel sizes than reading
+    # windows from a warped VRT
     ((left, right), (bottom, top)) = warp.transform(bounds_crs, src.crs, bounds[::2], bounds[1::2])
     bounds_src = (left, bottom, right, top)
     window = windows.from_bounds(*bounds_src, transform=src.transform, boundless=True)
