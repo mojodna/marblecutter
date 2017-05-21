@@ -44,7 +44,7 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     ((left, right), (bottom, top)) = warp.transform(bounds_crs, target_crs, bounds[::2], bounds[1::2])
     canvas_bounds = (left, bottom, right, top)
 
-    # TODO run this in reverse order, only proceeding if nodata pixels still exist
+    # iterate over available sources, sorted by decreasing resolution
     for (url, source_name, resolution) in sources:
         src = get_source(url)
 
@@ -58,6 +58,10 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
         # paste (and reproject) the resulting data onto a canvas
         # TODO NamedTuple for data (data + bounds)
         canvas = paste(window_data, (canvas, (canvas_bounds, target_crs)))
+
+        if not np.any(canvas.mask):
+            # stop if all pixels are valid
+            break
 
     return (canvas, (canvas_bounds, target_crs))
 
@@ -76,20 +80,30 @@ def get_sources(bounds, resolution):
 
     query = """
         SELECT
-            DISTINCT(url),
+            DISTINCT(url) url,
             source,
             resolution,
-            priority
+            priority,
+            -- group sources by approximate resolution
+            round(resolution) rounded_resolution,
+            -- measure the distance from centroids to prioritize overlap
+            ST_Centroid(wkb_geometry) <-> ST_Centroid(ST_SetSRID('BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)) distance
         FROM footprints
-        WHERE wkb_geometry && ST_SetSRID('BOX(%s %s, %s %s)'::box2d, 4326)
-            AND %s BETWEEN min_zoom AND max_zoom
-        ORDER BY PRIORITY DESC, resolution DESC
+        WHERE wkb_geometry && ST_SetSRID('BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)
+            AND %(zoom)s BETWEEN min_zoom AND max_zoom
+        ORDER BY priority ASC, rounded_resolution ASC, distance ASC
     """
 
     conn = pool.getconn()
     try:
         with conn.cursor() as cur:
-            cur.execute(query, (bounds[0], bounds[1], bounds[2], bounds[3], zoom))
+            cur.execute(query, {
+                "minx": bounds[0],
+                "miny": bounds[1],
+                "maxx": bounds[2],
+                "maxy": bounds[3],
+                "zoom": zoom,
+            })
 
             return [row[:3] for row in cur.fetchall()]
     finally:
