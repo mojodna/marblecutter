@@ -47,7 +47,8 @@ def get_resolution((bounds, crs), (height, width)):
 @lru_cache(maxsize=1024)
 def get_source(path):
     """Cached source opening."""
-    return rasterio.open(path)
+    with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
+        return rasterio.open(path)
 
 
 def get_zoom(resolution):
