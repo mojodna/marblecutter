@@ -43,6 +43,8 @@ def format((data, (data_bounds, data_crs)), data_format):
 
     with MemoryFile() as memfile:
         with memfile.open(**meta) as dataset:
+            # TODO not true for aerial imagery
+            dataset.update_tags(AREA_OR_POINT="Point")
             dataset.write(data.filled())
 
         return (CONTENT_TYPE, memfile.read())
