@@ -127,7 +127,11 @@ def paste((src_data, (src_bounds, src_crs)), (canvas, (canvas_bounds, canvas_bou
 
     dst_data = _mask(dst_data, nodata)
 
-    canvas = np.ma.where(dst_data.mask, canvas, dst_data)
+    if isinstance(dst_data.mask, np.ndarray):
+        canvas = np.ma.where(dst_data.mask, canvas, dst_data)
+    elif dst_data.mask == False:
+        canvas = dst_data
+
     canvas.fill_value = nodata
 
     return canvas
