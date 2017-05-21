@@ -51,4 +51,3 @@ RUN \
   && rm -rf /root/.npm
 
 COPY . /opt/oam-dynamic-tiler
-COPY shapes.py /usr/local/lib/python2.7/dist-packages/rasterio/rio/shapes.py
