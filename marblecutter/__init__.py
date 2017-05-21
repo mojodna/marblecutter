@@ -41,7 +41,7 @@ def get_resolution((bounds, crs), (height, width)):
 
         return max(haversine(left, right) * 1000 / width, haversine(top, bottom) * 1000 / height)
 
-    return max((bounds[2] - src.bounds[0]) / width, (bounds[3] - bounds[1]) / height)
+    return max((bounds[2] - bounds[0]) / width, (bounds[3] - bounds[1]) / height)
 
 
 @lru_cache(maxsize=1024)
