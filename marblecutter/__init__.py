@@ -33,6 +33,11 @@ def _nodata(dtype):
 
 def get_resolution((bounds, crs), (height, width)):
     # grab the lowest resolution dimension
+    return max((bounds[2] - bounds[0]) / width, (bounds[3] - bounds[1]) / height)
+
+
+def get_resolution_in_meters((bounds, crs), (height, width)):
+    # grab the lowest resolution dimension
     if crs.is_geographic:
         left = (bounds[0], (bounds[1] + bounds[3]) / 2)
         right = (bounds[2], (bounds[1] + bounds[3]) / 2)
@@ -98,8 +103,9 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 def render((bounds, bounds_crs), shape, target_crs, format, transformation=None):
     """Render data intersecting bounds into shape using an optional transformation."""
     resolution = get_resolution((bounds, bounds_crs), shape)
+    resolution_m = get_resolution_in_meters((bounds, bounds_crs), shape)
 
-    sources = mosaic.get_sources(bounds, resolution)
+    sources = mosaic.get_sources(bounds, resolution_m)
 
     (data, (data_bounds, data_crs)) = mosaic.composite(sources, (bounds, bounds_crs), shape, target_crs)
 
