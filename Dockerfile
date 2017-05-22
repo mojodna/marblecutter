@@ -51,3 +51,5 @@ RUN \
   && rm -rf /root/.npm
 
 COPY . /opt/oam-dynamic-tiler
+
+RUN pip install -e .
