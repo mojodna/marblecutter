@@ -14,6 +14,8 @@ logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
     tile = Tile(324, 787, 11)
+    # TODO repeat top/bottom if appropriate
+    # TODO wrap on sides if appropriate
     (content_type, data) = tiling.render_tile(tile, format=PNG(), transformation=Normal(), scale=2, buffer=2)
 
     print("Content-type: ", content_type)
