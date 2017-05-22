@@ -3,7 +3,6 @@
 from __future__ import absolute_import
 
 from io import BytesIO
-from StringIO import StringIO
 
 from PIL import Image
 
@@ -17,7 +16,7 @@ def format():
         if not _isimage(data_format):
             raise Exception("Must be an image format")
 
-        out = StringIO()
+        out = BytesIO()
         im = Image.fromarray(data, data_format.upper())
         im.save(out, "png")
 
