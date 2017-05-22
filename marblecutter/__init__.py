@@ -110,6 +110,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     return (data, (window_bounds, src.crs))
 
 
+# TODO does buffer actually belong here, vs. being the responsibility of the calling code?
 def render((bounds, bounds_crs), shape, target_crs, format, transformation=None, buffer=0):
     """Render data intersecting bounds into shape using an optional transformation."""
     resolution = get_resolution((bounds, bounds_crs), shape)

@@ -59,6 +59,9 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
         # TODO NamedTuple for data (data + bounds)
         canvas = paste(window_data, (canvas, (canvas_bounds, target_crs)))
 
+        # TODO get the sub-array that contains nodata pixels and only fetch
+        # sources that could potentially fill those (see windows.get_data_window
+        # for the inverse)
         if not np.any(canvas.mask):
             # stop if all pixels are valid
             break
@@ -78,6 +81,7 @@ def get_sources(bounds, resolution):
 
     LOG.info("Resolution: %s; equivalent zoom: %d", resolution, zoom)
 
+    # TODO get sources in native CRS of the target
     query = """
         SELECT
             DISTINCT(url) url,
