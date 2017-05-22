@@ -11,4 +11,4 @@ EXPOSE 8000
 
 USER nobody
 
-ENTRYPOINT ["gunicorn", "-k", "gevent", "-b", "0.0.0.0", "--access-logfile", "-", "app:app"]
+ENTRYPOINT ["gunicorn", "-k", "gevent", "-b", "0.0.0.0", "--access-logfile", "-", "marblecutter.web:app"]
