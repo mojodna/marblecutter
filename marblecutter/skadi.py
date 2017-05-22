@@ -12,6 +12,7 @@ from .formats import Skadi
 HALF_ARC_SEC = (1 / 3600) * .5
 SHAPE = (3601, 3601)
 SKADI_CRS = CRS.from_epsg(4326)
+SKADI_FORMAT = Skadi()
 SKADI_TILE_NAME_PATTERN = re.compile('^([NS])([0-9]{2})([EW])([0-9]{3})$')
 
 
@@ -40,4 +41,4 @@ def render_tile(tile):
     """Render a tile into gzipped HGT."""
     bounds = _bbox(*_parse_skadi_tile(tile))
 
-    return render((bounds, SKADI_CRS), SHAPE, SKADI_CRS, format=Skadi)
+    return render((bounds, SKADI_CRS), SHAPE, SKADI_CRS, format=SKADI_FORMAT)
