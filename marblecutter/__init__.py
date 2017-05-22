@@ -10,6 +10,7 @@ from cachetools.func import lru_cache
 from haversine import haversine
 import numpy as np
 import rasterio
+from rasterio import transform
 from rasterio import warp
 from rasterio import windows
 from rasterio.warp import Resampling
@@ -30,6 +31,17 @@ def _nodata(dtype):
     else:
         return np.finfo(dtype).min
 
+
+def crop((data, (data_bounds, data_crs)), offset):
+    _, height, width = data.shape
+    t = transform.from_bounds(*data_bounds, width=width, height=height)
+
+    data = data[:, offset:-offset, offset:-offset]
+
+    cropped_window = windows.Window(offset, offset, *data.shape[1:])
+    data_bounds = windows.bounds(cropped_window, t)
+
+    return (data, (data_bounds, data_crs))
 
 def get_resolution((bounds, crs), (height, width)):
     return ((bounds[2] - bounds[0]) / width, (bounds[3] - bounds[1]) / height)
@@ -103,9 +115,16 @@ def render((bounds, bounds_crs), shape, target_crs, format, transformation=None,
     resolution = get_resolution((bounds, bounds_crs), shape)
     resolution_m = get_resolution_in_meters((bounds, bounds_crs), shape)
 
+    effective_buffer = buffer
+    offset = 0
+
+    if transformation:
+        effective_buffer = buffer + transformation.buffer
+        offset = transformation.buffer
+
     # apply buffer
-    shape = map(lambda dim: dim + (2 * buffer), shape)
-    bounds = map(lambda (i, p): p - (buffer * resolution[i % 2]) if i < 2 else p + (buffer * resolution[i % 2]), enumerate(bounds))
+    shape = map(lambda dim: dim + (2 * effective_buffer), shape)
+    bounds = map(lambda (i, p): p - (effective_buffer * resolution[i % 2]) if i < 2 else p + (effective_buffer * resolution[i % 2]), enumerate(bounds))
 
     sources = mosaic.get_sources(bounds, resolution_m)
 
@@ -116,9 +135,7 @@ def render((bounds, bounds_crs), shape, target_crs, format, transformation=None,
     if transformation:
         (data, data_format) = transformation((data, (data_bounds, data_crs)))
 
-    buffered = False
-    if buffered:
-        # TODO figure out args
-        data = crop()
+    if effective_buffer > buffer:
+        (data, (data_bounds, data_crs)) = crop((data, (data_bounds, data_crs)), offset)
 
     return format((data, (data_bounds, data_crs)), data_format)
