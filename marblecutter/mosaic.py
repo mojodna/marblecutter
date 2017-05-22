@@ -87,17 +87,24 @@ def get_sources(bounds, resolution):
     # TODO get sources in native CRS of the target
     query = """
         SELECT
-            DISTINCT(url) url,
+            url,
             source,
-            resolution,
-            priority,
-            -- group sources by approximate resolution
-            round(resolution) rounded_resolution,
-            -- measure the distance from centroids to prioritize overlap
-            ST_Centroid(wkb_geometry) <-> ST_Centroid(ST_SetSRID('BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)) distance
-        FROM footprints
-        WHERE wkb_geometry && ST_SetSRID('BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)
-            AND %(zoom)s BETWEEN min_zoom AND max_zoom
+            resolution
+        FROM (
+            SELECT
+                DISTINCT ON (url) url,
+                source,
+                resolution,
+                priority,
+                -- group sources by approximate resolution
+                round(resolution) rounded_resolution,
+                -- measure the distance from centroids to prioritize overlap
+                ST_Centroid(wkb_geometry) <-> ST_Centroid(ST_SetSRID('BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)) distance
+            FROM footprints
+            WHERE wkb_geometry && ST_SetSRID('BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)
+                AND %(zoom)s BETWEEN min_zoom AND max_zoom
+            ORDER BY url
+        ) AS _
         ORDER BY priority ASC, rounded_resolution ASC, distance ASC
     """
 
