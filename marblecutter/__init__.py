@@ -78,8 +78,8 @@ def get_source(path):
 
 
 def get_zoom(resolution):
-    return min(22, int(round(math.log((2 * math.pi * 6378137) /
-                                          (resolution * 256)) / math.log(2))))
+    return int(round(math.log((2 * math.pi * 6378137) /
+                              (resolution * 256)) / math.log(2)))
 
 
 def read_window(src, (bounds, bounds_crs), (height, width)):
