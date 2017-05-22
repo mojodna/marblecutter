@@ -36,7 +36,6 @@ def get_resolution((bounds, crs), (height, width)):
 
 
 def get_resolution_in_meters((bounds, crs), (height, width)):
-    # grab the lowest resolution dimension
     if crs.is_geographic:
         left = (bounds[0], (bounds[1] + bounds[3]) / 2)
         right = (bounds[2], (bounds[1] + bounds[3]) / 2)
