@@ -18,6 +18,10 @@ from rasterio.warp import Resampling
 from . import mosaic
 
 
+def _isimage(data_format):
+    return data_format.upper() in ["RGB", "RGBA"]
+
+
 def _mask(data, nodata):
     if np.issubdtype(data.dtype, float):
         return np.ma.masked_values(data, nodata, copy=False)
@@ -32,7 +36,14 @@ def _nodata(dtype):
         return np.finfo(dtype).min
 
 
-def crop((data, (data_bounds, data_crs)), offset):
+def crop((data, (data_bounds, data_crs)), data_format, offset):
+    if _isimage(data_format):
+        width, height, _ = data.shape
+
+        data = data[offset:-offset, offset:-offset, :]
+
+        return (data, (None, None))
+
     _, height, width = data.shape
     t = transform.from_bounds(*data_bounds, width=width, height=height)
 
@@ -137,6 +148,6 @@ def render((bounds, bounds_crs), shape, target_crs, format, transformation=None,
         (data, data_format) = transformation((data, (data_bounds, data_crs)))
 
     if effective_buffer > buffer:
-        (data, (data_bounds, data_crs)) = crop((data, (data_bounds, data_crs)), offset)
+        (data, (data_bounds, data_crs)) = crop((data, (data_bounds, data_crs)), data_format, offset)
 
     return format((data, (data_bounds, data_crs)), data_format)
