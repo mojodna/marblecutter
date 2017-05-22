@@ -24,8 +24,8 @@ def format():
             predictor = 2
 
         meta = {
-            "blockxsize": 512,
-            "blockysize": 512,
+            "blockxsize": 512 if width >= 512 else width,
+            "blockysize": 512 if height >= 512 else height,
             "compress": "deflate",
             "count": count,
             "crs": data_crs,
@@ -35,7 +35,7 @@ def format():
             "predictor": predictor,
             "height": height,
             "width": width,
-            "tiled": True,
+            "tiled": width >= 512 and height >= 512,
             "transform": transform.from_bounds(
                 *data_bounds,
                 width=width,
