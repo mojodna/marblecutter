@@ -62,7 +62,7 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
         # TODO get the sub-array that contains nodata pixels and only fetch
         # sources that could potentially fill those (see windows.get_data_window
         # for the inverse)
-        if not np.any(canvas.mask):
+        if not canvas.mask.any():
             # stop if all pixels are valid
             break
 
