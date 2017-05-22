@@ -50,13 +50,12 @@ def _height_mapping_func(h):
     return 255 - bisect.bisect_left(HEIGHT_TABLE, h)
 
 
-
 def transformation():
     def _transform((data, (bounds, crs))):
         (count, height, width) = data.shape
 
         if count != 1:
-            raise Exception("Can't hillshade from multiple bands")
+            raise Exception("Can't produce normals from multiple bands")
 
         (dx, dy) = get_resolution_in_meters((bounds, crs), (height, width))
         data = data[0]
