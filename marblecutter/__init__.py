@@ -112,9 +112,6 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     )
 
     if src.nodata is not None:
-        # TODO test this with NED 1/9
-        # some datasets use the min value but report an alternate nodata value
-        # mask = np.where((data == src.nodata) | (data == _nodata(data.dtype)), True, False)
         data = _mask(data, src.nodata)
     else:
         data = np.ma.masked_array(data, mask=False)
