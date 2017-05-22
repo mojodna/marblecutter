@@ -158,7 +158,7 @@ def transformation((data, (bounds, crs)), resample=True, add_slopeshade=True):
             # hs *= 0.8
             hs *= ss
 
-        hs = np.ma.masked_array([hs], mask=data.mask)
+        hs = np.ma.masked_array(hs[np.newaxis], mask=data.mask)
 
         # scale hillshade values (0.0-1.0) to integers (0-255)
         hs = (255.0 * hs).astype(np.uint8)
