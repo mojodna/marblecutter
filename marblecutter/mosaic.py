@@ -55,6 +55,9 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
         # TODO NamedTuple for bounds (bounds + CRS)
         window_data = read_window(src, (bounds, bounds_crs), (height, width))
 
+        if not window_data:
+            continue
+
         # paste (and reproject) the resulting data onto a canvas
         # TODO NamedTuple for data (data + bounds)
         canvas = paste(window_data, (canvas, (canvas_bounds, target_crs)))

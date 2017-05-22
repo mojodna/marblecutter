@@ -97,6 +97,11 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     window_src = windows.crop(window, height=src.height, width=src.width)
     window_size = (window_src.num_cols, window_src.num_rows)
 
+    # bail if one or more of the source dimensions is 0 (src doesn't actually
+    # overlap)
+    if 0 in window_size:
+        return None
+
     # target shape, scaled
     target_shape = tuple(reversed(map(int, map(math.floor, window_size * ~scale))))
 
