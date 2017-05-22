@@ -44,128 +44,132 @@ RESAMPLING = {
 }
 
 
-def transformation((data, (bounds, crs)), resample=True, add_slopeshade=True):
-    (count, height, width) = data.shape
+def transformation(resample=True, add_slopeshade=True):
+    def _transform((data, (bounds, crs))):
+        (count, height, width) = data.shape
 
-    if count != 1:
-        raise Exception("Can't hillshade from multiple bands")
+        if count != 1:
+            raise Exception("Can't hillshade from multiple bands")
 
-    (dx, dy) = get_resolution_in_meters((bounds, crs), (height, width))
-    zoom = get_zoom(max(dx, dy))
-    # invert resolutions for hillshading purposes
-    (dx, dy) = map(lambda x: x * -1, (dx, dy))
+        (dx, dy) = get_resolution_in_meters((bounds, crs), (height, width))
+        zoom = get_zoom(max(dx, dy))
+        # invert resolutions for hillshading purposes
+        (dx, dy) = map(lambda x: x * -1, (dx, dy))
 
-    # TODO slopeshade addition results in excessively dark images?
+        # TODO slopeshade addition results in excessively dark images?
 
-    # # interpolate latitudes
-    # # TODO do this earlier
-    # latitudes = np.interp(np.arange(height), [0, height - 1], [bounds[3], bounds[1]])
-    #
-    # factors = 1 / np.cos(np.radians(latitudes))
-    #
-    # # convert to 2d array, rotate 270º, scale data
-    # data = data * np.rot90(np.atleast_2d(factors), 3)
+        # # interpolate latitudes
+        # latitudes = np.interp(np.arange(height), [0, height - 1], [bounds[3], bounds[1]])
+        #
+        # factors = 1 / np.cos(np.radians(latitudes))
+        #
+        # # convert to 2d array, rotate 270º, scale data
+        # data = data * np.rot90(np.atleast_2d(factors), 3)
 
-    resample_factor = RESAMPLING.get(zoom, 1.0)
-    aff = transform.from_bounds(*bounds, width=width, height=height)
+        resample_factor = RESAMPLING.get(zoom, 1.0)
+        aff = transform.from_bounds(*bounds, width=width, height=height)
 
-    if resample and resample_factor != 1.0:
-        # resample data according to Tom Paterson's chart
+        if resample and resample_factor != 1.0:
+            # resample data according to Tom Paterson's chart
 
-        # create an empty target array that's the shape of the resampled tile (e.g. 80% of 260x260px)
-        resampled_height = int(round(height * resample_factor))
-        resampled_width = int(round(width * resample_factor))
-        resampled = np.empty(shape=(resampled_height, resampled_width),
-                             dtype=data.dtype)
-        resampled_mask = np.empty(shape=(resampled.shape))
+            # create an empty target array that's the shape of the resampled tile (e.g. 80% of 260x260px)
+            resampled_height = int(round(height * resample_factor))
+            resampled_width = int(round(width * resample_factor))
+            resampled = np.empty(shape=(resampled_height, resampled_width),
+                                 dtype=data.dtype)
+            resampled_mask = np.empty(shape=(resampled.shape))
 
-        newaff = transform.from_bounds(*bounds, width=resampled_width, height=resampled_height)
+            newaff = transform.from_bounds(*bounds, width=resampled_width, height=resampled_height)
 
-        # downsample using GDAL's reprojection functionality (which gives us access to different resampling algorithms)
-        warp.reproject(
-            data,
-            resampled,
-            src_transform=aff,
-            dst_transform=newaff,
-            src_crs=crs,
-            dst_crs=crs,
-            resampling=Resampling.bilinear,
-        )
-
-        # reproject / resample the mask so that intermediate operations can also use it
-        if np.any(data.mask):
+            # downsample using GDAL's reprojection functionality (which gives us access to different resampling algorithms)
             warp.reproject(
-                data.mask.astype(np.uint8),
-                resampled_mask,
+                data,
+                resampled,
                 src_transform=aff,
                 dst_transform=newaff,
                 src_crs=crs,
                 dst_crs=crs,
-                resampling=Resampling.nearest,
+                resampling=Resampling.bilinear,
             )
 
-            resampled = np.ma.masked_array(resampled, mask=resampled_mask)
+            # reproject / resample the mask so that intermediate operations can also use it
+            if np.any(data.mask):
+                warp.reproject(
+                    data.mask.astype(np.uint8),
+                    resampled_mask,
+                    src_transform=aff,
+                    dst_transform=newaff,
+                    src_crs=crs,
+                    dst_crs=crs,
+                    resampling=Resampling.nearest,
+                )
+
+                resampled = np.ma.masked_array(resampled, mask=resampled_mask)
+            else:
+                resampled = np.ma.masked_array(resampled)
+
+            hs = _hillshade(resampled,
+                dx=dx,
+                dy=dy,
+                vert_exag=EXAGGERATION.get(zoom, 1.0),
+            )
+
+            if add_slopeshade:
+                ss = slopeshade(resampled,
+                    dx=dx,
+                    dy=dy,
+                    vert_exag=EXAGGERATION.get(zoom, 1.0)
+                )
+
+                hs *= ss
+
+            # scale hillshade values (0.0-1.0) to integers (0-255)
+            hs = (255.0 * hs).astype(np.uint8)
+
+            # create an empty target array that's the shape of the target tile + buffers (e.g. 260x260px)
+            resampled_hs = np.empty(shape=data.shape, dtype=hs.dtype)
+
+            # upsample (invert the previous reprojection)
+            warp.reproject(
+                hs.data,
+                resampled_hs,
+                src_transform=newaff,
+                dst_transform=aff,
+                src_crs=crs,
+                dst_crs=crs,
+                resampling=Resampling.bilinear,
+            )
+
+            hs = np.ma.masked_array(resampled_hs, mask=data.mask)
         else:
-            resampled = np.ma.masked_array(resampled)
-
-        hs = _hillshade(resampled,
-            dx=dx,
-            dy=dy,
-            vert_exag=EXAGGERATION.get(zoom, 1.0),
-        )
-
-        if add_slopeshade:
-            ss = slopeshade(resampled,
+            hs = _hillshade(data[0],
                 dx=dx,
                 dy=dy,
-                vert_exag=EXAGGERATION.get(zoom, 1.0)
+                vert_exag=EXAGGERATION.get(zoom, 1.0),
             )
 
-            hs *= ss
+            if add_slopeshade:
+                ss = slopeshade(data[0],
+                    dx=dx,
+                    dy=dy,
+                    vert_exag=EXAGGERATION.get(zoom, 1.0)
+                )
 
-        # scale hillshade values (0.0-1.0) to integers (0-255)
-        hs = (255.0 * hs).astype(np.uint8)
+                # hs *= 0.8
+                hs *= ss
 
-        # create an empty target array that's the shape of the target tile + buffers (e.g. 260x260px)
-        resampled_hs = np.empty(shape=data.shape, dtype=hs.dtype)
+            hs = np.ma.masked_array(hs[np.newaxis], mask=data.mask)
 
-        # upsample (invert the previous reprojection)
-        warp.reproject(
-            hs.data,
-            resampled_hs,
-            src_transform=newaff,
-            dst_transform=aff,
-            src_crs=crs,
-            dst_crs=crs,
-            resampling=Resampling.bilinear,
-        )
+            # scale hillshade values (0.0-1.0) to integers (0-255)
+            hs = (255.0 * hs).astype(np.uint8)
 
-        hs = np.ma.masked_array(resampled_hs, mask=data.mask)
-    else:
-        hs = _hillshade(data[0],
-            dx=dx,
-            dy=dy,
-            vert_exag=EXAGGERATION.get(zoom, 1.0),
-        )
+        hs.fill_value = 0
 
-        if add_slopeshade:
-            ss = slopeshade(data[0],
-                dx=dx,
-                dy=dy,
-                vert_exag=EXAGGERATION.get(zoom, 1.0)
-            )
+        return (hs, "raw")
 
-            # hs *= 0.8
-            hs *= ss
+    _transform.buffer = BUFFER
 
-        hs = np.ma.masked_array(hs[np.newaxis], mask=data.mask)
-
-        # scale hillshade values (0.0-1.0) to integers (0-255)
-        hs = (255.0 * hs).astype(np.uint8)
-
-    hs.fill_value = 0
-
-    return (hs, "raw")
+    return _transform
 
 
 def _hillshade(elevation, azdeg=315, altdeg=45, vert_exag=1, dx=1, dy=1, fraction=1.):
