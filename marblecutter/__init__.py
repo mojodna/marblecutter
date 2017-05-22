@@ -130,7 +130,7 @@ def render((bounds, bounds_crs), shape, target_crs, format, transformation=None,
     effective_buffer = buffer
     offset = 0
 
-    if transformation:
+    if transformation and hasattr(transformation, 'buffer'):
         effective_buffer = buffer + transformation.buffer
         offset = transformation.buffer
 
