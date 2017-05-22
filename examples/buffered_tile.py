@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
     tile = Tile(324, 787, 11)
-    (content_type, data) = tiling.render_tile(tile, format=GeoTIFF, scale=2, buffer=2)
+    (content_type, data) = tiling.render_tile(tile, format=GeoTIFF(), scale=2, buffer=2)
 
     print("Content-type: ", content_type)
 
