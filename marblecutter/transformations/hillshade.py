@@ -54,7 +54,7 @@ def transformation(resample=True, add_slopeshade=True):
         (dx, dy) = get_resolution_in_meters((bounds, crs), (height, width))
         zoom = get_zoom(max(dx, dy))
         # invert resolutions for hillshading purposes
-        (dx, dy) = map(lambda x: x * -1, (dx, dy))
+        dy *= -1
 
         # TODO slopeshade addition results in excessively dark images?
 
@@ -89,7 +89,7 @@ def transformation(resample=True, add_slopeshade=True):
                 dst_transform=newaff,
                 src_crs=crs,
                 dst_crs=crs,
-                resampling=Resampling.bilinear,
+                resampling=Resampling.lanczos,
             )
 
             # reproject / resample the mask so that intermediate operations can also use it
@@ -137,7 +137,7 @@ def transformation(resample=True, add_slopeshade=True):
                 dst_transform=aff,
                 src_crs=crs,
                 dst_crs=crs,
-                resampling=Resampling.bilinear,
+                resampling=Resampling.lanczos,
             )
 
             hs = np.ma.masked_array(resampled_hs, mask=data.mask)
