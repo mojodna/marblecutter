@@ -39,7 +39,7 @@ mask=""
 opts=""
 overview_opts=""
 bands=""
-intermediate=$(mktemp --suffix ".${ext}")
+intermediate=$(mktemp --suffix ".tif")
 
 # update info now that rasterio has read it
 if [[ $input =~ "http://" ]] || [[ $input =~ "https://" ]]; then
