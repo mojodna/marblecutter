@@ -155,7 +155,7 @@ def render(
               p + (effective_buffer * resolution[i % 2])
               for i, p in enumerate(bounds)]
 
-    sources = mosaic.get_sources(bounds, resolution_m)
+    sources = mosaic.get_sources((bounds, bounds_crs), resolution_m)
 
     (data, (data_bounds, data_crs)) = mosaic.composite(
         sources, (bounds, bounds_crs), shape, target_crs)

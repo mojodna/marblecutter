@@ -28,10 +28,12 @@ pool = SimpleConnectionPool(
 )
 
 LOG = logging.getLogger(__name__)
+WGS84_CRS = CRS.from_epsg(4326)
 
 
 def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
-    """Composite data from sources into a single raster covering bounds, but in the target CRS."""
+    """Composite data from sources into a single raster covering bounds, but in
+    the target CRS."""
     from . import _nodata, get_source, read_window
 
     canvas = np.ma.empty(
@@ -40,20 +42,24 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
         fill_value=_nodata(np.float32),
     )
     canvas.mask = True
+    canvas.fill_value = _nodata(np.float32)
 
-    ((left, right), (bottom, top)) = warp.transform(bounds_crs, target_crs, bounds[::2], bounds[1::2])
+    ((left, right), (bottom, top)) = warp.transform(
+        bounds_crs, target_crs, bounds[::2], bounds[1::2])
     canvas_bounds = (left, bottom, right, top)
 
     # iterate over available sources, sorted by decreasing resolution
     for (url, source_name, resolution) in sources:
         src = get_source(url)
 
-        LOG.info("Compositing %s...", url)
+        LOG.info("Compositing %s (%s)...", url, source_name)
 
         # read a window from the source data
-        # TODO ask for a buffer here, get back an updated bounding box reflecting it
+        # TODO ask for a buffer here, get back an updated bounding box
+        # reflecting it
         # TODO NamedTuple for bounds (bounds + CRS)
-        window_data = read_window(src, (bounds, bounds_crs), (height, width))
+        window_data = read_window(
+            src, (canvas_bounds, target_crs), (height, width))
 
         if not window_data:
             continue
@@ -63,8 +69,8 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
         canvas = paste(window_data, (canvas, (canvas_bounds, target_crs)))
 
         # TODO get the sub-array that contains nodata pixels and only fetch
-        # sources that could potentially fill those (see windows.get_data_window
-        # for the inverse)
+        # sources that could potentially fill those (see
+        # windows.get_data_window for the inverse)
         if not canvas.mask.any():
             # stop if all pixels are valid
             break
@@ -72,9 +78,10 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     return (canvas, (canvas_bounds, target_crs))
 
 
-def get_sources(bounds, resolution):
+def get_sources((bounds, bounds_crs), resolution):
     """
-    Fetch sources intersecting a bounding box, curated for a specific resolution (in terms of zoom).
+    Fetch sources intersecting a bounding box, curated for a specific
+    resolution (in terms of zoom).
 
     Returns a tuple of (url, source name, resolution).
     """
@@ -99,27 +106,35 @@ def get_sources(bounds, resolution):
                 -- group sources by approximate resolution
                 round(resolution) rounded_resolution,
                 -- measure the distance from centroids to prioritize overlap
-                ST_Centroid(wkb_geometry) <-> ST_Centroid(ST_SetSRID('BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)) distance
+                ST_Centroid(wkb_geometry) <-> ST_Centroid(
+                    ST_SetSRID(
+                        'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
+                        4326)) distance
             FROM footprints
-            WHERE wkb_geometry && ST_SetSRID('BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)
+            WHERE wkb_geometry && ST_SetSRID(
+                'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)
                 AND %(zoom)s BETWEEN min_zoom AND max_zoom
             ORDER BY url
         ) AS _
         ORDER BY priority ASC, rounded_resolution ASC, distance ASC
     """
 
+    # height and width of the CRS
+    ((left, right), (bottom, top)) = warp.transform(
+        bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
+
     conn = pool.getconn()
     try:
         with conn.cursor() as cur:
             cur.execute(query, {
-                "minx": bounds[0],
-                "miny": bounds[1],
-                "maxx": bounds[2],
-                "maxy": bounds[3],
+                "minx": left,
+                "miny": bottom,
+                "maxx": right,
+                "maxy": top,
                 "zoom": zoom,
             })
 
-            return [row[:3] for row in cur.fetchall()]
+            return cur.fetchall()
     finally:
         pool.putconn(conn)
 
