@@ -54,8 +54,11 @@ def crop((data, (data_bounds, data_crs)), data_format, offset):
 
     return (data, (data_bounds, data_crs))
 
+
 def get_resolution((bounds, crs), (height, width)):
-    return ((bounds[2] - bounds[0]) / width, (bounds[3] - bounds[1]) / height)
+    t = transform.from_bounds(*bounds, width=width, height=height)
+
+    return abs(t.a), abs(t.e)
 
 
 def get_resolution_in_meters((bounds, crs), (height, width)):
