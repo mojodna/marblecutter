@@ -89,7 +89,7 @@ def transformation(resample=True, add_slopeshade=True):
                 dst_transform=newaff,
                 src_crs=crs,
                 dst_crs=crs,
-                resampling=Resampling.lanczos,
+                resampling=Resampling.bilinear,
             )
 
             # reproject / resample the mask so that intermediate operations can also use it
@@ -137,7 +137,7 @@ def transformation(resample=True, add_slopeshade=True):
                 dst_transform=aff,
                 src_crs=crs,
                 dst_crs=crs,
-                resampling=Resampling.lanczos,
+                resampling=Resampling.bilinear,
             )
 
             hs = np.ma.masked_array(resampled_hs, mask=data.mask)
