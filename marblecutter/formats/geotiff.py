@@ -31,7 +31,7 @@ def format():
             "crs": data_crs,
             "dtype": data.dtype,
             "driver": "GTiff",
-            "nodata": data.fill_value,
+            "nodata": data.fill_value if data.dtype != np.uint8 else None,
             "predictor": predictor,
             "height": height,
             "width": width,
