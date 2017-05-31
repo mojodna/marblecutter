@@ -68,9 +68,10 @@ def get_resolution_in_meters((bounds, crs), (height, width)):
         top = ((bounds[0] + bounds[2]) / 2, bounds[3])
         bottom = ((bounds[0] + bounds[2]) / 2, bounds[1])
 
-        return (haversine(left, right) * 1000 / width, haversine(top, bottom) * 1000 / height)
+        return (haversine(left, right) * 1000 / width,
+                haversine(top, bottom) * 1000 / height)
 
-    return ((bounds[2] - bounds[0]) / width, (bounds[3] - bounds[1]) / height)
+    return get_resolution((bounds, crs), (height, width))
 
 
 @lru_cache(maxsize=1024)
@@ -126,9 +127,18 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     return (data, (window_bounds, src.crs))
 
 
-# TODO does buffer actually belong here, vs. being the responsibility of the calling code?
-def render((bounds, bounds_crs), shape, target_crs, format, transformation=None, buffer=0):
-    """Render data intersecting bounds into shape using an optional transformation."""
+# TODO does buffer actually belong here, vs. being the responsibility of the
+# calling code?
+def render(
+    (bounds, bounds_crs),
+    shape,
+    target_crs,
+    format,
+    transformation=None,
+    buffer=0
+):
+    """Render data intersecting bounds into shape using an optional
+    transformation."""
     resolution = get_resolution((bounds, bounds_crs), shape)
     resolution_m = get_resolution_in_meters((bounds, bounds_crs), shape)
 
@@ -140,12 +150,15 @@ def render((bounds, bounds_crs), shape, target_crs, format, transformation=None,
         offset = transformation.buffer
 
     # apply buffer
-    shape = map(lambda dim: dim + (2 * effective_buffer), shape)
-    bounds = map(lambda (i, p): p - (effective_buffer * resolution[i % 2]) if i < 2 else p + (effective_buffer * resolution[i % 2]), enumerate(bounds))
+    shape = [dim + (2 * effective_buffer) for dim in shape]
+    bounds = [p - (effective_buffer * resolution[i % 2]) if i < 2 else
+              p + (effective_buffer * resolution[i % 2])
+              for i, p in enumerate(bounds)]
 
     sources = mosaic.get_sources(bounds, resolution_m)
 
-    (data, (data_bounds, data_crs)) = mosaic.composite(sources, (bounds, bounds_crs), shape, target_crs)
+    (data, (data_bounds, data_crs)) = mosaic.composite(
+        sources, (bounds, bounds_crs), shape, target_crs)
 
     data_format = "raw"
 
@@ -153,6 +166,7 @@ def render((bounds, bounds_crs), shape, target_crs, format, transformation=None,
         (data, data_format) = transformation((data, (data_bounds, data_crs)))
 
     if effective_buffer > buffer:
-        (data, (data_bounds, data_crs)) = crop((data, (data_bounds, data_crs)), data_format, offset)
+        (data, (data_bounds, data_crs)) = crop(
+            (data, (data_bounds, data_crs)), data_format, offset)
 
     return format((data, (data_bounds, data_crs)), data_format)
