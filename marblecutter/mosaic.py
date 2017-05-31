@@ -3,16 +3,14 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
-import multiprocessing
 import os
 import urlparse
 
-from affine import Affine
 import numpy as np
-from psycopg2.pool import SimpleConnectionPool
-from rasterio import transform
 from rasterio import warp
-from rasterio.warp import Resampling
+from rasterio.crs import CRS
+
+from psycopg2.pool import SimpleConnectionPool
 
 urlparse.uses_netloc.append('postgis')
 urlparse.uses_netloc.append('postgres')
@@ -139,39 +137,10 @@ def get_sources((bounds, bounds_crs), resolution):
         pool.putconn(conn)
 
 
-def paste((src_data, (src_bounds, src_crs)), (canvas, (canvas_bounds, canvas_bounds_crs)), resampling=Resampling.lanczos):
+def paste(
+    (window_data, (window_bounds, window_crs)),
+    (canvas, (canvas_bounds, canvas_bounds_crs))
+):
     """ "Reproject" src data into the correct position within a larger image"""
-    from . import _mask, _nodata
 
-    src_height, src_width = src_data.shape[1:]
-    canvas_height, canvas_width = canvas.shape[1:]
-
-    src_transform = transform.from_bounds(*src_bounds, width=src_width, height=src_height)
-    canvas_transform = transform.from_bounds(*canvas_bounds, width=canvas_width, height=canvas_height)
-
-    dst_data = np.empty(
-        canvas.shape,
-        dtype=canvas.dtype,
-    )
-
-    nodata = _nodata(dst_data.dtype)
-
-    warp.reproject(
-        source=src_data,
-        destination=dst_data,
-        src_transform=src_transform,
-        src_crs=src_crs,
-        dst_transform=canvas_transform,
-        dst_crs=canvas_bounds_crs,
-        dst_nodata=nodata,
-        resampling=resampling,
-        num_threads=multiprocessing.cpu_count(),
-    )
-
-    dst_data = _mask(dst_data, nodata)
-
-    canvas = np.ma.where(canvas.mask & ~dst_data.mask, dst_data, canvas)
-
-    canvas.fill_value = nodata
-
-    return canvas
+    return np.ma.where(canvas.mask & ~window_data.mask, window_data, canvas)

@@ -1,9 +1,8 @@
 # noqa
 # coding=utf-8
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import math
-import multiprocessing
 
 from affine import Affine
 from cachetools.func import lru_cache
@@ -11,8 +10,8 @@ from haversine import haversine
 import numpy as np
 import rasterio
 from rasterio import transform
-from rasterio import warp
 from rasterio import windows
+from rasterio.vrt import WarpedVRT
 from rasterio.warp import Resampling
 
 from . import mosaic
@@ -81,50 +80,52 @@ def get_source(path):
         return rasterio.open(path)
 
 
-def get_zoom(resolution):
-    return int(round(math.log((2 * math.pi * 6378137) /
-                              (resolution * 256)) / math.log(2)))
+def get_zoom(resolution, op=round):
+    return int(op(math.log((2 * math.pi * 6378137) /
+                           (resolution * 256)) / math.log(2)))
 
 
 def read_window(src, (bounds, bounds_crs), (height, width)):
-    # NOTE: this produces slightly different horizontal pixel sizes than reading
-    # windows from a warped VRT
-    ((left, right), (bottom, top)) = warp.transform(bounds_crs, src.crs, bounds[::2], bounds[1::2])
-    bounds_src = (left, bottom, right, top)
-    window = windows.from_bounds(*bounds_src, transform=src.transform, boundless=True)
+    # TODO support non-Web Mercator extents
+    zoom = get_zoom(max(get_resolution_in_meters(
+        (src.bounds, src.crs), (src.height, src.width))), op=math.ceil)
 
-    # scaling factor
-    scale = Affine.scale(max(1, window.num_cols / width),
-                         max(1, window.num_rows / height))
+    # extent = (-20037508.342789244, -20037508.342789244,
+    #           20037508.342789244, 20037508.342789244)
+    extent = (-20037508.34, -20037508.34,
+              20037508.34, 20037508.34)
 
-    # crop the data window to available data
-    window_src = windows.crop(window, height=src.height, width=src.width)
-    window_size = (window_src.num_cols, window_src.num_rows)
+    dst_width = dst_height = (2 ** zoom) * 256
+    resolution = ((extent[2] - extent[0]) / dst_width,
+                  (extent[3] - extent[1]) / dst_height)
 
-    # bail if one or more of the source dimensions is 0 (src doesn't actually
-    # overlap)
-    if 0 in window_size:
-        return None
+    dst_transform = Affine(resolution[0], 0.0, extent[0],
+                           0.0, -resolution[1], extent[3])
 
-    # target shape, scaled
-    target_shape = tuple(reversed(map(int, map(math.floor, window_size * ~scale))))
+    with WarpedVRT(
+        src,
+        src_nodata=src.nodata,
+        dst_crs=bounds_crs,
+        dst_width=dst_width,
+        dst_height=dst_height,
+        dst_transform=dst_transform,
+        resampling=Resampling.lanczos,
+    ) as vrt:
+        dst_window = vrt.window(*bounds)
 
-    # read data
-    data = src.read(
-        out_shape=(src.count, ) + target_shape,
-        window=window_src,
-    )
+        data = vrt.read(
+            out_shape=(vrt.count, height, width),
+            window=dst_window,
+        )
 
-    if src.nodata is not None:
-        data = _mask(data, src.nodata)
-    else:
-        data = np.ma.masked_array(data, mask=False)
+        if vrt.nodata is not None:
+            data = _mask(data, vrt.nodata)
+        else:
+            data = np.ma.masked_array(data, mask=False)
 
-    data = data.astype(np.float32)
+        data = data.astype(np.float32)
 
-    window_bounds = windows.bounds(window_src, src.transform)
-
-    return (data, (window_bounds, src.crs))
+        return (data, (bounds, bounds_crs))
 
 
 # TODO does buffer actually belong here, vs. being the responsibility of the
