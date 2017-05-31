@@ -6,7 +6,7 @@ flask
 flask-cors
 haversine
 matplotlib
-mercantile
+mercantile >= 0.10.0
 numpy
 Pillow
 psycopg2
