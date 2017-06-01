@@ -11,7 +11,7 @@ numpy
 Pillow
 psycopg2
 # rasterio[s3] >= 1.0a6 --no-binary rasterio
-https://github.com/mojodna/rasterio/archive/a374761.tar.gz
+https://github.com/mapbox/rasterio/archive/1f3514e.tar.gz
 raven
 rio-color
 scipy
