@@ -11,10 +11,14 @@ import numpy as np
 import rasterio
 from rasterio import transform
 from rasterio import windows
+from rasterio.crs import CRS
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import Resampling
 
 from . import mosaic
+
+WEB_MERCATOR_CRS = CRS.from_epsg(3857)
+WGS84_CRS = CRS.from_epsg(4326)
 
 
 def _isimage(data_format):
@@ -86,21 +90,47 @@ def get_zoom(resolution, op=round):
 
 
 def read_window(src, (bounds, bounds_crs), (height, width)):
-    # TODO support non-Web Mercator extents
-    zoom = get_zoom(max(get_resolution_in_meters(
-        (src.bounds, src.crs), (src.height, src.width))), op=math.ceil)
+    if bounds_crs == WEB_MERCATOR_CRS:
+        extent = (-20037508.342789244, -20037508.342789244,
+                  20037508.342789244, 20037508.342789244)
+    elif bounds_crs == WGS84_CRS:
+        extent = (-180, -90, 180, 90)
+    else:
+        raise Exception("Unsupported CRS: {}".format(bounds_crs))
 
-    # extent = (-20037508.342789244, -20037508.342789244,
-    #           20037508.342789244, 20037508.342789244)
-    extent = (-20037508.34, -20037508.34,
-              20037508.34, 20037508.34)
+    if bounds_crs == WEB_MERCATOR_CRS:
+        # special case for web mercator; use a target image size that most
+        # closely matches the source resolution (and is a power of 2)
+        zoom = get_zoom(max(get_resolution_in_meters(
+            (src.bounds, src.crs), (src.height, src.width))), op=math.ceil)
 
-    dst_width = dst_height = (2 ** zoom) * 256
-    resolution = ((extent[2] - extent[0]) / dst_width,
-                  (extent[3] - extent[1]) / dst_height)
+        dst_width = dst_height = (2 ** zoom) * 256
+        resolution = ((extent[2] - extent[0]) / dst_width,
+                      (extent[3] - extent[1]) / dst_height)
 
-    dst_transform = Affine(resolution[0], 0.0, extent[0],
-                           0.0, -resolution[1], extent[3])
+        dst_transform = Affine(resolution[0], 0.0, extent[0],
+                               0.0, -resolution[1], extent[3])
+    else:
+        # use a target image size that most closely matches the target
+        # resolution
+        extent_width = extent[2] - extent[0]
+        extent_height = extent[3] - extent[1]
+        bounds_width = bounds[2] - bounds[0]
+        bounds_height = bounds[3] - bounds[1]
+        hpx_per_unit = width / bounds_width
+        vpx_per_unit = height / bounds_height
+        dst_width = hpx_per_unit * extent_width
+        dst_height = vpx_per_unit * extent_height
+
+        resolution = get_resolution((bounds, bounds_crs), (height, width))
+
+        if width % 2 == 1 or height % 2 == 1:
+            dst_width *= 2
+            dst_height *= 2
+            resolution = [res / 2 for res in resolution]
+
+        dst_transform = Affine(resolution[0], 0.0, extent[0],
+                               0.0, -resolution[1], extent[3])
 
     with WarpedVRT(
         src,
