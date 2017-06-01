@@ -113,17 +113,14 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     else:
         # use a target image size that most closely matches the target
         # resolution
+        resolution = get_resolution((bounds, bounds_crs), (height, width))
         extent_width = extent[2] - extent[0]
         extent_height = extent[3] - extent[1]
-        bounds_width = bounds[2] - bounds[0]
-        bounds_height = bounds[3] - bounds[1]
-        hpx_per_unit = width / bounds_width
-        vpx_per_unit = height / bounds_height
-        dst_width = hpx_per_unit * extent_width
-        dst_height = vpx_per_unit * extent_height
+        dst_width = (1 / resolution[0]) * extent_width
+        dst_height = (1 / resolution[1]) * extent_height
 
-        resolution = get_resolution((bounds, bounds_crs), (height, width))
-
+        # ensure that we end up with a clean multiple of the target size (until
+        # rasterio uses floating point window offsets)
         if width % 2 == 1 or height % 2 == 1:
             dst_width *= 2
             dst_height *= 2
