@@ -3,7 +3,7 @@
   "description": "Scene Rendering",
   "runtime": "python",
   "hooks": {
-    "build": "make -C ../../deps deps.zip && unzip -o ../../deps/deps.zip",
+    "build": "make -C ../.. deps/deps.zip && unzip -o ../../deps/deps.zip",
     "clean": "rm -rf _posixsubprocess.so affine* arrow* cachetools* click* cligj* contextlib2* cycler* enum* flask Flask* flask_cors Flask_Cors* functools32 itsdangerous* lib matplotlib* mercantile* numpy* OleFileIO_PL* olefile* pyparsing* pytz* rasterio* raven* rio_color share snuggs* PIL* Pillow* psycopg2 jinja2* Jinja2* markupsafe* MarkupSafe* scipy subprocess32.pyc urllib3* werkzeug* Werkzeug*"
   },
   "environment": {
