@@ -10,8 +10,7 @@ mercantile >= 0.10.0
 numpy
 Pillow
 psycopg2
-# rasterio[s3] >= 1.0a6 --no-binary rasterio
-https://github.com/mapbox/rasterio/archive/1f3514e.tar.gz
+rasterio[s3] >= 1.0a9 --no-binary rasterio
 raven
 rio-color
 scipy
