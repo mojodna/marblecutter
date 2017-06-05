@@ -14,6 +14,8 @@ from rasterio import windows
 from rasterio.crs import CRS
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import Resampling
+from rasterio.windows import Window
+from scipy.interpolate import RectBivariateSpline
 
 from . import mosaic
 
@@ -140,10 +142,47 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     ) as vrt:
         dst_window = vrt.window(*bounds)
 
-        data = vrt.read(
-            out_shape=(vrt.count, height, width),
-            window=dst_window,
-        )
+        scale_factor = (dst_window.num_cols / width,
+                        dst_window.num_rows / height)
+
+        if vrt.count == 1 and (scale_factor[0] < 1 or scale_factor[1] < 1):
+            buffer_pixels = 2
+            pixel = (1 / scale_factor[0],
+                     1 / scale_factor[1])
+            buffer = (buffer_pixels * pixel[0],
+                      buffer_pixels * pixel[1])
+            r, c = dst_window
+            window = Window.from_ranges(
+                (r[0] - buffer_pixels, r[1] + buffer_pixels),
+                (c[0] - buffer_pixels, c[1] + buffer_pixels))
+
+            data = vrt.read(
+                1,
+                window=window,
+            )
+
+            h, w = data.shape
+
+            # if pixel_size isn't a power of 2, we picked up some extra width,
+            # so use ceil() to stretch out the shape of the interpolation
+            # target
+            x = np.arange(-buffer[0],
+                          (window.num_cols * math.ceil(pixel[0])) - buffer[0],
+                          (window.num_cols * math.ceil(pixel[0])) / w)
+            y = np.arange(-buffer[1],
+                          (window.num_rows * math.ceil(pixel[1])) - buffer[1],
+                          (window.num_rows * math.ceil(pixel[1])) / h)
+            interp = RectBivariateSpline(y, x, data)
+
+            data = interp(
+                np.arange(0, height),
+                np.arange(0, width),
+            )[np.newaxis]
+        else:
+            data = vrt.read(
+                out_shape=(vrt.count, height, width),
+                window=dst_window,
+            )
 
         data = np.ma.masked_array(data.astype(np.float32), mask=False)
 
