@@ -161,6 +161,11 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 window=window,
             )
 
+            if vrt.nodata is not None:
+                data = _mask(data, vrt.nodata)
+            else:
+                data = np.ma.masked_array(data, mask=False)
+
             h, w = data.shape
 
             # if pixel_size isn't a power of 2, we picked up some extra width,
@@ -178,13 +183,23 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 np.arange(0, height),
                 np.arange(0, width),
             )[np.newaxis]
+
+            if vrt.nodata is not None:
+                data = _mask(data, vrt.nodata)
+            else:
+                data = np.ma.masked_array(data, mask=False)
         else:
             data = vrt.read(
                 out_shape=(vrt.count, height, width),
                 window=dst_window,
             )
 
-        data = np.ma.masked_array(data.astype(np.float32), mask=False)
+            if vrt.nodata is not None:
+                data = _mask(data, vrt.nodata)
+            else:
+                data = np.ma.masked_array(data, mask=False)
+
+        data = data.astype(np.float32)
 
     # open the mask separately so we can take advantage of its overviews
     try:
