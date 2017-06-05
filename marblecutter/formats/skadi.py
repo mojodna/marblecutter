@@ -44,6 +44,7 @@ def format():
         x = "W" if lon < 0 else "E"
         y = "S" if lat < 0 else "N"
         filename = "{}{}{}{}.hgt".format(y, abs(lat), x, abs(lon))
+        filename = "{}{:02d}{}{:03d}.hgt".format(y, abs(lat), x, abs(lon))
 
         with MemoryFile(filename=filename) as memfile:
             with memfile.open(**meta) as dataset:
