@@ -78,7 +78,7 @@ gdal_output=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $output)
 tiler_url=$(sed "s|s3://[^/]*|${TILER_BASE_URL}|" <<< $output)
 
 # 0. download source (if appropriate)
-if [[ "$input" =~ ^s3:// || "$input" =~ s3\.amazonaws\.com ]]; then
+if [[ ( "$input" =~ ^s3:// || "$input" =~ s3\.amazonaws\.com ) && ! "$input" =~ \.zip$ ]]; then
   source=$input
 else
   >&2 echo "Downloading $input..."
