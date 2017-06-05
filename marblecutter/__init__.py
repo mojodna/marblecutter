@@ -145,14 +145,33 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             window=dst_window,
         )
 
-        if vrt.nodata is not None:
-            data = _mask(data, vrt.nodata)
-        else:
-            data = np.ma.masked_array(data, mask=False)
+        data = np.ma.masked_array(data.astype(np.float32), mask=False)
 
-        data = data.astype(np.float32)
+    # open the mask separately so we can take advantage of its overviews
+    try:
+        with rasterio.open("{}.msk".format(src.name), crs=src.crs) as mask_src:
+            with WarpedVRT(
+                mask_src,
+                src_crs=src.crs,
+                src_transform=src.transform,
+                dst_crs=bounds_crs,
+                dst_width=dst_width,
+                dst_height=dst_height,
+                dst_transform=dst_transform,
+            ) as mask_vrt:
+                dst_window = vrt.window(*bounds)
 
-        return (data, (bounds, bounds_crs))
+                mask = mask_vrt.read(
+                    out_shape=(vrt.count, height, width),
+                    window=dst_window,
+                )
+
+                data.mask = ~mask
+    except Exception:
+        # no mask
+        pass
+
+    return (data, (bounds, bounds_crs))
 
 
 # TODO does buffer actually belong here, vs. being the responsibility of the
