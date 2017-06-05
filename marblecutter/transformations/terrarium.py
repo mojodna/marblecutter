@@ -4,8 +4,6 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
-from .. import get_resolution_in_meters
-
 
 def transformation():
     def _transform((data, (bounds, crs))):
