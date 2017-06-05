@@ -2,6 +2,8 @@
 # coding=utf-8
 from __future__ import print_function
 
+import argparse
+import boto3
 import logging
 import multiprocessing
 from multiprocessing.dummy import Pool
@@ -24,44 +26,66 @@ NORMAL_TRANSFORMATION = Normal()
 TERRARIUM_TRANSFORMATION = Terrarium()
 
 
-def render_tile(tile):
+def write_to_s3(bucket, key_prefix, tile, data, key_suffix, content_type):
+    s3 = boto3.resource('s3')
+    key = '{}/{}/{}/{}{}'.format(
+        key_prefix,
+        tile.zoom,
+        tile.x,
+        tile.y,
+        key_suffix,
+    )
+
+    s3.Bucket(bucket).put_object(
+        Key=key,
+        Body=data,
+        ContentType=content_type,
+    )
+
+
+def render_tile(tile, s3_details):
+    s3_bucket, s3_key_prefix = s3_details
+
     for (type, transformation) in (("normal", NORMAL_TRANSFORMATION),
                                    ("terrarium", TERRARIUM_TRANSFORMATION)):
         (content_type, data) = tiling.render_tile(
             tile, format=PNG_FORMAT, transformation=transformation)
 
-        with open(
-            "tmp/{}_{}_{}_{}.png".format(
-                tile.z, tile.x, tile.y, type), "w") as f:
-            f.write(data)
+        write_to_s3(s3_bucket, s3_key_prefix, tile, data, '.png', content_type)
 
     (content_type, data) = tiling.render_tile(
         tile, format=GEOTIFF_FORMAT, scale=2)
 
-    with open(
-        "tmp/{}_{}_{}_{}.tif".format(tile.z, tile.x, tile.y, type), "w"
-    ) as f:
-        f.write(data)
+    write_to_s3(s3_bucket, s3_key_prefix, tile, data, '.tif', content_type)
 
 
-def queue_tile(tile):
-    queue_render(tile)
+def queue_tile(tile, s3_details):
+    queue_render(tile, s3_details)
 
     if tile.z < MAX_ZOOM:
         for child in mercantile.children(tile):
-            queue_tile(child)
+            queue_tile(child, s3_details)
 
 
-def queue_render(tile):
+def queue_render(tile, s3_details):
     print(tile)
     POOL.apply_async(
         render_tile,
-        args=[tile])
+        args=[tile, s3_details])
 
 
 if __name__ == "__main__":
-    root = Tile(328, 793, 11)
-    queue_tile(root)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('x', type=int)
+    parser.add_argument('y', type=int)
+    parser.add_argument('zoom', type=int)
+    parser.add_argument('bucket')
+    parser.add_argument('key_prefix')
+
+    args = parser.parse_args()
+
+    root = Tile(args.x, args.y, args.zoom)
+    queue_tile(root, (args.bucket, args.key_prefix))
 
     POOL.close()
     POOL.join()

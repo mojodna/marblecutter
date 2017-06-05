@@ -1,9 +1,17 @@
 {
-    "jobName": "sample-transcode",
-    "jobQueue": "arn:aws:batch:us-east-1:{{AWS_ACCOUNT_ID}}:job-queue/transcoding",
-    "jobDefinition": "arn:aws:batch:us-east-1:{{AWS_ACCOUNT_ID}}:job-definition/transcode",
+    "jobName": "{{ name }}",
+    "jobQueue": "arn:aws:batch:us-east-1:{{ AWS_ACCOUNT_ID }}:job-queue/transcoding-20170519",
+    "jobDefinition": "arn:aws:batch:us-east-1:{{ AWS_ACCOUNT_ID }}:job-definition/transcode",
     "parameters": {
-        "input": "s3://mapzen-terrain-sources-dev-us-east/ned/ned19_n38x00_w122x75_ca_sanfrancisocoast_2010.img",
-        "output": "s3://mapzen-dynamic-tiler-test/ned/0/ned19_n38x00_w122x75_ca_sanfrancisocoast_2010"
+        "input": "{{ input }}",
+        "output": "{{ output }}"
+    },
+    "containerOverrides": {
+      "environment": [
+        {
+          "name": "TMPDIR",
+          "value": "/mnt"
+        }
+      ]
     }
 }
