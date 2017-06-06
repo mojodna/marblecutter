@@ -147,7 +147,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             # buffer
 
             # number of "pixel-equivalents" to buffer
-            buffer_pixels = 1
+            buffer_pixels = 2
 
             # individual pixel size in scaled "pixels"
             pixel = (1 / scale_factor[0],
