@@ -82,71 +82,78 @@ RUN \
 
 WORKDIR /tmp/virtualenv/lib/python2.7/site-packages
 
-RUN find . -name \*.so -exec strip {} \;
+RUN find . -name \*.so\* -exec strip {} \;
 
 # skip the zipping (above, too) and put it in a staging directory that can be copied to a volume or output via tar on stdout
 # determined by copying the app in, touching start, exercising it, then using find /tmp/virtualenv/lib/python2.7/site-packages -type f -anewer start | sort
 RUN \
   zip \
     -r /tmp/task.zip \
+    PIL/BmpImagePlugin.pyc \
+    PIL/GifImagePlugin.pyc \
+    PIL/GimpGradientFile.pyc \
+    PIL/GimpPaletteFile.pyc \
+    PIL/Image.pyc \
+    PIL/ImageChops.pyc \
+    PIL/ImageColor.pyc \
+    PIL/ImageFile.pyc \
+    PIL/ImageMode.pyc \
+    PIL/ImagePalette.pyc \
+    PIL/ImageSequence.pyc \
+    PIL/JpegImagePlugin.pyc \
+    PIL/JpegPresets.pyc \
+    PIL/PaletteFile.pyc \
+    PIL/PngImagePlugin.pyc \
+    PIL/PpmImagePlugin.pyc \
+    PIL/TiffImagePlugin.pyc \
+    PIL/TiffTags.pyc \
+    PIL/__init__.pyc \
+    PIL/_binary.pyc \
+    PIL/_imaging.so \
+    PIL/_util.pyc \
+    _posixsubprocess.so \
     affine/__init__.pyc \
-    arrow/api.pyc \
-    arrow/arrow.pyc \
-    arrow/factory.pyc \
-    arrow/formatter.pyc \
-    arrow/__init__.pyc \
-    arrow/locales.pyc \
-    arrow/parser.pyc \
-    arrow/util.pyc \
-    cachetools/abc.pyc \
-    cachetools/cache.pyc \
-    cachetools/func.pyc \
-    cachetools/__init__.pyc \
-    cachetools/keys.pyc \
-    cachetools/lfu.pyc \
-    cachetools/lru.pyc \
-    cachetools/rr.pyc \
-    cachetools/ttl.pyc \
+    click/__init__.pyc \
     click/_compat.pyc \
+    click/_unicodefun.pyc \
     click/core.pyc \
     click/decorators.pyc \
     click/exceptions.pyc \
     click/formatting.pyc \
     click/globals.pyc \
-    click/__init__.pyc \
     click/parser.pyc \
     click/termui.pyc \
     click/types.pyc \
-    click/_unicodefun.pyc \
     click/utils.pyc \
     cycler.pyc \
     enum/__init__.pyc \
+    flask/__init__.pyc \
+    flask/_compat.pyc \
     flask/app.pyc \
     flask/blueprints.pyc \
     flask/cli.pyc \
-    flask/_compat.pyc \
     flask/config.pyc \
-    flask_cors/core.pyc \
-    flask_cors/decorator.pyc \
-    flask_cors/extension.pyc \
-    flask_cors/__init__.pyc \
-    flask_cors/version.pyc \
     flask/ctx.pyc \
     flask/globals.pyc \
     flask/helpers.pyc \
-    flask/__init__.pyc \
     flask/json.pyc \
-    flask/logging.pyc \
     flask/sessions.pyc \
     flask/signals.pyc \
     flask/templating.pyc \
     flask/wrappers.pyc \
-    functools32/functools32.pyc \
+    flask_cors/__init__.pyc \
+    flask_cors/core.pyc \
+    flask_cors/decorator.pyc \
+    flask_cors/extension.pyc \
+    flask_cors/version.pyc \
     functools32/__init__.pyc \
+    functools32/functools32.pyc \
     functools32/reprlib32.pyc \
+    haversine/__init__.pyc \
     itsdangerous.pyc \
-    jinja2/bccache.pyc \
+    jinja2/__init__.pyc \
     jinja2/_compat.pyc \
+    jinja2/bccache.pyc \
     jinja2/compiler.pyc \
     jinja2/defaults.pyc \
     jinja2/environment.pyc \
@@ -154,7 +161,6 @@ RUN \
     jinja2/ext.pyc \
     jinja2/filters.pyc \
     jinja2/idtracking.pyc \
-    jinja2/__init__.pyc \
     jinja2/lexer.pyc \
     jinja2/loaders.pyc \
     jinja2/nodes.pyc \
@@ -164,109 +170,84 @@ RUN \
     jinja2/tests.pyc \
     jinja2/utils.pyc \
     jinja2/visitor.pyc \
-    markupsafe/_compat.pyc \
     markupsafe/__init__.pyc \
+    markupsafe/_compat.pyc \
     markupsafe/_speedups.so \
-    mercantile/__init__.pyc \
-    matplotlib-2.0.0-py2.7-nspkg.pth \
+    matplotlib/__init__.pyc \
+    matplotlib/_cm.pyc \
+    matplotlib/_cm_listed.pyc \
+    matplotlib/_cntr.so \
+    matplotlib/_color_data.pyc \
+    matplotlib/_contour.so \
+    matplotlib/_image.so \
+    matplotlib/_mathtext_data.pyc \
+    matplotlib/_path.so \
+    matplotlib/_png.so \
+    matplotlib/_pylab_helpers.pyc \
+    matplotlib/_qhull.so \
+    matplotlib/_tri.so \
+    matplotlib/_version.pyc \
     matplotlib/afm.pyc \
     matplotlib/artist.pyc \
+    matplotlib/axes/__init__.pyc \
     matplotlib/axes/_axes.pyc \
     matplotlib/axes/_base.pyc \
-    matplotlib/axes/__init__.pyc \
     matplotlib/axes/_subplots.pyc \
     matplotlib/axis.pyc \
     matplotlib/backend_bases.pyc \
-    matplotlib/backends/backend_agg.pyc \
-    matplotlib/backends/_backend_agg.so \
-    matplotlib/backends/__init__.pyc \
     matplotlib/backend_tools.pyc \
+    matplotlib/backends/__init__.pyc \
+    matplotlib/backends/_backend_agg.so \
+    matplotlib/backends/backend_agg.pyc \
     matplotlib/bezier.pyc \
     matplotlib/blocking_input.pyc \
     matplotlib/cbook.pyc \
-    matplotlib/_cm_listed.pyc \
-    matplotlib/_cm.pyc \
     matplotlib/cm.pyc \
-    matplotlib/_cntr.so \
     matplotlib/collections.pyc \
     matplotlib/colorbar.pyc \
-    matplotlib/_color_data.pyc \
     matplotlib/colors.pyc \
     matplotlib/compat/__init__.pyc \
     matplotlib/compat/subprocess.pyc \
     matplotlib/container.pyc \
     matplotlib/contour.pyc \
-    matplotlib/_contour.so \
     matplotlib/dates.pyc \
     matplotlib/docstring.pyc \
     matplotlib/dviread.pyc \
     matplotlib/figure.pyc \
-    matplotlib/fontconfig_pattern.pyc \
     matplotlib/font_manager.pyc \
+    matplotlib/fontconfig_pattern.pyc \
     matplotlib/ft2font.so \
     matplotlib/gridspec.pyc \
     matplotlib/image.pyc \
-    matplotlib/_image.so \
-    matplotlib/__init__.pyc \
-    matplotlib/legend_handler.pyc \
     matplotlib/legend.pyc \
-    matplotlib/.libs/libpng16-3e9b18e2.so.16.21.0 \
+    matplotlib/legend_handler.pyc \
     matplotlib/lines.pyc \
     matplotlib/markers.pyc \
-    matplotlib/_mathtext_data.pyc \
     matplotlib/mathtext.pyc \
     matplotlib/mlab.pyc \
-    matplotlib/mpl-data/matplotlibrc \
-    matplotlib/mpl-data/stylelib/bmh.mplstyle \
-    matplotlib/mpl-data/stylelib/classic.mplstyle \
-    matplotlib/mpl-data/stylelib/dark_background.mplstyle \
-    matplotlib/mpl-data/stylelib/fivethirtyeight.mplstyle \
-    matplotlib/mpl-data/stylelib/ggplot.mplstyle \
-    matplotlib/mpl-data/stylelib/grayscale.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-bright.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-colorblind.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-darkgrid.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-dark.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-dark-palette.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-deep.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-muted.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-notebook.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-paper.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-pastel.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-poster.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-talk.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-ticks.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-whitegrid.mplstyle \
-    matplotlib/mpl-data/stylelib/seaborn-white.mplstyle \
     matplotlib/offsetbox.pyc \
     matplotlib/patches.pyc \
     matplotlib/path.pyc \
-    matplotlib/_path.so \
-    matplotlib/_png.so \
-    matplotlib/projections/geo.pyc \
     matplotlib/projections/__init__.pyc \
+    matplotlib/projections/geo.pyc \
     matplotlib/projections/polar.pyc \
-    matplotlib/_pylab_helpers.pyc \
     matplotlib/pyplot.pyc \
-    matplotlib/_qhull.so \
     matplotlib/quiver.pyc \
     matplotlib/rcsetup.pyc \
     matplotlib/scale.pyc \
     matplotlib/spines.pyc \
     matplotlib/stackplot.pyc \
     matplotlib/streamplot.pyc \
-    matplotlib/style/core.pyc \
     matplotlib/style/__init__.pyc \
+    matplotlib/style/core.pyc \
     matplotlib/table.pyc \
     matplotlib/texmanager.pyc \
-    matplotlib/textpath.pyc \
     matplotlib/text.pyc \
+    matplotlib/textpath.pyc \
     matplotlib/ticker.pyc \
     matplotlib/tight_bbox.pyc \
     matplotlib/transforms.pyc \
     matplotlib/tri/__init__.pyc \
-    matplotlib/_tri.so \
     matplotlib/tri/triangulation.pyc \
     matplotlib/tri/tricontour.pyc \
     matplotlib/tri/trifinder.pyc \
@@ -276,10 +257,8 @@ RUN \
     matplotlib/tri/trirefine.pyc \
     matplotlib/tri/tritools.pyc \
     matplotlib/units.pyc \
-    matplotlib/_version.pyc \
     matplotlib/widgets.pyc \
-    numpy/.libs/libgfortran-ed201abd.so.3.0.0 \
-    numpy/.libs/libopenblasp-r0-39a31c03.2.18.so \
+    mercantile/__init__.pyc \
     numpy/__config__.pyc \
     numpy/__init__.pyc \
     numpy/_distributor_init.pyc \
@@ -290,7 +269,6 @@ RUN \
     numpy/compat/_inspect.pyc \
     numpy/compat/py3k.pyc \
     numpy/core/__init__.pyc \
-    numpy/core/_dummy.so \
     numpy/core/_internal.pyc \
     numpy/core/_methods.pyc \
     numpy/core/arrayprint.pyc \
@@ -365,285 +343,236 @@ RUN \
     numpy/testing/nosetester.pyc \
     numpy/testing/utils.pyc \
     numpy/version.pyc \
-    PIL/_binary.pyc \
-    PIL/BmpImagePlugin.pyc \
-    PIL/GifImagePlugin.pyc \
-    PIL/GimpGradientFile.pyc \
-    PIL/GimpPaletteFile.pyc \
-    PIL/ImageChops.pyc \
-    PIL/ImageColor.pyc \
-    PIL/ImageFile.pyc \
-    PIL/ImageMode.pyc \
-    PIL/ImagePalette.pyc \
-    PIL/Image.pyc \
-    PIL/ImageSequence.pyc \
-    PIL/_imaging.so \
-    PIL/__init__.pyc \
-    PIL/JpegImagePlugin.pyc \
-    PIL/JpegPresets.pyc \
-    PIL/.libs/libjpeg-bcb94a84.so.9.2.0 \
-    PIL/.libs/liblzma-f444c404.so.5.2.2 \
-    PIL/.libs/libopenjp2-59185378.so.2.1.0 \
-    PIL/.libs/libtiff-56518a27.so.5.2.5 \
-    PIL/.libs/libz-a147dcb0.so.1.2.3 \
-    PIL/PaletteFile.pyc \
-    PIL/PngImagePlugin.pyc \
-    PIL/PpmImagePlugin.pyc \
-    PIL/TiffImagePlugin.pyc \
-    PIL/TiffTags.pyc \
-    PIL/_util.pyc \
-    _posixsubprocess.so \
-    psycopg2/.libs/libssl-cdf7ba29.so.1.0.2k \
-    psycopg2/.libs/libsasl2-e96a0dbf.so.2.0.22 \
-    psycopg2/.libs/libselinux-cf8f9094.so.1 \
-    psycopg2/.libs/libcom_err-beb60336.so.2.1 \
-    psycopg2/.libs/libkrb5support-d7ce89d4.so.0.1 \
-    psycopg2/.libs/libk5crypto-622ef25b.so.3.1 \
-    psycopg2/.libs/libgssapi_krb5-174f8956.so.2.2 \
-    psycopg2/.libs/libldap_r-2-3a9294b6.4.so.2.10.7 \
-    psycopg2/.libs/libkeyutils-1-ff31573b.2.so \
-    psycopg2/.libs/libpq-9c51d239.so.5.9 \
-    psycopg2/.libs/libz-a147dcb0.so.1.2.3 \
-    psycopg2/.libs/libkrb5-fb0d2caa.so.3.3 \
-    psycopg2/.libs/libsepol-b4f5b513.so.1 \
-    psycopg2/.libs/libcrypto-aa58ed98.so.1.0.2k \
-    psycopg2/.libs/liblber-2-14d46c3c.4.so.2.10.7 \
-    psycopg2/.libs/libresolv-2-c4c53def.5.so \
-    psycopg2/pool.pyc \
-    psycopg2/tz.pyc \
-    psycopg2/extensions.pyc \
-    psycopg2/_range.pyc \
-    psycopg2/_psycopg.so \
     psycopg2/__init__.pyc \
     psycopg2/_json.pyc \
-    pyparsing.py \
+    psycopg2/_psycopg.so \
+    psycopg2/_range.pyc \
+    psycopg2/extensions.pyc \
+    psycopg2/pool.pyc \
+    psycopg2/tz.pyc \
     pyparsing.pyc \
+    rasterio/__init__.pyc \
     rasterio/_base.so \
+    rasterio/_crs.so \
+    rasterio/_env.so \
+    rasterio/_err.so \
+    rasterio/_features.so \
+    rasterio/_io.so \
+    rasterio/_shim.so \
+    rasterio/_warp.so \
     rasterio/compat.pyc \
     rasterio/control.pyc \
     rasterio/coords.pyc \
     rasterio/crs.pyc \
-    rasterio/_crs.so \
     rasterio/drivers.pyc \
-    rasterio/_drivers.so \
     rasterio/dtypes.pyc \
     rasterio/enums.pyc \
     rasterio/env.pyc \
-    rasterio/_env.so \
     rasterio/errors.pyc \
-    rasterio/_err.so \
-    rasterio/_features.so \
-    rasterio/__init__.pyc \
     rasterio/io.pyc \
-    rasterio/_io.so \
     rasterio/profiles.pyc \
     rasterio/sample.pyc \
-    rasterio/_shim.so \
     rasterio/transform.pyc \
     rasterio/vfs.pyc \
+    rasterio/vrt.pyc \
     rasterio/warp.pyc \
-    rasterio/_warp.so \
     rasterio/windows.pyc \
-    rio_color/colorspace.so \
-    rio_color/__init__.pyc \
-    rio_color/operations.pyc \
-    rio_color/utils.pyc \
-    scipy/special/basic.pyc \
-    scipy/special/_ufuncs_cxx.so \
-    scipy/special/lambertw.pyc \
-    scipy/special/__init__.pyc \
-    scipy/special/_ellip_harm_2.so \
-    scipy/special/_ufuncs.so \
-    scipy/special/_comb.so \
-    scipy/special/orthogonal.pyc \
-    scipy/special/_spherical_bessel.pyc \
-    scipy/special/_logsumexp.pyc \
-    scipy/special/sf_error.pyc \
-    scipy/special/specfun.so \
-    scipy/special/_ellip_harm.pyc \
-    scipy/special/spfun_stats.pyc \
     scipy/__config__.pyc \
-    scipy/linalg/misc.pyc \
-    scipy/linalg/_procrustes.pyc \
-    scipy/linalg/decomp.pyc \
-    scipy/linalg/_decomp_polar.pyc \
-    scipy/linalg/decomp_cholesky.pyc \
-    scipy/linalg/matfuncs.pyc \
-    scipy/linalg/_decomp_update.so \
-    scipy/linalg/basic.pyc \
-    scipy/linalg/_flinalg.so \
-    scipy/linalg/_solvers.pyc \
-    scipy/linalg/cython_blas.so \
-    scipy/linalg/lapack.pyc \
-    scipy/linalg/_expm_frechet.pyc \
-    scipy/linalg/blas.pyc \
-    scipy/linalg/decomp_schur.pyc \
-    scipy/linalg/_matfuncs_sqrtm.pyc \
-    scipy/linalg/decomp_svd.pyc \
-    scipy/linalg/decomp_qr.pyc \
-    scipy/linalg/decomp_lu.pyc \
-    scipy/linalg/__init__.pyc \
-    scipy/linalg/_fblas.so \
-    scipy/linalg/_decomp_qz.pyc \
-    scipy/linalg/special_matrices.pyc \
-    scipy/linalg/_solve_toeplitz.so \
-    scipy/linalg/cython_lapack.so \
-    scipy/linalg/linalg_version.pyc \
-    scipy/linalg/_flapack.so \
-    scipy/linalg/flinalg.pyc \
     scipy/__init__.pyc \
-    scipy/version.pyc \
-    scipy/optimize/lbfgsb.pyc \
-    scipy/optimize/_root.pyc \
-    scipy/optimize/_cobyla.so \
-    scipy/optimize/moduleTNC.so \
-    scipy/optimize/_numdiff.pyc \
-    scipy/optimize/_group_columns.so \
-    scipy/optimize/_minpack.so \
-    scipy/optimize/_differentialevolution.pyc \
-    scipy/optimize/linesearch.pyc \
-    scipy/optimize/_nnls.so \
-    scipy/optimize/tnc.pyc \
-    scipy/optimize/_trustregion_ncg.pyc \
-    scipy/optimize/_basinhopping.pyc \
-    scipy/optimize/minpack2.so \
-    scipy/optimize/_lbfgsb.so \
-    scipy/optimize/_zeros.so \
-    scipy/optimize/__init__.pyc \
-    scipy/optimize/_slsqp.so \
-    scipy/optimize/nonlin.pyc \
-    scipy/optimize/slsqp.pyc \
-    scipy/optimize/_linprog.pyc \
-    scipy/optimize/_trustregion_dogleg.pyc \
-    scipy/optimize/nnls.pyc \
-    scipy/optimize/_trustregion.pyc \
-    scipy/optimize/minpack.pyc \
-    scipy/optimize/_spectral.pyc \
-    scipy/optimize/optimize.pyc \
-    scipy/optimize/_minimize.pyc \
-    scipy/optimize/_lsq/trf.pyc \
-    scipy/optimize/_lsq/lsq_linear.pyc \
-    scipy/optimize/_lsq/givens_elimination.so \
-    scipy/optimize/_lsq/__init__.pyc \
-    scipy/optimize/_lsq/common.pyc \
-    scipy/optimize/_lsq/least_squares.pyc \
-    scipy/optimize/_lsq/dogbox.pyc \
-    scipy/optimize/_lsq/trf_linear.pyc \
-    scipy/optimize/_lsq/bvls.pyc \
-    scipy/optimize/cobyla.pyc \
-    scipy/optimize/zeros.pyc \
-    scipy/optimize/_hungarian.pyc \
-    scipy/_lib/_threadsafety.pyc \
-    scipy/_lib/_ccallback.pyc \
-    scipy/_lib/decorator.pyc \
     scipy/_lib/__init__.pyc \
-    scipy/_lib/_util.pyc \
+    scipy/_lib/_ccallback.pyc \
     scipy/_lib/_ccallback_c.so \
-    scipy/_lib/six.pyc \
+    scipy/_lib/_threadsafety.pyc \
+    scipy/_lib/_util.pyc \
     scipy/_lib/_version.pyc \
-    scipy/integrate/quadpack.pyc \
-    scipy/integrate/quadrature.pyc \
+    scipy/_lib/decorator.pyc \
+    scipy/_lib/six.pyc \
+    scipy/integrate/__init__.pyc \
+    scipy/integrate/_bvp.pyc \
+    scipy/integrate/_dop.so \
     scipy/integrate/_ode.pyc \
     scipy/integrate/_odepack.so \
-    scipy/integrate/odepack.pyc \
     scipy/integrate/_quadpack.so \
-    scipy/integrate/vode.so \
-    scipy/integrate/__init__.pyc \
-    scipy/integrate/_dop.so \
     scipy/integrate/lsoda.so \
-    scipy/integrate/_bvp.pyc \
-    scipy/interpolate/polyint.pyc \
-    scipy/interpolate/dfitpack.so \
-    scipy/interpolate/fitpack2.pyc \
-    scipy/interpolate/_ppoly.so \
-    scipy/interpolate/interpnd.so \
-    scipy/interpolate/_bsplines.pyc \
-    scipy/interpolate/rbf.pyc \
-    scipy/interpolate/_fitpack.so \
-    scipy/interpolate/ndgriddata.pyc \
-    scipy/interpolate/_cubic.pyc \
-    scipy/interpolate/fitpack.pyc \
+    scipy/integrate/odepack.pyc \
+    scipy/integrate/quadpack.pyc \
+    scipy/integrate/quadrature.pyc \
+    scipy/integrate/vode.so \
+    scipy/interpolate/__init__.pyc \
     scipy/interpolate/_bspl.so \
+    scipy/interpolate/_bsplines.pyc \
+    scipy/interpolate/_cubic.pyc \
+    scipy/interpolate/_fitpack.so \
     scipy/interpolate/_fitpack_impl.pyc \
     scipy/interpolate/_pade.pyc \
-    scipy/interpolate/__init__.pyc \
+    scipy/interpolate/_ppoly.so \
+    scipy/interpolate/dfitpack.so \
+    scipy/interpolate/fitpack.pyc \
+    scipy/interpolate/fitpack2.pyc \
+    scipy/interpolate/interpnd.so \
     scipy/interpolate/interpolate.pyc \
-    scipy/sparse/_csparsetools.so \
-    scipy/sparse/_sparsetools.so \
-    scipy/sparse/compressed.pyc \
-    scipy/sparse/extract.pyc \
-    scipy/sparse/base.pyc \
-    scipy/sparse/csc.pyc \
-    scipy/sparse/data.pyc \
-    scipy/sparse/dia.pyc \
-    scipy/sparse/csr.pyc \
+    scipy/interpolate/ndgriddata.pyc \
+    scipy/interpolate/polyint.pyc \
+    scipy/interpolate/rbf.pyc \
+    scipy/linalg/__init__.pyc \
+    scipy/linalg/_decomp_polar.pyc \
+    scipy/linalg/_decomp_qz.pyc \
+    scipy/linalg/_decomp_update.so \
+    scipy/linalg/_expm_frechet.pyc \
+    scipy/linalg/_fblas.so \
+    scipy/linalg/_flapack.so \
+    scipy/linalg/_flinalg.so \
+    scipy/linalg/_matfuncs_sqrtm.pyc \
+    scipy/linalg/_procrustes.pyc \
+    scipy/linalg/_solve_toeplitz.so \
+    scipy/linalg/_solvers.pyc \
+    scipy/linalg/basic.pyc \
+    scipy/linalg/blas.pyc \
+    scipy/linalg/cython_blas.so \
+    scipy/linalg/cython_lapack.so \
+    scipy/linalg/decomp.pyc \
+    scipy/linalg/decomp_cholesky.pyc \
+    scipy/linalg/decomp_lu.pyc \
+    scipy/linalg/decomp_qr.pyc \
+    scipy/linalg/decomp_schur.pyc \
+    scipy/linalg/decomp_svd.pyc \
+    scipy/linalg/flinalg.pyc \
+    scipy/linalg/lapack.pyc \
+    scipy/linalg/linalg_version.pyc \
+    scipy/linalg/matfuncs.pyc \
+    scipy/linalg/misc.pyc \
+    scipy/linalg/special_matrices.pyc \
+    scipy/optimize/__init__.pyc \
+    scipy/optimize/_basinhopping.pyc \
+    scipy/optimize/_cobyla.so \
+    scipy/optimize/_differentialevolution.pyc \
+    scipy/optimize/_group_columns.so \
+    scipy/optimize/_hungarian.pyc \
+    scipy/optimize/_lbfgsb.so \
+    scipy/optimize/_linprog.pyc \
+    scipy/optimize/_lsq/__init__.pyc \
+    scipy/optimize/_lsq/bvls.pyc \
+    scipy/optimize/_lsq/common.pyc \
+    scipy/optimize/_lsq/dogbox.pyc \
+    scipy/optimize/_lsq/givens_elimination.so \
+    scipy/optimize/_lsq/least_squares.pyc \
+    scipy/optimize/_lsq/lsq_linear.pyc \
+    scipy/optimize/_lsq/trf.pyc \
+    scipy/optimize/_lsq/trf_linear.pyc \
+    scipy/optimize/_minimize.pyc \
+    scipy/optimize/_minpack.so \
+    scipy/optimize/_nnls.so \
+    scipy/optimize/_numdiff.pyc \
+    scipy/optimize/_root.pyc \
+    scipy/optimize/_slsqp.so \
+    scipy/optimize/_spectral.pyc \
+    scipy/optimize/_trustregion.pyc \
+    scipy/optimize/_trustregion_dogleg.pyc \
+    scipy/optimize/_trustregion_ncg.pyc \
+    scipy/optimize/_zeros.so \
+    scipy/optimize/cobyla.pyc \
+    scipy/optimize/lbfgsb.pyc \
+    scipy/optimize/linesearch.pyc \
+    scipy/optimize/minpack.pyc \
+    scipy/optimize/minpack2.so \
+    scipy/optimize/moduleTNC.so \
+    scipy/optimize/nnls.pyc \
+    scipy/optimize/nonlin.pyc \
+    scipy/optimize/optimize.pyc \
+    scipy/optimize/slsqp.pyc \
+    scipy/optimize/tnc.pyc \
+    scipy/optimize/zeros.pyc \
     scipy/sparse/__init__.pyc \
+    scipy/sparse/_csparsetools.so \
     scipy/sparse/_matrix_io.pyc \
-    scipy/sparse/linalg/matfuncs.pyc \
-    scipy/sparse/linalg/dsolve/_superlu.so \
-    scipy/sparse/linalg/dsolve/_add_newdocs.pyc \
-    scipy/sparse/linalg/dsolve/__init__.pyc \
-    scipy/sparse/linalg/dsolve/linsolve.pyc \
-    scipy/sparse/linalg/eigen/__init__.pyc \
-    scipy/sparse/linalg/eigen/lobpcg/__init__.pyc \
-    scipy/sparse/linalg/eigen/lobpcg/lobpcg.pyc \
-    scipy/sparse/linalg/eigen/arpack/arpack.pyc \
-    scipy/sparse/linalg/eigen/arpack/_arpack.so \
-    scipy/sparse/linalg/eigen/arpack/__init__.pyc \
-    scipy/sparse/linalg/isolve/lgmres.pyc \
-    scipy/sparse/linalg/isolve/lsqr.pyc \
-    scipy/sparse/linalg/isolve/minres.pyc \
-    scipy/sparse/linalg/isolve/_iterative.so \
-    scipy/sparse/linalg/isolve/lsmr.pyc \
-    scipy/sparse/linalg/isolve/iterative.pyc \
-    scipy/sparse/linalg/isolve/utils.pyc \
-    scipy/sparse/linalg/isolve/__init__.pyc \
-    scipy/sparse/linalg/_onenormest.pyc \
-    scipy/sparse/linalg/_expm_multiply.pyc \
-    scipy/sparse/linalg/_norm.pyc \
-    scipy/sparse/linalg/interface.pyc \
-    scipy/sparse/linalg/__init__.pyc \
-    scipy/sparse/construct.pyc \
-    scipy/sparse/dok.pyc \
+    scipy/sparse/_sparsetools.so \
+    scipy/sparse/base.pyc \
     scipy/sparse/bsr.pyc \
+    scipy/sparse/compressed.pyc \
+    scipy/sparse/construct.pyc \
     scipy/sparse/coo.pyc \
-    scipy/sparse/sputils.pyc \
-    scipy/sparse/lil.pyc \
-    scipy/sparse/csgraph/_shortest_path.so \
-    scipy/sparse/csgraph/_reordering.so \
+    scipy/sparse/csc.pyc \
+    scipy/sparse/csgraph/__init__.pyc \
+    scipy/sparse/csgraph/_components.pyc \
     scipy/sparse/csgraph/_laplacian.pyc \
     scipy/sparse/csgraph/_min_spanning_tree.so \
-    scipy/sparse/csgraph/_components.pyc \
-    scipy/sparse/csgraph/__init__.pyc \
+    scipy/sparse/csgraph/_reordering.so \
+    scipy/sparse/csgraph/_shortest_path.so \
     scipy/sparse/csgraph/_tools.so \
-    scipy/sparse/csgraph/_validation.pyc \
     scipy/sparse/csgraph/_traversal.so \
-    scipy/spatial/_voronoi.so \
-    scipy/spatial/qhull.so \
+    scipy/sparse/csgraph/_validation.pyc \
+    scipy/sparse/csr.pyc \
+    scipy/sparse/data.pyc \
+    scipy/sparse/dia.pyc \
+    scipy/sparse/dok.pyc \
+    scipy/sparse/extract.pyc \
+    scipy/sparse/lil.pyc \
+    scipy/sparse/linalg/__init__.pyc \
+    scipy/sparse/linalg/_expm_multiply.pyc \
+    scipy/sparse/linalg/_norm.pyc \
+    scipy/sparse/linalg/_onenormest.pyc \
+    scipy/sparse/linalg/dsolve/__init__.pyc \
+    scipy/sparse/linalg/dsolve/_add_newdocs.pyc \
+    scipy/sparse/linalg/dsolve/_superlu.so \
+    scipy/sparse/linalg/dsolve/linsolve.pyc \
+    scipy/sparse/linalg/eigen/__init__.pyc \
+    scipy/sparse/linalg/eigen/arpack/__init__.pyc \
+    scipy/sparse/linalg/eigen/arpack/_arpack.so \
+    scipy/sparse/linalg/eigen/arpack/arpack.pyc \
+    scipy/sparse/linalg/eigen/lobpcg/__init__.pyc \
+    scipy/sparse/linalg/eigen/lobpcg/lobpcg.pyc \
+    scipy/sparse/linalg/interface.pyc \
+    scipy/sparse/linalg/isolve/__init__.pyc \
+    scipy/sparse/linalg/isolve/_iterative.so \
+    scipy/sparse/linalg/isolve/iterative.pyc \
+    scipy/sparse/linalg/isolve/lgmres.pyc \
+    scipy/sparse/linalg/isolve/lsmr.pyc \
+    scipy/sparse/linalg/isolve/lsqr.pyc \
+    scipy/sparse/linalg/isolve/minres.pyc \
+    scipy/sparse/linalg/isolve/utils.pyc \
+    scipy/sparse/linalg/matfuncs.pyc \
+    scipy/sparse/sputils.pyc \
     scipy/spatial/__init__.pyc \
-    scipy/spatial/distance.pyc \
     scipy/spatial/_distance_wrap.so \
-    scipy/spatial/ckdtree.so \
-    scipy/spatial/_spherical_voronoi.pyc \
-    scipy/spatial/kdtree.pyc \
     scipy/spatial/_hausdorff.so \
-    scipy/spatial/_procrustes.pyc \
     scipy/spatial/_plotutils.pyc \
+    scipy/spatial/_procrustes.pyc \
+    scipy/spatial/_spherical_voronoi.pyc \
+    scipy/spatial/_voronoi.so \
+    scipy/spatial/ckdtree.so \
+    scipy/spatial/distance.pyc \
+    scipy/spatial/kdtree.pyc \
+    scipy/spatial/qhull.so \
+    scipy/special/__init__.pyc \
+    scipy/special/_comb.so \
+    scipy/special/_ellip_harm.pyc \
+    scipy/special/_ellip_harm_2.so \
+    scipy/special/_logsumexp.pyc \
+    scipy/special/_spherical_bessel.pyc \
+    scipy/special/_ufuncs.so \
+    scipy/special/_ufuncs_cxx.so \
+    scipy/special/basic.pyc \
+    scipy/special/lambertw.pyc \
+    scipy/special/orthogonal.pyc \
+    scipy/special/sf_error.pyc \
+    scipy/special/specfun.so \
+    scipy/special/spfun_stats.pyc \
+    scipy/version.pyc \
     subprocess32.pyc \
+    werkzeug/__init__.pyc \
     werkzeug/_compat.pyc \
+    werkzeug/_internal.pyc \
+    werkzeug/_reloader.pyc \
     werkzeug/datastructures.pyc \
-    werkzeug/debug/console.pyc \
     werkzeug/debug/__init__.pyc \
+    werkzeug/debug/console.pyc \
     werkzeug/debug/repr.pyc \
     werkzeug/debug/tbtools.pyc \
     werkzeug/exceptions.pyc \
     werkzeug/filesystem.pyc \
     werkzeug/formparser.pyc \
     werkzeug/http.pyc \
-    werkzeug/__init__.pyc \
-    werkzeug/_internal.pyc \
     werkzeug/local.pyc \
-    werkzeug/_reloader.pyc \
     werkzeug/routing.pyc \
     werkzeug/security.pyc \
     werkzeug/serving.pyc \
@@ -651,8 +580,50 @@ RUN \
     werkzeug/utils.pyc \
     werkzeug/wrappers.pyc \
     werkzeug/wsgi.pyc \
-    urllib3/* \
-    raven/* \
-    contextlib2.pyc \
-    flask/testing.pyc \
-    werkzeug/test.pyc
+    PIL/.libs/libjpeg-* \
+    PIL/.libs/liblzma-* \
+    PIL/.libs/libopenjp2-* \
+    PIL/.libs/libtiff-* \
+    PIL/.libs/libz-* \
+    matplotlib/.libs/libpng16-* \
+    numpy/.libs/libgfortran-* \
+    numpy/.libs/libopenblasp-r0-* \
+    psycopg2/.libs/libcom_err-* \
+    psycopg2/.libs/libcrypto-* \
+    psycopg2/.libs/libgssapi_krb5-* \
+    psycopg2/.libs/libk5crypto-* \
+    psycopg2/.libs/libkeyutils-1-* \
+    psycopg2/.libs/libkrb5-* \
+    psycopg2/.libs/libkrb5support-* \
+    psycopg2/.libs/liblber-2-* \
+    psycopg2/.libs/libldap_r-2-* \
+    psycopg2/.libs/libpq-* \
+    psycopg2/.libs/libresolv-2-* \
+    psycopg2/.libs/libsasl2-* \
+    psycopg2/.libs/libselinux-* \
+    psycopg2/.libs/libsepol-* \
+    psycopg2/.libs/libssl-* \
+    psycopg2/.libs/libz-* \
+    matplotlib/mpl-data/matplotlibrc \
+    matplotlib/mpl-data/stylelib/bmh.mplstyle \
+    matplotlib/mpl-data/stylelib/classic.mplstyle \
+    matplotlib/mpl-data/stylelib/dark_background.mplstyle \
+    matplotlib/mpl-data/stylelib/fivethirtyeight.mplstyle \
+    matplotlib/mpl-data/stylelib/ggplot.mplstyle \
+    matplotlib/mpl-data/stylelib/grayscale.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-bright.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-colorblind.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-dark-palette.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-dark.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-darkgrid.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-deep.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-muted.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-notebook.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-paper.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-pastel.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-poster.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-talk.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-ticks.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-white.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn-whitegrid.mplstyle \
+    matplotlib/mpl-data/stylelib/seaborn.mplstyle
