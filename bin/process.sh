@@ -196,35 +196,6 @@ gdal_translate -of png $vrt $thumb -outsize $target_width $target_height
 aws s3 cp $thumb ${output}_thumb.png
 rm -f $vrt $thumb
 
-if [ "$mask" -eq 1 ]; then
-  # 7. create and upload warped VRT
-  >&2 echo "Generating warped VRT..."
-  warped_vrt=${base}_warped.vrt
-  to_clean+=($warped_vrt)
-  make_vrt.sh -r lanczos ${output}.tif > $warped_vrt
-  aws s3 cp $warped_vrt ${output}_warped.vrt
-
-  # 8. create and upload warped VRT for mask
-  >&2 echo "Generating warped VRT for mask..."
-  make_mask_vrt.py $warped_vrt | aws s3 cp - ${output}_warped_mask.vrt
-elif [ "$count" -eq 3 ]; then
-  # RGB; add an alpha channel
-  # 7. create and upload warped VRT
-  >&2 echo "Generating warped VRT..."
-  warped_vrt=${base}_warped.vrt
-  to_clean+=($warped_vrt)
-  make_vrt.sh -r lanczos -a ${output}.tif > $warped_vrt
-  aws s3 cp $warped_vrt ${output}_warped.vrt
-else
-  # 7. create and upload warped VRT
-  >&2 echo "Generating warped VRT..."
-  warped_vrt=${base}_warped.vrt
-  to_clean+=($warped_vrt)
-  make_vrt.sh -r lanczos ${output}.tif > $warped_vrt
-  aws s3 cp $warped_vrt ${output}_warped.vrt
-fi
-
-rm -f $warped_vrt
 
 # 9. create and upload metadata
 >&2 echo "Generating metadata..."
