@@ -182,8 +182,8 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
                 # expand the calculated window
                 # (this isn't a Window so we can keep floating point values)
-                target_window = ((r[0] - buffer_pixels * scale_factor[0],
-                                  r[1] + buffer_pixels * scale_factor[0]),
+                target_window = ((r[0] - buffer_pixels * scale_factor[1],
+                                  r[1] + buffer_pixels * scale_factor[1]),
                                  (c[0] - buffer_pixels * scale_factor[0],
                                   c[1] + buffer_pixels * scale_factor[0]))
 
