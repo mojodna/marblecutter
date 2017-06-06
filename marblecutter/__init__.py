@@ -305,6 +305,25 @@ def render(
               p + (effective_buffer * resolution[i % 2])
               for i, p in enumerate(bounds)]
 
+    # adjust bounds + shape if bounds extends outside the extent
+    extent = get_extent(bounds_crs)
+
+    if bounds[0] < extent[0]:
+        shape[1] -= effective_buffer
+        bounds[0] = extent[0]
+
+    if bounds[2] > extent[2]:
+        shape[1] -= effective_buffer
+        bounds[2] = extent[2]
+
+    if bounds[1] < extent[1]:
+        shape[0] -= effective_buffer
+        bounds[1] = extent[1]
+
+    if bounds[3] > extent[3]:
+        shape[0] -= effective_buffer
+        bounds[3] = extent[3]
+
     sources = mosaic.get_sources((bounds, bounds_crs), resolution_m)
 
     (data, (data_bounds, data_crs)) = mosaic.composite(

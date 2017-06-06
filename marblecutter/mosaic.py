@@ -143,7 +143,6 @@ def paste(
     (canvas, (canvas_bounds, canvas_crs))
 ):
     """ "Reproject" src data into the correct position within a larger image"""
-
     if window_crs != canvas_crs:
         raise Exception(
             "CRSes must match: {} != {}".format(window_crs, canvas_crs))
