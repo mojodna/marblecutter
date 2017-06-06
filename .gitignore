@@ -3,3 +3,4 @@ venv/
 .env
 project.json
 .cache/
+marblecutter.egg-info/
