@@ -4,13 +4,13 @@ from __future__ import absolute_import, division, print_function
 
 import math
 
-from affine import Affine
 from haversine import haversine
 import numpy as np
 import rasterio
 from rasterio import transform
 from rasterio import windows
 from rasterio.crs import CRS
+from rasterio.transform import Affine
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import Resampling
 from rasterio.windows import Window
