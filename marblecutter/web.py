@@ -57,8 +57,6 @@ def meta(renderer): # noqa
     if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium"]:
         return '', 404
 
-    LOG.warn('meta')
-
     meta = {
         "minzoom": 0,
         "maxzoom": 22,
