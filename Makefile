@@ -13,8 +13,8 @@ tools:
 server: tools
 	docker build --build-arg http_proxy=$(http_proxy) -t quay.io/mojodna/mapzen-dynamic-tiler-server -f server/Dockerfile .
 
-test:
-	python -m pytest -v -s
+depfinder:
+	docker build --build-arg http_proxy=$(http_proxy) -t marblecutter-depfinder -f aws/Dockerfile .
 
 deploy: project.json
 	apex deploy -l debug -E environment.json
@@ -48,7 +48,7 @@ submit-job: node_modules/.bin/interp
 	rm -f $(tmp)
 
 deps/deps.zip: deps/Dockerfile
-		docker run --rm --entrypoint cat $$(docker build -q -f $< .) /tmp/task.zip > $@
+	docker run --rm --entrypoint cat $$(docker build --build-arg http_proxy=$(http_proxy) -q -f $< .) /tmp/task.zip > $@
 
 clean:
-		rm -f deps/deps.zip
+	rm -f deps/deps.zip

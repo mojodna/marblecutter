@@ -1,5 +1,7 @@
 FROM lambci/lambda:build-python2.7
 
+ARG http_proxy
+
 # Install deps
 
 RUN \
