@@ -141,6 +141,7 @@ RUN \
     flask/sessions.pyc \
     flask/signals.pyc \
     flask/templating.pyc \
+    flask/testing.pyc \
     flask/wrappers.pyc \
     flask_cors/__init__.pyc \
     flask_cors/core.pyc \
@@ -577,6 +578,7 @@ RUN \
     werkzeug/routing.pyc \
     werkzeug/security.pyc \
     werkzeug/serving.pyc \
+    werkzeug/test.pyc \
     werkzeug/urls.pyc \
     werkzeug/utils.pyc \
     werkzeug/wrappers.pyc \
