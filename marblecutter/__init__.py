@@ -5,7 +5,6 @@ from __future__ import absolute_import, division, print_function
 import math
 
 from affine import Affine
-from cachetools.func import lru_cache
 from haversine import haversine
 import numpy as np
 import rasterio
@@ -79,7 +78,6 @@ def get_resolution_in_meters((bounds, crs), (height, width)):
     return get_resolution((bounds, crs), (height, width))
 
 
-@lru_cache(maxsize=1024)
 def get_source(path):
     """Cached source opening."""
     with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
