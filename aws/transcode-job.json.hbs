@@ -1,0 +1,17 @@
+{
+  "jobName": "{{ name }}",
+  "jobQueue": "arn:aws:batch:us-east-1:{{ AWS_ACCOUNT_ID }}:job-queue/transcoding-20170519",
+  "jobDefinition": "arn:aws:batch:us-east-1:{{ AWS_ACCOUNT_ID }}:job-definition/transcode",
+  "parameters": {
+    "input": "{{ input }}",
+    "output": "{{ output }}"
+  },
+  "containerOverrides": {
+    "environment": [
+      {
+        "name": "TMPDIR",
+        "value": "/mnt"
+      }
+    ]
+  }
+}
