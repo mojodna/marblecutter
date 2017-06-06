@@ -26,6 +26,15 @@ if [[ "$ext" == "zip" ]]; then
   fi
 
   input="zip://${input}!${inner_source}"
+elif [[ "$input" =~ \.tar\.gz$ ]]; then
+  inner_source=$(tar ztf ${input} | grep tif | head -1)
+
+  if [[ -z "$inner_source" ]]; then
+    >&2 echo "Could not find a TIFF inside ${input}"
+    exit 1
+  fi
+
+  input="tar://${input}!${inner_source}"
 fi
 
 info=$(rio info $input 2> /dev/null)
@@ -48,6 +57,8 @@ elif [[ $input =~ "s3://" ]]; then
   input=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $input)
 elif [[ $input =~ "zip://" ]]; then
   input=$(sed 's|zip://\(.*\)!\(.*\)|/vsizip/\1/\2|' <<< $input)
+elif [[ $input =~ "tar://" ]]; then
+  input=$(sed 's|tar://\(.*\)!\(.*\)|/vsitar/\1/\2|' <<< $input)
 fi
 
 

@@ -86,7 +86,7 @@ if [[ "$input" =~ ^s3:// ]]; then
     source=$input
   fi
 elif [[ "$input" =~ s3\.amazonaws\.com ]]; then
-  if [[ "$input" =~ \.zip$ ]]; then
+  if [[ "$input" =~ \.zip$ || "$input" =~ \.tar\.gz$ ]]; then
     >&2 echo "Downloading $input from S3 over HTTP..."
     curl -sfL $input -o $source
   else
