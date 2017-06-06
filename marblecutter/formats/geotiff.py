@@ -6,6 +6,8 @@ import numpy as np
 from rasterio import transform
 from rasterio.io import MemoryFile
 
+from .. import _nodata, get_resolution_in_meters
+
 CONTENT_TYPE = "image/tiff"
 
 
@@ -16,11 +18,19 @@ def format():
 
         (count, height, width) = data.shape
 
+        if count == 1:
+            resolution = get_resolution_in_meters(
+                (data_bounds, data_crs), (height, width))
+
+            # downsample to int16 if ground resolution is more than 10 meters
+            # (at the equator)
+            if resolution[0] > 10 and resolution[1] > 10:
+                data = data.astype(np.int16)
+                data.fill_value = _nodata(data.dtype)
+
         if np.issubdtype(data.dtype, np.float):
-            info = np.finfo(data.dtype)
             predictor = 3
         else:
-            info = np.iinfo(data.dtype)
             predictor = 2
 
         meta = {
