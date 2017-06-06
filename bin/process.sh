@@ -102,13 +102,13 @@ fi
 transcode.sh $source $intermediate
 rm -f $source
 
-# 2. generate metadata
->&2 echo "Generating OIN metadata..."
-if [[ ${#args} -gt 0 ]]; then
-  metadata=$(oin-meta-generator -u "${output}.tif" -m "thumbnail=${output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" "${args[@]}" $intermediate)
-else
-  metadata=$(oin-meta-generator -u "${output}.tif" -m "thumbnail=${output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" $intermediate)
-fi
+# # 2. generate metadata
+# >&2 echo "Generating OIN metadata..."
+# if [[ ${#args} -gt 0 ]]; then
+#   metadata=$(oin-meta-generator -u "${output}.tif" -m "thumbnail=${output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" "${args[@]}" $intermediate)
+# else
+#   metadata=$(oin-meta-generator -u "${output}.tif" -m "thumbnail=${output}_thumb.png" -m "tms=${tiler_url}/{z}/{x}/{y}.png" -m "wmts=${tiler_url}/wmts" $intermediate)
+# fi
 
 # 2. upload TIF
 >&2 echo "Uploading..."
@@ -121,34 +121,34 @@ if [ -f ${intermediate}.msk ]; then
   >&2 echo "Uploading mask..."
   aws s3 cp ${intermediate}.msk ${output}.tif.msk
 
-  # 4. create RGBA VRT (for use in QGIS, etc.)
-  info=$(rio info $intermediate 2> /dev/null)
-  count=$(jq .count <<< $info)
-  if [ "$count" -eq 4 ]; then
-    >&2 echo "Generating RGBA VRT..."
-    vrt=${base}.vrt
-    to_clean+=($vrt)
-    gdal_translate \
-      -b 1 \
-      -b 2 \
-      -b 3 \
-      -b mask \
-      -of VRT \
-      ${gdal_output}.tif $vrt
-  else
-    >&2 echo "Generating VRT..."
-    vrt=${base}.vrt
-    to_clean+=($vrt)
-    gdal_translate \
-      -of VRT \
-      ${gdal_output}.tif $vrt
-  fi
-
-  cat $vrt | \
-    perl -pe 's|(band="4"\>)|$1\n    <ColorInterp>Alpha</ColorInterp>|' | \
-    perl -pe "s|${gdal_output}|$(basename $output)|" | \
-    perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
-    aws s3 cp - ${output}.vrt
+  # # 4. create RGBA VRT (for use in QGIS, etc.)
+  # info=$(rio info $intermediate 2> /dev/null)
+  # count=$(jq .count <<< $info)
+  # if [ "$count" -eq 4 ]; then
+  #   >&2 echo "Generating RGBA VRT..."
+  #   vrt=${base}.vrt
+  #   to_clean+=($vrt)
+  #   gdal_translate \
+  #     -b 1 \
+  #     -b 2 \
+  #     -b 3 \
+  #     -b mask \
+  #     -of VRT \
+  #     ${gdal_output}.tif $vrt
+  # else
+  #   >&2 echo "Generating VRT..."
+  #   vrt=${base}.vrt
+  #   to_clean+=($vrt)
+  #   gdal_translate \
+  #     -of VRT \
+  #     ${gdal_output}.tif $vrt
+  # fi
+  #
+  # cat $vrt | \
+  #   perl -pe 's|(band="4"\>)|$1\n    <ColorInterp>Alpha</ColorInterp>|' | \
+  #   perl -pe "s|${gdal_output}|$(basename $output)|" | \
+  #   perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
+  #   aws s3 cp - ${output}.vrt
 
   # 5. create footprint
   >&2 echo "Generating footprint..."
@@ -158,18 +158,18 @@ if [ -f ${intermediate}.msk ]; then
 else
   mask=0
 
-  # 3. create RGB VRT (for parity)
-  >&2 echo "Generating RGB VRT..."
-  vrt=${base}.vrt
-  to_clean+=($vrt)
-  gdal_translate \
-    -of VRT \
-    ${gdal_output}.tif $vrt
-
-  cat $vrt | \
-    perl -pe "s|${gdal_output}|$(basename $output)|" | \
-    perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
-    aws s3 cp - ${output}.vrt
+  # # 3. create RGB VRT (for parity)
+  # >&2 echo "Generating RGB VRT..."
+  # vrt=${base}.vrt
+  # to_clean+=($vrt)
+  # gdal_translate \
+  #   -of VRT \
+  #   ${gdal_output}.tif $vrt
+  #
+  # cat $vrt | \
+  #   perl -pe "s|${gdal_output}|$(basename $output)|" | \
+  #   perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
+  #   aws s3 cp - ${output}.vrt
 
   # 4. create footprint (bounds of image)
   >&2 echo "Generating footprint..."
@@ -180,22 +180,21 @@ fi
 
 rm -f ${intermediate}*
 
-# 6. create thumbnail
->&2 echo "Generating thumbnail..."
-thumb=${base}_thumb.png
-to_clean+=($thumb ${thumb}.aux.xml)
-info=$(rio info $vrt 2> /dev/null)
-count=$(jq .count <<< $info)
-height=$(jq .height <<< $info)
-width=$(jq .width <<< $info)
-target_pixel_area=$(bc -l <<< "$THUMBNAIL_SIZE * 1000 / 0.75")
-ratio=$(bc -l <<< "sqrt($target_pixel_area / ($width * $height))")
-target_width=$(printf "%.0f" $(bc -l <<< "$width * $ratio"))
-target_height=$(printf "%.0f" $(bc -l <<< "$height * $ratio"))
-gdal_translate -of png $vrt $thumb -outsize $target_width $target_height
-aws s3 cp $thumb ${output}_thumb.png
-rm -f $vrt $thumb
-
+# # 6. create thumbnail
+# >&2 echo "Generating thumbnail..."
+# thumb=${base}_thumb.png
+# to_clean+=($thumb ${thumb}.aux.xml)
+# info=$(rio info $vrt 2> /dev/null)
+# count=$(jq .count <<< $info)
+# height=$(jq .height <<< $info)
+# width=$(jq .width <<< $info)
+# target_pixel_area=$(bc -l <<< "$THUMBNAIL_SIZE * 1000 / 0.75")
+# ratio=$(bc -l <<< "sqrt($target_pixel_area / ($width * $height))")
+# target_width=$(printf "%.0f" $(bc -l <<< "$width * $ratio"))
+# target_height=$(printf "%.0f" $(bc -l <<< "$height * $ratio"))
+# gdal_translate -of png $vrt $thumb -outsize $target_width $target_height
+# aws s3 cp $thumb ${output}_thumb.png
+# rm -f $vrt $thumb
 
 # 9. create and upload metadata
 >&2 echo "Generating metadata..."
@@ -205,7 +204,7 @@ else
   get_metadata.py "${args[@]}" $output | aws s3 cp - ${output}.json
 fi
 
-# 10. Upload OIN metadata
-aws s3 cp - ${output}_meta.json <<< $metadata
+# # 10. Upload OIN metadata
+# aws s3 cp - ${output}_meta.json <<< $metadata
 
 >&2 echo "Done."
