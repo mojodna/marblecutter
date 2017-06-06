@@ -21,6 +21,12 @@ from . import mosaic
 WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
 
+EXTENTS = {
+    str(WEB_MERCATOR_CRS): (-20037508.342789244, -20037508.342789244,
+                            20037508.342789244, 20037508.342789244),
+    str(WGS84_CRS): (-180, -90, 180, 90),
+}
+
 
 def _isimage(data_format):
     return data_format.upper() in ["RGB", "RGBA"]
@@ -59,6 +65,10 @@ def crop((data, (data_bounds, data_crs)), data_format, offset):
     return (data, (data_bounds, data_crs))
 
 
+def get_extent(crs):
+    return EXTENTS[str(crs)]
+
+
 def get_resolution((bounds, crs), (height, width)):
     t = transform.from_bounds(*bounds, width=width, height=height)
 
@@ -90,12 +100,9 @@ def get_zoom(resolution, op=round):
 
 
 def read_window(src, (bounds, bounds_crs), (height, width)):
-    if bounds_crs == WEB_MERCATOR_CRS:
-        extent = (-20037508.342789244, -20037508.342789244,
-                  20037508.342789244, 20037508.342789244)
-    elif bounds_crs == WGS84_CRS:
-        extent = (-180, -90, 180, 90)
-    else:
+    try:
+        extent = get_extent(bounds_crs)
+    except KeyError:
         raise Exception("Unsupported CRS: {}".format(bounds_crs))
 
     if bounds_crs == WEB_MERCATOR_CRS:
