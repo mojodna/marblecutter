@@ -137,6 +137,7 @@ RUN \
     flask/globals.pyc \
     flask/helpers.pyc \
     flask/json.pyc \
+    flask/logging.pyc \
     flask/sessions.pyc \
     flask/signals.pyc \
     flask/templating.pyc \
