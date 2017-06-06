@@ -5,7 +5,7 @@ import logging
 import os
 
 import awsgi
-from app import app as tiler
+from marblecutter.web import app
 
 
 # reset the Lambda logger
@@ -25,4 +25,4 @@ def handle(event, context): # noqa
     # Gateway
     event['headers']['X-Forwarded-Proto'] = 'http'
 
-    return awsgi.response(tiler, event, context)
+    return awsgi.response(app, event, context)
