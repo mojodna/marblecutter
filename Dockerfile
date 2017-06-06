@@ -5,7 +5,6 @@ ARG http_proxy
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV PATH=/opt/oam-dynamic-tiler/bin:/opt/oam-dynamic-tiler/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ENV CPL_TMPDIR /tmp
 ENV CPL_VSIL_CURL_ALLOWED_EXTENSIONS .vrt,.tif,.tiff,.ovr,.msk,.jp2,.img,.hgt
 ENV GDAL_CACHEMAX 512
 ENV GDAL_DISABLE_READDIR_ON_OPEN TRUE
