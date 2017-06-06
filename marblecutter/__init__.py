@@ -313,7 +313,6 @@ def render(
     # adjust bounds + shape if bounds extends outside the extent
     extent = get_extent(bounds_crs)
 
-    # TODO this is still problematic with explicitly buffered outputs
     if bounds[0] < extent[0]:
         shape[1] -= effective_buffer
         bounds[0] = bounds_orig[0]
