@@ -62,7 +62,7 @@ WORKDIR /var/task
 COPY requirements.txt /var/task/requirements.txt
 
 RUN \
-  pip install -U numpy && \
+  pip install -U numpy Cython && \
   pip install -r requirements.txt
 
 # Add GDAL libs to the function zip
