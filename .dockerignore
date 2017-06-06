@@ -3,6 +3,7 @@ aws
 deps
 functions
 node_modules
+tmp
 venv
 *.tif
 *.TIF
