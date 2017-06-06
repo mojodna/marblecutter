@@ -4,7 +4,7 @@ MAINTAINER Seth Fitzsimmons <seth@mojodna.net>
 ARG http_proxy
 
 ENV DEBIAN_FRONTEND noninteractive
-ENV PATH=/opt/oam-dynamic-tiler/bin:/opt/oam-dynamic-tiler/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV PATH=/opt/marblecutter/bin:/opt/marblecutter/node_modules/.bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV CPL_VSIL_CURL_ALLOWED_EXTENSIONS .vrt,.tif,.tiff,.ovr,.msk,.jp2,.img,.hgt
 ENV GDAL_CACHEMAX 512
 ENV GDAL_DISABLE_READDIR_ON_OPEN TRUE
@@ -34,21 +34,21 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt/oam-dynamic-tiler
+WORKDIR /opt/marblecutter
 
-COPY requirements.txt /opt/oam-dynamic-tiler/requirements.txt
+COPY requirements.txt /opt/marblecutter/requirements.txt
 
 RUN pip install -U numpy && \
   pip install -r requirements.txt && \
   pip install -U awscli && \
   rm -rf /root/.cache
 
-COPY package.json /opt/oam-dynamic-tiler/package.json
+COPY package.json /opt/marblecutter/package.json
 
 RUN \
   npm install \
   && rm -rf /root/.npm
 
-COPY . /opt/oam-dynamic-tiler
+COPY . /opt/marblecutter
 
 RUN pip install -e .
