@@ -46,23 +46,25 @@ def _nodata(dtype):
         return np.finfo(dtype).min
 
 
-def crop((data, (data_bounds, data_crs)), data_format, offset):
+def crop((data, (bounds, data_crs)), data_format, offsets):
+    left,  right, bottom, top = offsets
+
     if _isimage(data_format):
         width, height, _ = data.shape
 
-        data = data[offset:-offset, offset:-offset, :]
+        data = data[top:height - bottom, left:width - right, :]
 
         return (data, (None, None))
 
     _, height, width = data.shape
-    t = transform.from_bounds(*data_bounds, width=width, height=height)
+    t = transform.from_bounds(*bounds, width=width, height=height)
 
-    data = data[:, offset:-offset, offset:-offset]
+    data = data[:, top:height - bottom, left:width - right]
 
-    cropped_window = windows.Window(offset, offset, *data.shape[1:])
-    data_bounds = windows.bounds(cropped_window, t)
+    cropped_window = windows.Window(left, top, *data.shape[1:])
+    cropped_bounds = windows.bounds(cropped_window, t)
 
-    return (data, (data_bounds, data_crs))
+    return (data, (cropped_bounds, data_crs))
 
 
 def get_extent(crs):
@@ -300,29 +302,37 @@ def render(
         offset = transformation.buffer
 
     # apply buffer
+    bounds_orig = bounds
     shape = [dim + (2 * effective_buffer) for dim in shape]
     bounds = [p - (effective_buffer * resolution[i % 2]) if i < 2 else
               p + (effective_buffer * resolution[i % 2])
               for i, p in enumerate(bounds)]
 
+    left = right = bottom = top = offset
+
     # adjust bounds + shape if bounds extends outside the extent
     extent = get_extent(bounds_crs)
 
+    # TODO this is still problematic with explicitly buffered outputs
     if bounds[0] < extent[0]:
         shape[1] -= effective_buffer
-        bounds[0] = extent[0]
+        bounds[0] = bounds_orig[0]
+        left = 0
 
     if bounds[2] > extent[2]:
         shape[1] -= effective_buffer
-        bounds[2] = extent[2]
+        bounds[2] = bounds_orig[2]
+        right = 0
 
     if bounds[1] < extent[1]:
         shape[0] -= effective_buffer
-        bounds[1] = extent[1]
+        bounds[1] = bounds_orig[1]
+        bottom = 0
 
     if bounds[3] > extent[3]:
         shape[0] -= effective_buffer
-        bounds[3] = extent[3]
+        bounds[3] = bounds_orig[3]
+        top = 0
 
     sources = mosaic.get_sources((bounds, bounds_crs), resolution_m)
 
@@ -336,6 +346,8 @@ def render(
 
     if effective_buffer > buffer:
         (data, (data_bounds, data_crs)) = crop(
-            (data, (data_bounds, data_crs)), data_format, offset)
+            (data, (data_bounds, data_crs)),
+            data_format,
+            (left, right, bottom, top))
 
     return format((data, (data_bounds, data_crs)), data_format)
