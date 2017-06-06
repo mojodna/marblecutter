@@ -140,8 +140,21 @@ def get_sources((bounds, bounds_crs), resolution):
 
 def paste(
     (window_data, (window_bounds, window_crs)),
-    (canvas, (canvas_bounds, canvas_bounds_crs))
+    (canvas, (canvas_bounds, canvas_crs))
 ):
     """ "Reproject" src data into the correct position within a larger image"""
+
+    if window_crs != canvas_crs:
+        raise Exception(
+            "CRSes must match: {} != {}".format(window_crs, canvas_crs))
+
+    if window_bounds != canvas_bounds:
+        raise Exception(
+            "Bounds must match: {} != {}".format(window_bounds, canvas_bounds))
+
+    if window_data.shape != canvas.shape:
+        raise Exception(
+            "Data shapes must match: {} != {}".format(
+                window_data.shape, canvas.shape))
 
     return np.ma.where(canvas.mask & ~window_data.mask, window_data, canvas)
