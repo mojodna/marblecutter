@@ -25,6 +25,7 @@ pool = SimpleConnectionPool(
     port=database_url.port,
 )
 
+Infinity = float("inf")
 LOG = logging.getLogger(__name__)
 WGS84_CRS = CRS.from_epsg(4326)
 
@@ -125,10 +126,10 @@ def get_sources((bounds, bounds_crs), resolution):
     try:
         with conn.cursor() as cur:
             cur.execute(query, {
-                "minx": left,
-                "miny": bottom,
-                "maxx": right,
-                "maxy": top,
+                "minx": left if left != Infinity else -180,
+                "miny": bottom if bottom != Infinity else -90,
+                "maxx": right if right != Infinity else 180,
+                "maxy": top if top != Infinity else 90,
                 "zoom": zoom,
             })
 
