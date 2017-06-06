@@ -144,15 +144,70 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                         dst_window.num_rows / height)
 
         if vrt.count == 1 and (scale_factor[0] < 1 or scale_factor[1] < 1):
-            buffer_pixels = 2
+            # buffer
+
+            # number of "pixel-equivalents" to buffer
+            buffer_pixels = 1
+
+            # individual pixel size in scaled "pixels"
             pixel = (1 / scale_factor[0],
                      1 / scale_factor[1])
+
+            # buffer sizing
             buffer = (buffer_pixels * pixel[0],
                       buffer_pixels * pixel[1])
             r, c = dst_window
+
+            # expand the calculated window
             window = Window.from_ranges(
                 (r[0] - buffer_pixels, r[1] + buffer_pixels),
                 (c[0] - buffer_pixels, c[1] + buffer_pixels))
+
+            if scale_factor[0] % 1 != 0 or scale_factor[1] % 1 != 0:
+                scaled_transform = vrt.transform * Affine.scale(*scale_factor)
+
+                # ideal window (in scaled space)
+                target_window = windows.from_bounds(
+                    *bounds, transform=scaled_transform, boundless=True)
+                r, c = target_window
+
+                # expand the calculated window
+                # (this isn't a Window so we can keep floating point values)
+                target_window = ((r[0] - buffer_pixels * scale_factor[0],
+                                  r[1] + buffer_pixels * scale_factor[0]),
+                                 (c[0] - buffer_pixels * scale_factor[0],
+                                  c[1] + buffer_pixels * scale_factor[0]))
+
+                # bounds actually covered by the calculated window (including
+                # buffers)
+                data_bounds = windows.bounds(window, vrt.transform)
+
+                # data window (in scaled space)
+                data_window = windows.from_bounds(
+                    *data_bounds, transform=scaled_transform, boundless=True)
+
+                tr, tc = target_window
+                dr, dc = data_window
+
+                minx = dr[0] - tr[0]
+                miny = dc[0] - tc[0]
+                maxx = width + (dr[1] - tr[1])
+                maxy = height + (dc[1] - tc[1])
+
+                # source data pixels mapped to target pixels
+                x = np.linspace(minx - buffer[0],
+                                maxx - buffer[0],
+                                num=window.num_cols)
+                y = np.linspace(miny - buffer[1],
+                                maxy - buffer[1],
+                                num=window.num_rows)
+            else:
+                x = np.linspace(-buffer[0],
+                                (window.num_cols * pixel[0]) - buffer[0],
+                                num=window.num_cols)
+                y = np.linspace(-buffer[1],
+                                (window.num_rows * pixel[1]) - buffer[1],
+                                num=window.num_rows)
 
             data = vrt.read(
                 1,
@@ -164,17 +219,6 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             else:
                 data = np.ma.masked_array(data, mask=False)
 
-            h, w = data.shape
-
-            # if pixel_size isn't a power of 2, we picked up some extra width,
-            # so use ceil() to stretch out the shape of the interpolation
-            # target
-            x = np.arange(-buffer[0],
-                          (window.num_cols * math.ceil(pixel[0])) - buffer[0],
-                          (window.num_cols * math.ceil(pixel[0])) / w)
-            y = np.arange(-buffer[1],
-                          (window.num_rows * math.ceil(pixel[1])) - buffer[1],
-                          (window.num_rows * math.ceil(pixel[1])) / h)
             interp = RectBivariateSpline(y, x, data)
 
             data = interp(
