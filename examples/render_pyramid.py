@@ -18,7 +18,7 @@ from marblecutter.transformations import Normal, Terrarium
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('batchtiler')
 
-MAX_ZOOM = 14
+MAX_ZOOM = 15
 POOL = Pool(multiprocessing.cpu_count() * 4)
 
 GEOTIFF_FORMAT = GeoTIFF()
