@@ -6,6 +6,7 @@ import argparse
 import boto3
 import logging
 import multiprocessing
+import time
 from multiprocessing.dummy import Pool
 
 import mercantile
@@ -27,6 +28,18 @@ NORMAL_TRANSFORMATION = Normal()
 TERRARIUM_TRANSFORMATION = Terrarium()
 
 
+class Timer(object):
+    def __init__(self):
+        self.elapsed = 0
+
+    def __enter__(self):
+        self.start = time.time()
+
+    def __exit__(self, ty, val, tb):
+        self.end = time.time()
+        self.elapsed = self.end - self.start
+
+
 def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
                 content_type):
     s3 = boto3.resource('s3')
@@ -41,14 +54,16 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
     if key_prefix:
         key = '{}/{}'.format(key_prefix, key)
 
-    s3.Bucket(bucket).put_object(
-        Key=key,
-        Body=data,
-        ContentType=content_type,
-    )
+    with Timer() as t:
+        s3.Bucket(bucket).put_object(
+            Key=key,
+            Body=data,
+            ContentType=content_type,
+        )
 
-    logger.info('Wrote %s tile (%s bytes) to s3://%s/%s',
-                tile_type, len(data), bucket, key)
+    logger.info('(%02d/%06d/%06d) Took %0.3fs to write %s tile to s3://%s/%s',
+                tile.zoom, tile.x, tile.y, t.elapsed, tile_type,
+                bucket, key)
 
 
 def render_tile(tile, s3_details):
@@ -56,15 +71,23 @@ def render_tile(tile, s3_details):
 
     for (type, transformation) in (("normal", NORMAL_TRANSFORMATION),
                                    ("terrarium", TERRARIUM_TRANSFORMATION)):
-        (content_type, data) = tiling.render_tile(
-            tile, format=PNG_FORMAT, transformation=transformation)
+        with Timer() as t:
+            (content_type, data) = tiling.render_tile(
+                tile, format=PNG_FORMAT, transformation=transformation)
+
+        logger.info('(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes)',
+                    tile.zoom, tile.x, tile.y, t.elapsed, type, len(data))
 
         write_to_s3(s3_bucket, s3_key_prefix,
                     tile, type, data,
                     '.png', content_type)
 
-    (content_type, data) = tiling.render_tile(
-        tile, format=GEOTIFF_FORMAT, scale=2)
+    with Timer() as t:
+        (content_type, data) = tiling.render_tile(
+            tile, format=GEOTIFF_FORMAT, scale=2)
+
+    logger.info('(%02d/%06d/%06d) Took %0.3fs to render geotiff tile (%s bytes)',
+                tile.zoom, tile.x, tile.y, t.elapsed, type, len(data))
 
     write_to_s3(s3_bucket, s3_key_prefix,
                 tile, 'geotiff', data,
