@@ -45,7 +45,7 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
     s3 = boto3.resource('s3')
     key = '{}/{}/{}/{}{}'.format(
         tile_type,
-        tile.zoom,
+        tile.z,
         tile.x,
         tile.y,
         key_suffix,
@@ -62,7 +62,7 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
         )
 
     logger.info('(%02d/%06d/%06d) Took %0.3fs to write %s tile to s3://%s/%s',
-                tile.zoom, tile.x, tile.y, t.elapsed, tile_type,
+                tile.z, tile.x, tile.y, t.elapsed, tile_type,
                 bucket, key)
 
 
@@ -76,7 +76,7 @@ def render_tile(tile, s3_details):
                 tile, format=PNG_FORMAT, transformation=transformation)
 
         logger.info('(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes)',
-                    tile.zoom, tile.x, tile.y, t.elapsed, type, len(data))
+                    tile.z, tile.x, tile.y, t.elapsed, type, len(data))
 
         write_to_s3(s3_bucket, s3_key_prefix,
                     tile, type, data,
@@ -87,7 +87,7 @@ def render_tile(tile, s3_details):
             tile, format=GEOTIFF_FORMAT, scale=2)
 
     logger.info('(%02d/%06d/%06d) Took %0.3fs to render geotiff tile (%s bytes)',
-                tile.zoom, tile.x, tile.y, t.elapsed, type, len(data))
+                tile.z, tile.x, tile.y, t.elapsed, type, len(data))
 
     write_to_s3(s3_bucket, s3_key_prefix,
                 tile, 'geotiff', data,
