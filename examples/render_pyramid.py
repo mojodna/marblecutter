@@ -26,15 +26,18 @@ NORMAL_TRANSFORMATION = Normal()
 TERRARIUM_TRANSFORMATION = Terrarium()
 
 
-def write_to_s3(bucket, key_prefix, tile, data, key_suffix, content_type):
+def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix, content_type):
     s3 = boto3.resource('s3')
     key = '{}/{}/{}/{}{}'.format(
-        key_prefix,
+        tile_type,
         tile.zoom,
         tile.x,
         tile.y,
         key_suffix,
     )
+
+    if key_prefix:
+        key = '{}/{}'.format(key_prefix, key)
 
     s3.Bucket(bucket).put_object(
         Key=key,
@@ -51,12 +54,28 @@ def render_tile(tile, s3_details):
         (content_type, data) = tiling.render_tile(
             tile, format=PNG_FORMAT, transformation=transformation)
 
-        write_to_s3(s3_bucket, s3_key_prefix, tile, data, '.png', content_type)
+        write_to_s3(
+            s3_bucket,
+            s3_key_prefix,
+            tile,
+            type,
+            data,
+            '.png',
+            content_type
+        )
 
     (content_type, data) = tiling.render_tile(
         tile, format=GEOTIFF_FORMAT, scale=2)
 
-    write_to_s3(s3_bucket, s3_key_prefix, tile, data, '.tif', content_type)
+    write_to_s3(
+        s3_bucket,
+        s3_key_prefix,
+        tile,
+        'geotiff',
+        data,
+        '.tif',
+        content_type
+    )
 
 
 def queue_tile(tile, s3_details):
