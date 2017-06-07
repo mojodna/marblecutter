@@ -45,6 +45,14 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix, content_t
         ContentType=content_type,
     )
 
+    logging.getLogger('batchtiler').info(
+        'Wrote %s tile (%s bytes) to s3://%s/%s',
+        tile_type,
+        len(data),
+        bucket,
+        key,
+    )
+
 
 def render_tile(tile, s3_details):
     s3_bucket, s3_key_prefix = s3_details
