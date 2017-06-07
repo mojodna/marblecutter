@@ -32,11 +32,9 @@ TERRARIUM_TRANSFORMATION = Terrarium()
 
 
 class Timer(object):
-    def __init__(self):
-        self.elapsed = 0
-
     def __enter__(self):
         self.start = time.time()
+        return self
 
     def __exit__(self, ty, val, tb):
         self.end = time.time()
