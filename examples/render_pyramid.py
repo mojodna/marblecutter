@@ -16,6 +16,7 @@ from marblecutter.formats import PNG, GeoTIFF
 from marblecutter.transformations import Normal, Terrarium
 
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('batchtiler')
 
 MAX_ZOOM = 14
 POOL = Pool(multiprocessing.cpu_count() * 4)
@@ -26,7 +27,8 @@ NORMAL_TRANSFORMATION = Normal()
 TERRARIUM_TRANSFORMATION = Terrarium()
 
 
-def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix, content_type):
+def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
+                content_type):
     s3 = boto3.resource('s3')
     key = '{}/{}/{}/{}{}'.format(
         tile_type,
@@ -45,13 +47,8 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix, content_t
         ContentType=content_type,
     )
 
-    logging.getLogger('batchtiler').info(
-        'Wrote %s tile (%s bytes) to s3://%s/%s',
-        tile_type,
-        len(data),
-        bucket,
-        key,
-    )
+    logger.info('Wrote %s tile (%s bytes) to s3://%s/%s',
+                tile_type, len(data), bucket, key)
 
 
 def render_tile(tile, s3_details):
@@ -62,28 +59,16 @@ def render_tile(tile, s3_details):
         (content_type, data) = tiling.render_tile(
             tile, format=PNG_FORMAT, transformation=transformation)
 
-        write_to_s3(
-            s3_bucket,
-            s3_key_prefix,
-            tile,
-            type,
-            data,
-            '.png',
-            content_type
-        )
+        write_to_s3(s3_bucket, s3_key_prefix,
+                    tile, type, data,
+                    '.png', content_type)
 
     (content_type, data) = tiling.render_tile(
         tile, format=GEOTIFF_FORMAT, scale=2)
 
-    write_to_s3(
-        s3_bucket,
-        s3_key_prefix,
-        tile,
-        'geotiff',
-        data,
-        '.tif',
-        content_type
-    )
+    write_to_s3(s3_bucket, s3_key_prefix,
+                tile, 'geotiff', data,
+                '.tif', content_type)
 
 
 def queue_tile(tile, s3_details):
@@ -95,7 +80,7 @@ def queue_tile(tile, s3_details):
 
 
 def queue_render(tile, s3_details):
-    print(tile)
+    logger.info('Enqueueing render for tile %s', tile)
     POOL.apply_async(
         render_tile,
         args=[tile, s3_details])
@@ -116,3 +101,4 @@ if __name__ == "__main__":
 
     POOL.close()
     POOL.join()
+    logger.info('Done processing root pyramid %s', root)
