@@ -96,7 +96,7 @@ def render_tile(tile, s3_details):
             tile, format=GEOTIFF_FORMAT, scale=2)
 
     logger.info('(%02d/%06d/%06d) Took %0.3fs to render geotiff tile (%s bytes)',
-                tile.z, tile.x, tile.y, t.elapsed, type, len(data))
+                tile.z, tile.x, tile.y, t.elapsed, len(data))
 
     write_to_s3(s3_bucket, s3_key_prefix,
                 tile, 'geotiff', data,
