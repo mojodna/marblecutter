@@ -66,6 +66,14 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
                 bucket, key)
 
 
+def render_tile_exc_wrapper(tile, s3_details):
+    try:
+        render_tile(tile, s3_details)
+    except:
+        logger.exception('Error while processing tile %s', tile)
+        raise
+
+
 def render_tile(tile, s3_details):
     s3_bucket, s3_key_prefix = s3_details
 
@@ -105,7 +113,7 @@ def queue_tile(tile, s3_details):
 def queue_render(tile, s3_details):
     logger.info('Enqueueing render for tile %s', tile)
     POOL.apply_async(
-        render_tile,
+        render_tile_exc_wrapper,
         args=[tile, s3_details])
 
 
