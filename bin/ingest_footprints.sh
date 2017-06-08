@@ -36,11 +36,13 @@ while read footprint_key; do
   cat << EOF
     UPDATE footprints SET
       resolution=${resolution},
+      approximate_zoom=least(22, ceil(log(2.0, ((2 * pi() * 6378137) / (${resolution} * 256))::numeric)))
+    WHERE filename='${filename}';
+    UPDATE footprints SET
       min_zoom=approximate_zoom - 3,
       max_zoom=approximate_zoom,
       source='${source}',
       url='s3://${bucket}/${transcoded_key}',
-      approximate_zoom=least(22, ceil(log(2.0, ((2 * pi() * 6378137) / (${resolution} * 256))::numeric))),
       wkb_geometry=ST_Multi(ST_Buffer(wkb_geometry::geography, resolution * 120)::geometry)
     WHERE filename='${filename}';
 EOF
