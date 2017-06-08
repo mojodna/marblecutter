@@ -8,6 +8,8 @@ aws s3 ls --recursive s3://$bucket | \
 grep _footprint.json | \
 awk '{ print $4 }' | \
 while read footprint_key; do
+  echo "Working on ${footprint_key}" 1>&2
+
   # We're going to say the source is the root of the S3 key
   source=$(awk -F '/' '{print $1}' <<< $footprint_key)
 
