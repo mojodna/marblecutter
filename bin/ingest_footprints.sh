@@ -6,7 +6,6 @@ set -eo pipefail
 
 aws s3 ls --recursive s3://$bucket | \
 grep _footprint.json | \
-head -n 1 | \
 awk '{ print $4 }' | \
 while read footprint_key; do
   # We're going to say the source is the root of the S3 key
