@@ -25,6 +25,7 @@ RUN apt-get update \
     python-pip \
     python-wheel \
     python-setuptools \
+    postgresql-client \
     software-properties-common \
     unzip \
   && curl -sf https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - \
