@@ -77,6 +77,8 @@ to_clean+=($intermediate)
 gdal_output=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $output)
 tiler_url=$(sed "s|s3://[^/]*|${TILER_BASE_URL}|" <<< $output)
 
+>&2 echo "Processing ${input} to ${output}..."
+
 # 0. download source (if appropriate)
 if [[ "$input" =~ ^s3:// ]]; then
   if [[ "$input" =~ \.zip$ ]]; then
@@ -206,5 +208,12 @@ fi
 
 # # 10. Upload OIN metadata
 # aws s3 cp - ${output}_meta.json <<< $metadata
+
+# 11. Insert into footprints database
+if [[ -z "$DATABASE_URL" ]]; then
+  >&2 echo "Skipping footprint load because DATABASE_URL is not set"
+else
+  ingest_single_footprint.sh ${output}_footprint.json | psql $DATABASE_URL
+fi
 
 >&2 echo "Done."
