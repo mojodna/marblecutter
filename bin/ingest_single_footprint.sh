@@ -9,6 +9,22 @@ set -e
 
 >&2 echo "Ingesting footprint for ${footprint_uri}"
 
+# We're going to say the source is the root of the S3 key after the bucket name
+source=$(awk -F '/' '{print $4}' <<< $footprint_uri)
+
+# Read the metadata to pull out useful info and get the footprint URI
+meta=$(aws s3 cp ${footprint_uri/_footprint.json/.json} - | jq .meta)
+resolution=$(jq -r .resolution <<< $meta)
+footprint_uri=$(jq -r .footprint <<< $meta)
+transcoded_uri=${footprint_uri/_footprint.json/.tif}
+filename=$(basename $transcoded_uri)
+
+# Since the following is not an idempotent process,
+# delete any rows for this filename if they exist already.
+cat << EOF
+  DELETE FROM footprints WHERE filename='${filename}';
+EOF
+
 # Read the footprint GeoJSON and use ogr2ogr to convert to pgdump format
 aws s3 cp $footprint_uri - | \
 ogr2ogr \
@@ -20,16 +36,6 @@ ogr2ogr \
   -nln footprints \
   -nlt PROMOTE_TO_MULTI \
   /vsistdout/ /vsistdin/
-
-# We're going to say the source is the root of the S3 key after the bucket name
-source=$(awk -F '/' '{print $4}' <<< $footprint_uri)
-
-# Read the metadata to pull out useful info and get the footprint URI
-meta=$(aws s3 cp ${footprint_uri/_footprint.json/.json} - | jq .meta)
-resolution=$(jq -r .resolution <<< $meta)
-footprint_uri=$(jq -r .footprint <<< $meta)
-transcoded_uri=${footprint_uri/_footprint.json/.tif}
-filename=$(basename $transcoded_uri)
 
 # Update the data we just added to include info about resolution, etc.
 # ... 120 is the number of pixels to buffer; it's the sample value for rio footprint + 20%
