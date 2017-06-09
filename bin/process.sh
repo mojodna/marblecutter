@@ -22,7 +22,7 @@ function cleanup() {
 }
 
 function cleanup_on_failure() {
-  s3_outputs=(${output}.tif ${output}.tif.msk ${output}_footprint.json ${output}.vrt ${output}_thumb.png ${output}_warped.vrt ${output}_warped_mask.vrt ${output}.json)
+  s3_outputs=(${output}.tif ${output}.tif.msk ${output}_footprint.json ${output}.vrt ${output}_thumb.png ${output}.json)
 
   set +e
   for x in ${s3_outputs[@]}; do
