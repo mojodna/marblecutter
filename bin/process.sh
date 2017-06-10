@@ -81,7 +81,7 @@ tiler_url=$(sed "s|s3://[^/]*|${TILER_BASE_URL}|" <<< $output)
 
 # 0. download source (if appropriate)
 if [[ "$input" =~ ^s3:// ]]; then
-  if [[ "$input" =~ \.zip$ ]]; then
+  if [[ "$input" =~ \.zip$ || "$input" =~ \.tar\.gz$ ]]; then
     >&2 echo "Downloading $input from S3..."
     aws s3 cp $input $source
   else
