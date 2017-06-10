@@ -209,7 +209,7 @@ fi
 # aws s3 cp - ${output}_meta.json <<< $metadata
 
 # 11. Insert into footprints database
-if [[ -z "$DATABASE_URL" ]]; then
+if [[ -z ${DATABASE_URL+x} ]]; then
   >&2 echo "Skipping footprint load because DATABASE_URL is not set"
 else
   ingest_single_footprint.sh ${output}_footprint.json | psql $DATABASE_URL
