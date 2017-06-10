@@ -68,9 +68,8 @@ trap cleanup_on_failure ERR
 __dirname=$(cd $(dirname "$0"); pwd -P)
 PATH=$__dirname:${__dirname}/../node_modules/.bin:$PATH
 filename=$(basename $input)
-ext="${filename##*.}"
 base=$(mktemp)
-source="${base}.${ext}"
+source="${base}.${filename}"
 to_clean+=($source)
 intermediate=${base}-intermediate.tif
 to_clean+=($intermediate)
