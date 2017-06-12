@@ -37,6 +37,8 @@ elif [[ "$input" =~ \.tar\.gz$ ]]; then
   input="tar://${input}!${inner_source}"
 fi
 
+echo "Transcoding ${input}"
+
 info=$(rio info $input 2> /dev/null)
 count=$(jq .count <<< $info)
 dtype=$(jq -r .dtype <<< $info)

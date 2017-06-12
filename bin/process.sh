@@ -68,18 +68,19 @@ trap cleanup_on_failure ERR
 __dirname=$(cd $(dirname "$0"); pwd -P)
 PATH=$__dirname:${__dirname}/../node_modules/.bin:$PATH
 filename=$(basename $input)
-ext="${filename##*.}"
 base=$(mktemp)
-source="${base}.${ext}"
+source="${base}.${filename}"
 to_clean+=($source)
 intermediate=${base}-intermediate.tif
 to_clean+=($intermediate)
 gdal_output=$(sed 's|s3://\([^/]*\)/|/vsis3/\1/|' <<< $output)
 tiler_url=$(sed "s|s3://[^/]*|${TILER_BASE_URL}|" <<< $output)
 
+>&2 echo "Processing ${input} to ${output}..."
+
 # 0. download source (if appropriate)
 if [[ "$input" =~ ^s3:// ]]; then
-  if [[ "$input" =~ \.zip$ ]]; then
+  if [[ "$input" =~ \.zip$ || "$input" =~ \.tar\.gz$ ]]; then
     >&2 echo "Downloading $input from S3..."
     aws s3 cp $input $source
   else
@@ -206,5 +207,12 @@ fi
 
 # # 10. Upload OIN metadata
 # aws s3 cp - ${output}_meta.json <<< $metadata
+
+# 11. Insert into footprints database
+if [[ -z ${DATABASE_URL+x} ]]; then
+  >&2 echo "Skipping footprint load because DATABASE_URL is not set"
+else
+  ingest_single_footprint.sh ${output}_footprint.json | psql $DATABASE_URL
+fi
 
 >&2 echo "Done."
