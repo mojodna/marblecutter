@@ -1,0 +1,22 @@
+{
+    "jobDefinitionName": "tiler",
+    "type": "container",
+    "retryStrategy": {
+        "attempts": 3
+    },
+    "containerProperties": {
+        "image": "quay.io/mojodna/mapzen-dynamic-tiler-batch",
+        "vcpus": 2,
+        "memory": 8000,
+        "command": [
+            "python",
+            "examples/render_pyramid.py",
+            "Ref::x",
+            "Ref::y",
+            "Ref::zoom",
+            "Ref::bucket",
+            "Ref::key_prefix"
+        ],
+        "jobRoleArn": "arn:aws:iam::{{AWS_ACCOUNT_ID}}:role/tiler"
+    }
+}

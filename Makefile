@@ -42,6 +42,11 @@ transcode-job-definition: node_modules/.bin/interp
 	aws batch register-job-definition --cli-input-json file://$(tmp)
 	rm -f $(tmp)
 
+tiling-job-definition: node_modules/.bin/interp
+	interp < aws/$@.json.hbs > $(tmp)
+	aws batch register-job-definition --cli-input-json file://$(tmp)
+	rm -f $(tmp)
+
 submit-job: node_modules/.bin/interp
 	interp < $(job) > $(tmp)
 	aws batch submit-job --cli-input-json file://$(tmp)
