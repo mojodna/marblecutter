@@ -25,7 +25,8 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 logger = logging.getLogger('batchtiler')
 
 MAX_ZOOM = 15
-POOL = Pool(multiprocessing.cpu_count() * 4)
+POOL_SIZE = multiprocessing.cpu_count() * 2
+POOL = Pool(POOL_SIZE)
 
 GEOTIFF_FORMAT = GeoTIFF()
 PNG_FORMAT = PNG()
@@ -161,6 +162,8 @@ if __name__ == "__main__":
     parser.add_argument('key_prefix')
 
     args = parser.parse_args()
+
+    logger.info('Running %s processes', POOL_SIZE)
 
     root = Tile(args.x, args.y, args.zoom)
     queue_tile(root, (args.bucket, args.key_prefix))
