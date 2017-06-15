@@ -21,6 +21,7 @@ logging.basicConfig(level=logging.INFO)
 # Quieting boto messages down a little
 logging.getLogger('boto3.resources.action').setLevel(logging.WARNING)
 logging.getLogger('botocore').setLevel(logging.WARNING)
+logging.getLogger('marblecutter.mosaic').setLevel(logging.WARNING)
 logger = logging.getLogger('batchtiler')
 
 MAX_ZOOM = 15
