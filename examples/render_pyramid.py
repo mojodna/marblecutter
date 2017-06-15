@@ -5,7 +5,6 @@ from __future__ import print_function
 import argparse
 import boto3
 import logging
-import multiprocessing
 import psycopg2
 import time
 from functools import wraps
@@ -25,7 +24,7 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 logger = logging.getLogger('batchtiler')
 
 MAX_ZOOM = 15
-POOL_SIZE = multiprocessing.cpu_count() * 2
+POOL_SIZE = 12
 POOL = Pool(POOL_SIZE)
 
 GEOTIFF_FORMAT = GeoTIFF()
