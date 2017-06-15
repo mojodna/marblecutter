@@ -78,7 +78,6 @@ def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
 @retry((Exception,), logger=logger)
 def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
                 content_type):
-    s3 = boto3.resource('s3')
     key = '{}/{}/{}/{}{}'.format(
         tile_type,
         tile.z,
@@ -90,7 +89,7 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
     if key_prefix:
         key = '{}/{}'.format(key_prefix, key)
 
-    return s3.Bucket(bucket).put_object(
+    return bucket.put_object(
         Key=key,
         Body=data,
         ContentType=content_type,
@@ -115,6 +114,9 @@ def render_tile(tile, format, transformation):
 
 def render_tile_and_put_to_s3(tile, s3_details):
     s3_bucket, s3_key_prefix = s3_details
+    session = boto3.session.Session()
+    s3 = session.resource('s3')
+    bucket = s3.Bucket(s3_bucket)
 
     for (type, transformation, format, ext) in RENDER_COMBINATIONS:
         with Timer() as t:
@@ -127,7 +129,7 @@ def render_tile_and_put_to_s3(tile, s3_details):
 
         with Timer() as t:
             obj = write_to_s3(
-                s3_bucket, s3_key_prefix,
+                bucket, s3_key_prefix,
                 tile, type, data,
                 ext, content_type)
 
