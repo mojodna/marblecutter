@@ -10,12 +10,12 @@ import numpy as np
 from rasterio import warp
 from rasterio.crs import CRS
 
-from psycopg2.pool import SimpleConnectionPool
+from psycopg2.pool import ThreadedConnectionPool
 
 urlparse.uses_netloc.append('postgis')
 urlparse.uses_netloc.append('postgres')
 database_url = urlparse.urlparse(os.environ['DATABASE_URL'])
-pool = SimpleConnectionPool(
+pool = ThreadedConnectionPool(
     1,
     16,
     database=database_url.path[1:],

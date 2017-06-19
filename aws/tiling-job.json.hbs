@@ -1,0 +1,20 @@
+{
+  "jobName": "z{{ zoom }}_x{{ x }}_y{{ y }}",
+  "jobQueue": "arn:aws:batch:us-east-1:{{ AWS_ACCOUNT_ID }}:job-queue/tiling-20150606",
+  "jobDefinition": "arn:aws:batch:us-east-1:{{ AWS_ACCOUNT_ID }}:job-definition/tiler",
+  "parameters": {
+    "zoom": "{{ zoom }}",
+    "x": "{{ x }}",
+    "y": "{{ y }}",
+    "bucket": "{{ bucket }}",
+    "key_prefix": "{{ key_prefix }}"
+  },
+  "containerOverrides": {
+    "environment": [
+      {
+        "name": "DATABASE_URL",
+        "value": "{{ DATABASE_URL }}"
+      }
+    ]
+  }
+}

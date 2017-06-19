@@ -4,9 +4,11 @@ from __future__ import print_function
 
 import argparse
 import boto3
+import botocore
 import logging
-import multiprocessing
+import psycopg2
 import time
+from functools import wraps
 from multiprocessing.dummy import Pool
 
 import mercantile
@@ -20,15 +22,24 @@ logging.basicConfig(level=logging.INFO)
 # Quieting boto messages down a little
 logging.getLogger('boto3.resources.action').setLevel(logging.WARNING)
 logging.getLogger('botocore').setLevel(logging.WARNING)
+logging.getLogger('marblecutter.mosaic').setLevel(logging.WARNING)
 logger = logging.getLogger('batchtiler')
 
 MAX_ZOOM = 15
-POOL = Pool(multiprocessing.cpu_count() * 4)
+POOL_SIZE = 12
+POOL = Pool(POOL_SIZE)
 
 GEOTIFF_FORMAT = GeoTIFF()
 PNG_FORMAT = PNG()
 NORMAL_TRANSFORMATION = Normal()
 TERRARIUM_TRANSFORMATION = Terrarium()
+
+
+RENDER_COMBINATIONS = [
+    ("normal", NORMAL_TRANSFORMATION, PNG_FORMAT, ".png"),
+    ("terrarium", TERRARIUM_TRANSFORMATION, PNG_FORMAT, ".png"),
+    ("geotiff", None, GEOTIFF_FORMAT, ".tif"),
+]
 
 
 class Timer(object):
@@ -41,9 +52,34 @@ class Timer(object):
         self.elapsed = self.end - self.start
 
 
+# From https://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
+def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
+    def deco_retry(f):
+        @wraps(f)
+        def f_retry(*args, **kwargs):
+            mtries, mdelay = tries, delay
+            while mtries > 1:
+                try:
+                    return f(*args, **kwargs)
+                except ExceptionToCheck, e:
+                    msg = "%s, Retrying in %d seconds..." % (str(e), mdelay)
+                    if logger:
+                        logger.exception(msg)
+                    else:
+                        print(msg)
+                    time.sleep(mdelay)
+                    mtries -= 1
+                    mdelay *= backoff
+            return f(*args, **kwargs)
+
+        return f_retry  # true decorator
+
+    return deco_retry
+
+
+@retry((Exception,), logger=logger)
 def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
-                content_type):
-    s3 = boto3.resource('s3')
+                content_type, overwrite=False):
     key = '{}/{}/{}/{}{}'.format(
         tile_type,
         tile.z,
@@ -55,52 +91,69 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
     if key_prefix:
         key = '{}/{}'.format(key_prefix, key)
 
-    with Timer() as t:
-        s3.Bucket(bucket).put_object(
-            Key=key,
+    obj = bucket.Object(key)
+    if overwrite:
+        obj.put(
             Body=data,
             ContentType=content_type,
         )
+    else:
+        try:
+            obj.load()
+        except botocore.exceptions.ClientError as e:
+            # If a client error is thrown, then check that it was a 404 error.
+            # If it was a 404 error, then the object does not exist.
+            error_code = int(e.response['Error']['Code'])
+            if error_code == 404:
+                obj.put(
+                    Body=data,
+                    ContentType=content_type,
+                )
 
-    logger.info('(%02d/%06d/%06d) Took %0.3fs to write %s tile to s3://%s/%s',
-                tile.z, tile.x, tile.y, t.elapsed, tile_type,
-                bucket, key)
+    return obj
 
 
 def render_tile_exc_wrapper(tile, s3_details):
     try:
-        render_tile(tile, s3_details)
+        render_tile_and_put_to_s3(tile, s3_details)
     except:
         logger.exception('Error while processing tile %s', tile)
         raise
 
 
-def render_tile(tile, s3_details):
+@retry((psycopg2.OperationalError,), logger=logger)
+def render_tile(tile, format, transformation):
+    return tiling.render_tile(
+        tile,
+        format=format,
+        transformation=transformation)
+
+
+def render_tile_and_put_to_s3(tile, s3_details):
     s3_bucket, s3_key_prefix = s3_details
+    session = boto3.session.Session()
+    s3 = session.resource('s3')
+    bucket = s3.Bucket(s3_bucket)
 
-    for (type, transformation) in (("normal", NORMAL_TRANSFORMATION),
-                                   ("terrarium", TERRARIUM_TRANSFORMATION)):
+    for (type, transformation, format, ext) in RENDER_COMBINATIONS:
         with Timer() as t:
-            (content_type, data) = tiling.render_tile(
-                tile, format=PNG_FORMAT, transformation=transformation)
+            (content_type, data) = render_tile(
+                tile, format, transformation)
 
-        logger.info('(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes)',
-                    tile.z, tile.x, tile.y, t.elapsed, type, len(data))
+        logger.info(
+            '(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes)',
+            tile.z, tile.x, tile.y, t.elapsed, type, len(data))
 
-        write_to_s3(s3_bucket, s3_key_prefix,
-                    tile, type, data,
-                    '.png', content_type)
+        with Timer() as t:
+            obj = write_to_s3(
+                bucket, s3_key_prefix,
+                tile, type, data,
+                ext, content_type)
 
-    with Timer() as t:
-        (content_type, data) = tiling.render_tile(
-            tile, format=GEOTIFF_FORMAT, scale=2)
-
-    logger.info('(%02d/%06d/%06d) Took %0.3fs to render geotiff tile (%s bytes)',
-                tile.z, tile.x, tile.y, t.elapsed, len(data))
-
-    write_to_s3(s3_bucket, s3_key_prefix,
-                tile, 'geotiff', data,
-                '.tif', content_type)
+        logger.info('(%02d/%06d/%06d) Took %0.3fs to write %s tile to '
+                    's3://%s/%s',
+                    tile.z, tile.x, tile.y, t.elapsed, type,
+                    obj.bucket_name, obj.key)
 
 
 def queue_tile(tile, s3_details):
@@ -127,6 +180,8 @@ if __name__ == "__main__":
     parser.add_argument('key_prefix')
 
     args = parser.parse_args()
+
+    logger.info('Running %s processes', POOL_SIZE)
 
     root = Tile(args.x, args.y, args.zoom)
     queue_tile(root, (args.bucket, args.key_prefix))
