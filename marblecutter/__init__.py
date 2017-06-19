@@ -218,7 +218,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                     window=dst_window,
                 )
 
-                data.mask = ~mask
+                data.mask = data.mask | ~mask
     except Exception:
         # no mask
         pass
