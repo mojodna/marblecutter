@@ -5,6 +5,7 @@ ARG http_proxy
 # Install deps
 
 RUN \
+  rpm --rebuilddb && \
   yum install -y \
     automake16 \
     libcurl-devel \
