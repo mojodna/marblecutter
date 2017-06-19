@@ -3,6 +3,7 @@ FROM lambci/lambda:build-python2.7
 ARG http_proxy
 
 RUN \
+  rpm --rebuilddb && \
   yum install -y \
     automake16 \
     libcurl-devel \
