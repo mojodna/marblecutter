@@ -149,92 +149,44 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     ) as vrt:
         dst_window = vrt.window(*bounds)
 
-        scale_factor = (dst_window.num_cols / width,
-                        dst_window.num_rows / height)
+        scale_factor = (round(dst_window.num_cols / width, 6),
+                        round(dst_window.num_rows / height, 6))
 
         if vrt.count == 1 and (scale_factor[0] < 1 or scale_factor[1] < 1):
-            # buffer
+            scaled_transform = vrt.transform * Affine.scale(*scale_factor)
+            target_window = windows.from_bounds(
+                *bounds, transform=scaled_transform, boundless=True)
 
-            # number of "pixel-equivalents" to buffer
-            buffer_pixels = 2
+            # buffer needs to be 50% of the target size in order for spine knots to match between
+            # adjacent tiles
+            buffer_pixels = (target_window.num_cols / 2, target_window.num_rows / 2)
 
-            # individual pixel size in scaled "pixels"
-            pixel = (1 / scale_factor[0],
-                     1 / scale_factor[1])
-
-            # buffer sizing
-            buffer = (buffer_pixels * pixel[0],
-                      buffer_pixels * pixel[1])
             r, c = dst_window
-
-            # expand the calculated window
             window = Window.from_ranges(
-                (r[0] - buffer_pixels, r[1] + buffer_pixels),
-                (c[0] - buffer_pixels, c[1] + buffer_pixels))
+                (r[0] - buffer_pixels[1], r[1] + buffer_pixels[1]),
+                (c[0] - buffer_pixels[0], c[1] + buffer_pixels[0]))
 
-            if scale_factor[0] % 1 != 0 or scale_factor[1] % 1 != 0:
-                scaled_transform = vrt.transform * Affine.scale(*scale_factor)
+            data = vrt.read(1, window=window)
 
-                # ideal window (in scaled space)
-                target_window = windows.from_bounds(
-                    *bounds, transform=scaled_transform, boundless=True)
-                r, c = target_window
-
-                # expand the calculated window
-                # (this isn't a Window so we can keep floating point values)
-                target_window = ((r[0] - buffer_pixels * scale_factor[1],
-                                  r[1] + buffer_pixels * scale_factor[1]),
-                                 (c[0] - buffer_pixels * scale_factor[0],
-                                  c[1] + buffer_pixels * scale_factor[0]))
-
-                # bounds actually covered by the calculated window (including
-                # buffers)
-                data_bounds = windows.bounds(window, vrt.transform)
-
-                # data window (in scaled space)
-                data_window = windows.from_bounds(
-                    *data_bounds, transform=scaled_transform, boundless=True)
-
-                tr, tc = target_window
-                dr, dc = data_window
-
-                minx = dr[0] - tr[0]
-                miny = dc[0] - tc[0]
-                maxx = width + (dr[1] - tr[1])
-                maxy = height + (dc[1] - tc[1])
-
-                # source data pixels mapped to target pixels
-                x = np.linspace(minx - buffer[0],
-                                maxx - buffer[0],
-                                num=window.num_cols)
-                y = np.linspace(miny - buffer[1],
-                                maxy - buffer[1],
-                                num=window.num_rows)
-            else:
-                x = np.linspace(-buffer[0],
-                                (window.num_cols * pixel[0]) - buffer[0],
-                                num=window.num_cols)
-                y = np.linspace(-buffer[1],
-                                (window.num_rows * pixel[1]) - buffer[1],
-                                num=window.num_rows)
-
-            data = vrt.read(
-                1,
-                window=window,
-            )
-
-            if vrt.nodata is not None:
-                data = _mask(data, vrt.nodata)
-            else:
-                data = np.ma.masked_array(data, mask=False)
+            # use world pixels as indices
+            r, c = window
+            x = np.linspace(c[0] / scale_factor[0],
+                            c[1] / scale_factor[0],
+                            num=data.shape[1])
+            y = np.linspace(r[0] / scale_factor[1],
+                            r[1] / scale_factor[1],
+                            num=data.shape[0])
 
             interp = RectBivariateSpline(y, x, data)
 
+            # set target coordinates for interpolation using world pixels
+            r, c = target_window
             data = interp(
-                np.arange(0, height),
-                np.arange(0, width),
+                np.linspace(r[0], r[1], num=height),
+                np.linspace(c[0], c[1], num=width),
             )[np.newaxis]
 
+            # mask with NODATA values
             if vrt.nodata is not None:
                 data = _mask(data, vrt.nodata)
             else:
