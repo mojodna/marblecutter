@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import argparse
 import boto3
+import botocore
 import logging
 import psycopg2
 import time
@@ -78,7 +79,7 @@ def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
 
 @retry((Exception,), logger=logger)
 def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
-                content_type):
+                content_type, overwrite=False):
     key = '{}/{}/{}/{}{}'.format(
         tile_type,
         tile.z,
@@ -90,11 +91,26 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
     if key_prefix:
         key = '{}/{}'.format(key_prefix, key)
 
-    return bucket.put_object(
-        Key=key,
-        Body=data,
-        ContentType=content_type,
-    )
+    obj = bucket.Object(key)
+    if overwrite:
+        obj.put(
+            Body=data,
+            ContentType=content_type,
+        )
+    else:
+        try:
+            obj.load()
+        except botocore.exceptions.ClientError as e:
+            # If a client error is thrown, then check that it was a 404 error.
+            # If it was a 404 error, then the object does not exist.
+            error_code = int(e.response['Error']['Code'])
+            if error_code == 404:
+                obj.put(
+                    Body=data,
+                    ContentType=content_type,
+                )
+
+    return obj
 
 
 def render_tile_exc_wrapper(tile, s3_details):
