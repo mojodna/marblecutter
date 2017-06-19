@@ -308,6 +308,7 @@ RUN \
     numpy/lib/function_base.pyc \
     numpy/lib/index_tricks.pyc \
     numpy/lib/info.pyc \
+    numpy/lib/mixins.py \
     numpy/lib/nanfunctions.pyc \
     numpy/lib/npyio.pyc \
     numpy/lib/polynomial.pyc \
