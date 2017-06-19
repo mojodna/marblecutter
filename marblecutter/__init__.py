@@ -185,22 +185,17 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 np.linspace(r[0], r[1], num=height),
                 np.linspace(c[0], c[1], num=width),
             )[np.newaxis]
-
-            # mask with NODATA values
-            if vrt.nodata is not None:
-                data = _mask(data, vrt.nodata)
-            else:
-                data = np.ma.masked_array(data, mask=False)
         else:
             data = vrt.read(
                 out_shape=(vrt.count, height, width),
                 window=dst_window,
             )
 
-            if vrt.nodata is not None:
-                data = _mask(data, vrt.nodata)
-            else:
-                data = np.ma.masked_array(data, mask=False)
+        # mask with NODATA values
+        if vrt.nodata is not None:
+            data = _mask(data, vrt.nodata)
+        else:
+            data = np.ma.masked_array(data, mask=False)
 
         data = data.astype(np.float32)
 
