@@ -1,3 +1,4 @@
+node_modules/
 environment.json
 venv/
 .env
