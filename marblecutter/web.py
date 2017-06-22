@@ -22,7 +22,7 @@ CORS(app)
 
 app.config["APPLICATION_ROOT"] = os.getenv("APPLICATION_ROOT")
 app.config["PREFERRED_URL_SCHEME"] = os.getenv("PREFERRED_URL_SCHEME", "http")
-app.config["SERVER_NAME"] = os.getenv("SERVER_NAME", "localhost:8000")
+# app.config["SERVER_NAME"] = os.getenv("SERVER_NAME", "localhost:8000")
 
 GEOTIFF_FORMAT = GeoTIFF()
 HILLSHADE_FORMAT = ColorRamp()
@@ -186,7 +186,8 @@ def handle_ioerror(error): # noqa
 
 
 static = app.send_static_file
-#
-# app.wsgi_app = DispatcherMiddleware(None, {
-#     app.config["APPLICATION_ROOT"]: app.wsgi_app
-# })
+
+
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    app.config["APPLICATION_ROOT"]: app.wsgi_app
+})
