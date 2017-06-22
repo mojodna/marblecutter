@@ -47,7 +47,7 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
         bounds_crs, target_crs, bounds[::2], bounds[1::2])
     canvas_bounds = (left, bottom, right, top)
 
-    sources_used = set()
+    sources_used = list()
 
     # iterate over available sources, sorted by decreasing resolution
     for (url, source_name, resolution) in sources:
