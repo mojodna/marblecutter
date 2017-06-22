@@ -52,7 +52,7 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     # iterate over available sources, sorted by decreasing resolution
     for (url, source_name, resolution) in sources:
         src = get_source(url)
-        sources_used.add((source_name, url))
+        sources_used.append((source_name, url))
 
         LOG.info("Compositing %s (%s)...", url, source_name)
 
