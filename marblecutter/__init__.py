@@ -300,7 +300,7 @@ def render(
 
     headers = {
         "Content-Type": content_type,
-        "X-Imagery-Sources": ", ".join([s[0] for s in sources_used]),
+        "X-Imagery-Sources": ", ".join([s[1].split('/', 3)[3] for s in sources_used]),
     }
 
     return (headers, formatted)
