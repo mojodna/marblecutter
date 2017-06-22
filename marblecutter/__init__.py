@@ -282,7 +282,7 @@ def render(
 
     sources = mosaic.get_sources((bounds, bounds_crs), resolution_m)
 
-    (data, (data_bounds, data_crs)) = mosaic.composite(
+    (sources_used, data, (data_bounds, data_crs)) = mosaic.composite(
         sources, (bounds, bounds_crs), shape, target_crs)
 
     data_format = "raw"
@@ -296,4 +296,11 @@ def render(
             data_format,
             (left, right, bottom, top))
 
-    return format((data, (data_bounds, data_crs)), data_format)
+    (content_type, formatted) = format((data, (data_bounds, data_crs)), data_format)
+
+    headers = {
+        "Content-Type": content_type,
+        "X-Source-Names": ", ".join(sources_used),
+    }
+
+    return (headers, content_type)

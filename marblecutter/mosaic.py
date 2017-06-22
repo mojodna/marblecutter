@@ -47,9 +47,12 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
         bounds_crs, target_crs, bounds[::2], bounds[1::2])
     canvas_bounds = (left, bottom, right, top)
 
+    sources_used = set()
+
     # iterate over available sources, sorted by decreasing resolution
     for (url, source_name, resolution) in sources:
         src = get_source(url)
+        sources_used.add((source_name, url))
 
         LOG.info("Compositing %s (%s)...", url, source_name)
 
@@ -74,7 +77,7 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
             # stop if all pixels are valid
             break
 
-    return (canvas, (canvas_bounds, target_crs))
+    return (sources_used, canvas, (canvas_bounds, target_crs))
 
 
 def get_sources((bounds, bounds_crs), resolution):
