@@ -16,27 +16,27 @@ if __name__ == "__main__":
     tile = Tile(1308, 3164, 13)
 
     hillshade = Hillshade(resample=True, add_slopeshade=True)
-    (content_type, data) = tiling.render_tile(
+    (headers, data) = tiling.render_tile(
         tile, format=GeoTIFF(), transformation=hillshade, scale=1)
 
-    print("Content-type: ", content_type)
+    print("Headers: ", headers)
 
     with open("tmp/{}_{}_{}_hillshade.tif".format(
                 tile.z, tile.x, tile.y), "w") as f:
         f.write(data)
 
-    (content_type, data) = tiling.render_tile(tile, format=GeoTIFF())
+    (headers, data) = tiling.render_tile(tile, format=GeoTIFF())
 
-    print("Content-type: ", content_type)
+    print("Headers: ", headers)
 
     with open("tmp/{}_{}_{}.tif".format(tile.z, tile.x, tile.y), "w") as f:
         f.write(data)
 
     # tile = Tile(654, 1582, 12)
-    (content_type, data) = tiling.render_tile(
+    (headers, data) = tiling.render_tile(
         tile, format=ColorRamp("png"), transformation=hillshade, scale=2)
 
-    print("Content-type: ", content_type)
+    print("Headers: ", headers)
 
     with open("tmp/{}_{}_{}_hillshade.png".format(
                 tile.z, tile.x, tile.y), "w") as f:

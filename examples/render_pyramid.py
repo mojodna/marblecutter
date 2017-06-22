@@ -79,7 +79,7 @@ def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
 
 @retry((Exception,), logger=logger)
 def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
-                content_type, overwrite=False):
+                headers, overwrite=False):
     key = '{}/{}/{}/{}{}'.format(
         tile_type,
         tile.z,
@@ -95,7 +95,8 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
     if overwrite:
         obj.put(
             Body=data,
-            ContentType=content_type,
+            ContentType=headers['Content-Type'],
+            Metadata={k:headers[k] for k in headers if k != 'Content-Type'}
         )
     else:
         try:
@@ -107,7 +108,8 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
             if error_code == 404:
                 obj.put(
                     Body=data,
-                    ContentType=content_type,
+                    ContentType=headers['Content-Type'],
+                    Metadata={k:headers[k] for k in headers if k != 'Content-Type'}
                 )
 
     return obj
@@ -137,7 +139,7 @@ def render_tile_and_put_to_s3(tile, s3_details):
 
     for (type, transformation, format, ext) in RENDER_COMBINATIONS:
         with Timer() as t:
-            (content_type, data) = render_tile(
+            (headers, data) = render_tile(
                 tile, format, transformation)
 
         logger.info(
@@ -148,7 +150,7 @@ def render_tile_and_put_to_s3(tile, s3_details):
             obj = write_to_s3(
                 bucket, s3_key_prefix,
                 tile, type, data,
-                ext, content_type)
+                ext, headers)
 
         logger.info('(%02d/%06d/%06d) Took %0.3fs to write %s tile to '
                     's3://%s/%s',
