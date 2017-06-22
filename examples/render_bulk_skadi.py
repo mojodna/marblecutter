@@ -14,9 +14,9 @@ POOL = Pool(multiprocessing.cpu_count() * 4)
 
 
 def render_tile(tile):
-    (content_type, data) = skadi.render_tile(tile)
+    (headers, data) = skadi.render_tile(tile)
 
-    print("Content-type: ", content_type)
+    print("Headers: ", headers)
 
     with open("tmp/{}.hgt.gz".format(tile), "w") as f:
         f.write(data)
