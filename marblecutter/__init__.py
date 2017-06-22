@@ -303,4 +303,4 @@ def render(
         "X-Source-Names": ", ".join(sources_used),
     }
 
-    return (headers, content_type)
+    return (headers, formatted)
