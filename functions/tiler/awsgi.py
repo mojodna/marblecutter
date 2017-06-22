@@ -24,6 +24,7 @@
 
 import base64
 from io import BytesIO
+import os
 import sys
 try:
     # Python 3
@@ -76,7 +77,7 @@ def environ(event, context):
 
     environ = {
         'REQUEST_METHOD': event['httpMethod'],
-        'SCRIPT_NAME': '',
+        'SCRIPT_NAME': os.environ.get('SCRIPT_NAME'),
         'PATH_INFO': event['path'],
         'QUERY_STRING': urlencode(event['queryStringParameters'] or {}),
         'REMOTE_ADDR': '127.0.0.1',

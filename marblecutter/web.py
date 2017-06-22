@@ -8,7 +8,6 @@ import os
 from flask import Flask, jsonify, render_template, url_for
 from flask_cors import CORS
 from mercantile import Tile
-from werkzeug.wsgi import DispatcherMiddleware
 
 from . import skadi, tiling
 from .formats import ColorRamp, GeoTIFF, PNG
@@ -172,8 +171,3 @@ def handle_ioerror(error): # noqa
 
 
 static = app.send_static_file
-
-
-app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
-    app.config["APPLICATION_ROOT"]: app.wsgi_app
-})
