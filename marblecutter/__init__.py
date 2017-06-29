@@ -18,6 +18,7 @@ from rasterio.windows import Window
 from scipy.interpolate import RectBivariateSpline
 
 from . import mosaic
+from marblecutter.stats import Timer
 
 WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
@@ -243,6 +244,7 @@ def render(
     transformation."""
     resolution = get_resolution((bounds, bounds_crs), shape)
     resolution_m = get_resolution_in_meters((bounds, bounds_crs), shape)
+    stats = []
 
     effective_buffer = buffer
     offset = 0
@@ -283,27 +285,38 @@ def render(
         bounds[3] = bounds_orig[3]
         top = 0
 
-    sources = sources_store.get_sources((bounds, bounds_crs), resolution_m)
+    with Timer() as t:
+        sources = sources_store.get_sources((bounds, bounds_crs), resolution_m)
+    stats.append(('get sources', t.elapsed))
 
-    (sources_used, data, (data_bounds, data_crs)) = mosaic.composite(
-        sources, (bounds, bounds_crs), shape, target_crs)
+    with Timer() as t:
+        (sources_used, data, (data_bounds, data_crs)) = mosaic.composite(
+            sources, (bounds, bounds_crs), shape, target_crs)
+    stats.append(('composite', t.elapsed))
 
     data_format = "raw"
 
-    if transformation:
-        (data, data_format) = transformation((data, (data_bounds, data_crs)))
+    with Timer() as t:
+        if transformation:
+            (data, data_format) = transformation((data, (data_bounds, data_crs)))
+    stats.append(('transform', t.elapsed))
 
-    if effective_buffer > buffer:
-        (data, (data_bounds, data_crs)) = crop(
-            (data, (data_bounds, data_crs)),
-            data_format,
-            (left, right, bottom, top))
+    with Timer() as t:
+        if effective_buffer > buffer:
+            (data, (data_bounds, data_crs)) = crop(
+                (data, (data_bounds, data_crs)),
+                data_format,
+                (left, right, bottom, top))
+    stats.append(('crop', t.elapsed))
 
-    (content_type, formatted) = format((data, (data_bounds, data_crs)), data_format)
+    with Timer() as t:
+        (content_type, formatted) = format((data, (data_bounds, data_crs)), data_format)
+    stats.append(('format', t.elapsed))
 
     headers = {
         "Content-Type": content_type,
-        "X-Imagery-Sources": ", ".join([s[1].split('/', 3)[3] for s in sources_used]),
+        "X-Imagery-Sources": ", ".join(s[1].split('/', 3)[3] for s in sources_used),
+        "X-Timers": ", ".join("{}: {:0.2f}".format(*s) for s in stats),
     }
 
     return (headers, formatted)

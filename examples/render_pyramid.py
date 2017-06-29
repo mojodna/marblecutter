@@ -179,9 +179,9 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
                 tile, format, transformation, sources)
 
         logger.info(
-            '(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes), %s',
+            '(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes), Source: %s, Timers: %s',
             tile.z, tile.x, tile.y, t.elapsed, type, len(data),
-            headers.get('X-Imagery-Sources'))
+            headers.get('X-Imagery-Sources'), headers.get('X-Timers'))
 
         with Timer() as t:
             obj = write_to_s3(
