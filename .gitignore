@@ -5,3 +5,4 @@ venv/
 project.json
 .cache/
 marblecutter.egg-info/
+*.pyc
