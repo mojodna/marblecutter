@@ -230,6 +230,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 # calling code?
 def render(
     (bounds, bounds_crs),
+    sources,
     shape,
     target_crs,
     format,
@@ -280,10 +281,10 @@ def render(
         bounds[3] = bounds_orig[3]
         top = 0
 
-    sources = mosaic.get_sources((bounds, bounds_crs), resolution_m)
+    candidates = sources.get_sources((bounds, bounds_crs), resolution_m)
 
     (sources_used, data, (data_bounds, data_crs)) = mosaic.composite(
-        sources, (bounds, bounds_crs), shape, target_crs)
+        candidates, (bounds, bounds_crs), shape, target_crs)
 
     data_format = "raw"
 
