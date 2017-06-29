@@ -36,7 +36,7 @@ class MemoryAdapter(SourceAdapter):
                     (attr['url'], attr['source'], attr['resolution'])
                 )
 
-        return results
+        return sorted(results, key=lambda r: r[2])
 
 
 class PostGISAdapter(SourceAdapter):
