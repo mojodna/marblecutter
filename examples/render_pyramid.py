@@ -6,15 +6,20 @@ import argparse
 import boto3
 import botocore
 import logging
+import os
 import psycopg2
+import psycopg2.extras
 import time
 from functools import wraps
 from multiprocessing.dummy import Pool
+from shapely import wkb
+from shapely.geometry import box
 
 import mercantile
 from mercantile import Tile
 
 from marblecutter import tiling
+from marblecutter.sources import MemoryAdapter
 from marblecutter.formats import PNG, GeoTIFF
 from marblecutter.transformations import Normal, Terrarium
 
@@ -115,23 +120,54 @@ def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
     return obj
 
 
-def render_tile_exc_wrapper(tile, s3_details):
+def build_source_index(tile):
+    source_cache = MemoryAdapter()
+    bbox = box(*mercantile.bounds(tile))
+
+    database_url = os.environ.get('DATABASE_URL')
+
+    with psycopg2.connect(database_url) as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.DictCursor) as cur:
+            cur.execute("""
+                SELECT
+                    filename, resolution, source, url,
+                    min_zoom, max_zoom, priority, approximate_zoom,
+                    wkb_geometry
+                FROM
+                    footprints
+                WHERE
+                    ST_Intersects(
+                        wkb_geometry,
+                        ST_GeomFromText(%s, 4326)
+                    )
+                """, (bbox.to_wkt(),))
+
+            for row in cur:
+                row = dict(row)
+                shape = wkb.loads(row.pop('wkb_geometry').decode('hex'))
+                source_cache.add_source(shape, row)
+
+    return source_cache
+
+
+def render_tile_exc_wrapper(tile, s3_details, sources):
     try:
-        render_tile_and_put_to_s3(tile, s3_details)
+        render_tile_and_put_to_s3(tile, s3_details, sources)
     except:
         logger.exception('Error while processing tile %s', tile)
         raise
 
 
 @retry((psycopg2.OperationalError,), logger=logger)
-def render_tile(tile, format, transformation):
+def render_tile(tile, format, transformation, sources):
     return tiling.render_tile(
         tile,
+        sources,
         format=format,
         transformation=transformation)
 
 
-def render_tile_and_put_to_s3(tile, s3_details):
+def render_tile_and_put_to_s3(tile, s3_details, sources):
     s3_bucket, s3_key_prefix = s3_details
     session = boto3.session.Session()
     s3 = session.resource('s3')
@@ -140,7 +176,7 @@ def render_tile_and_put_to_s3(tile, s3_details):
     for (type, transformation, format, ext) in RENDER_COMBINATIONS:
         with Timer() as t:
             (headers, data) = render_tile(
-                tile, format, transformation)
+                tile, format, transformation, sources)
 
         logger.info(
             '(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes)',
@@ -158,19 +194,19 @@ def render_tile_and_put_to_s3(tile, s3_details):
                     obj.bucket_name, obj.key)
 
 
-def queue_tile(tile, s3_details):
-    queue_render(tile, s3_details)
+def queue_tile(tile, s3_details, sources):
+    queue_render(tile, s3_details, sources)
 
     if tile.z < MAX_ZOOM:
         for child in mercantile.children(tile):
-            queue_tile(child, s3_details)
+            queue_tile(child, s3_details, sources)
 
 
-def queue_render(tile, s3_details):
+def queue_render(tile, s3_details, sources):
     logger.info('Enqueueing render for tile %s', tile)
     POOL.apply_async(
         render_tile_exc_wrapper,
-        args=[tile, s3_details])
+        args=[tile, s3_details, sources])
 
 
 if __name__ == "__main__":
@@ -182,11 +218,15 @@ if __name__ == "__main__":
     parser.add_argument('key_prefix')
 
     args = parser.parse_args()
+    root = Tile(args.x, args.y, args.zoom)
+
+    logger.info('Caching sources for root tile %s', root)
+
+    source_index = build_source_index(root)
 
     logger.info('Running %s processes', POOL_SIZE)
 
-    root = Tile(args.x, args.y, args.zoom)
-    queue_tile(root, (args.bucket, args.key_prefix))
+    queue_tile(root, (args.bucket, args.key_prefix), source_index)
 
     POOL.close()
     POOL.join()
