@@ -27,16 +27,39 @@ class MemoryAdapter(SourceAdapter):
         ((left, right), (bottom, top)) = warp.transform(
             bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
         bounds_geom = box(left, right, bottom, top)
+        bounds_centroid = bounds_geom.centroid
 
+        # Filter by zoom level and intersecting geometries
         for candidate in self._sources:
             (geom, attr) = candidate
             if attr['min_zoom'] <= zoom < attr['max_zoom'] and \
                geom.intersects(bounds_geom):
-                results.append(
-                    (attr['url'], attr['source'], attr['resolution'])
-                )
+                results.append(candidate)
 
-        return sorted(results, key=lambda r: r[2])
+        # Sort by resolution and centroid distance
+        results = sorted(
+            results,
+            key=lambda (geom, attr): (
+                attr['resolution'],
+                geom.distance(bounds_centroid))
+        )
+
+        # Remove duplicate URLs
+        # From https://stackoverflow.com/a/480227
+        seen = set()
+        seen_add = seen.add
+        results = [
+            x for x in results
+            if not (x[1]['url'] in seen or seen_add(x[1]['url']))
+        ]
+
+        # Pick only the attributes we care about
+        results = [
+            (attr['url'], attr['source'], attr['resolution'])
+            for (geom, attr) in results
+        ]
+
+        return results
 
 
 class PostGISAdapter(SourceAdapter):

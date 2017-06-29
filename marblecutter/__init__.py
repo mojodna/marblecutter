@@ -2,6 +2,7 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
+import logging
 import math
 
 from haversine import haversine
@@ -20,6 +21,7 @@ from . import mosaic
 
 WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
+LOG = logging.getLogger(__name__)
 
 EXTENTS = {
     str(WEB_MERCATOR_CRS): (-20037508.342789244, -20037508.342789244,
