@@ -4,6 +4,10 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
+# Keeping consistent buffer with other transforms
+# so that we can more effectively cache the call to mosaic.compsoite()
+BUFFER = 4
+
 
 def transformation():
     def _transform((data, (bounds, crs))):
@@ -33,4 +37,5 @@ def transformation():
 
         return (np.dstack((r, g, b)), 'RGB')
 
+    _transform.buffer = BUFFER
     return _transform

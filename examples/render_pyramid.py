@@ -23,6 +23,7 @@ from marblecutter.sources import MemoryAdapter
 from marblecutter.stats import Timer
 from marblecutter.formats import PNG, GeoTIFF
 from marblecutter.transformations import Normal, Terrarium
+from marblecutter.transformations import GeoTIFF as GeoTIFFTransform
 
 logging.basicConfig(level=logging.INFO)
 # Quieting boto messages down a little
@@ -37,14 +38,16 @@ POOL = Pool(POOL_SIZE)
 
 GEOTIFF_FORMAT = GeoTIFF()
 PNG_FORMAT = PNG()
+
+GEOTIFF_TRANSFORMATION = GeoTIFFTransform()
 NORMAL_TRANSFORMATION = Normal()
 TERRARIUM_TRANSFORMATION = Terrarium()
 
 
 RENDER_COMBINATIONS = [
-    ("normal", NORMAL_TRANSFORMATION, PNG_FORMAT, ".png"),
-    ("terrarium", TERRARIUM_TRANSFORMATION, PNG_FORMAT, ".png"),
-    ("geotiff", None, GEOTIFF_FORMAT, ".tif"),
+    ("normal",    NORMAL_TRANSFORMATION,    PNG_FORMAT,     ".png"),
+    ("terrarium", TERRARIUM_TRANSFORMATION, PNG_FORMAT,     ".png"),
+    ("geotiff",   GEOTIFF_TRANSFORMATION,   GEOTIFF_FORMAT, ".tif"),
 ]
 
 
