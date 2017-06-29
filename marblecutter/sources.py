@@ -2,6 +2,7 @@ from marblecutter import get_zoom
 from psycopg2.pool import ThreadedConnectionPool
 from rasterio import warp
 from rasterio.crs import CRS
+from shapely.geometry import box
 
 
 Infinity = float("inf")
@@ -23,12 +24,17 @@ class MemoryAdapter(SourceAdapter):
     def get_sources(self, (bounds, bounds_crs), resolution):
         results = []
         zoom = get_zoom(max(resolution))
+        ((left, right), (bottom, top)) = warp.transform(
+            bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
+        bounds_geom = box(left, right, bottom, top)
 
         for candidate in self._sources:
             (geom, attr) = candidate
             if attr['min_zoom'] <= zoom < attr['max_zoom'] and \
-               geom.intersects(bounds):
-                results.append(candidate)
+               geom.intersects(bounds_geom):
+                results.append(
+                    (attr['url'], attr['source'], attr['resolution'])
+                )
 
         return results
 
