@@ -18,7 +18,7 @@ class MemoryAdapter(SourceAdapter):
         self._sources = []
 
     def add_source(self, geometry, attributes):
-        self._sources.add((geometry, attributes))
+        self._sources.append((geometry, attributes))
 
     def get_sources(self, (bounds, bounds_crs), resolution):
         results = []

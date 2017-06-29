@@ -176,7 +176,7 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
     for (type, transformation, format, ext) in RENDER_COMBINATIONS:
         with Timer() as t:
             (headers, data) = render_tile(
-                sources, tile, format, transformation)
+                tile, format, transformation, sources)
 
         logger.info(
             '(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes)',
