@@ -3,31 +3,11 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
-import os
-import urlparse
 
 import numpy as np
 from rasterio import warp
-from rasterio.crs import CRS
 
-from psycopg2.pool import ThreadedConnectionPool
-
-urlparse.uses_netloc.append('postgis')
-urlparse.uses_netloc.append('postgres')
-database_url = urlparse.urlparse(os.environ['DATABASE_URL'])
-pool = ThreadedConnectionPool(
-    1,
-    16,
-    database=database_url.path[1:],
-    user=database_url.username,
-    password=database_url.password,
-    host=database_url.hostname,
-    port=database_url.port,
-)
-
-Infinity = float("inf")
 LOG = logging.getLogger(__name__)
-WGS84_CRS = CRS.from_epsg(4326)
 
 
 def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
@@ -78,67 +58,6 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
             break
 
     return (sources_used, canvas, (canvas_bounds, target_crs))
-
-
-def get_sources((bounds, bounds_crs), resolution):
-    """
-    Fetch sources intersecting a bounding box, curated for a specific
-    resolution (in terms of zoom).
-
-    Returns a tuple of (url, source name, resolution).
-    """
-    from . import get_zoom
-
-    zoom = get_zoom(max(resolution))
-
-    LOG.info("Resolution: %s; equivalent zoom: %d", resolution, zoom)
-
-    # TODO get sources in native CRS of the target
-    query = """
-        SELECT
-            url,
-            source,
-            resolution
-        FROM (
-            SELECT
-                DISTINCT ON (url) url,
-                source,
-                resolution,
-                priority,
-                -- group sources by approximate resolution
-                round(resolution) rounded_resolution,
-                -- measure the distance from centroids to prioritize overlap
-                ST_Centroid(wkb_geometry) <-> ST_Centroid(
-                    ST_SetSRID(
-                        'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
-                        4326)) distance
-            FROM footprints
-            WHERE wkb_geometry && ST_SetSRID(
-                'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)
-                AND %(zoom)s BETWEEN min_zoom AND max_zoom
-            ORDER BY url
-        ) AS _
-        ORDER BY priority ASC, rounded_resolution ASC, distance ASC
-    """
-
-    # height and width of the CRS
-    ((left, right), (bottom, top)) = warp.transform(
-        bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
-
-    conn = pool.getconn()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(query, {
-                "minx": left if left != Infinity else -180,
-                "miny": bottom if bottom != Infinity else -90,
-                "maxx": right if right != Infinity else 180,
-                "maxy": top if top != Infinity else 90,
-                "zoom": zoom,
-            })
-
-            return cur.fetchall()
-    finally:
-        pool.putconn(conn)
 
 
 def paste(

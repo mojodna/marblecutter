@@ -12,3 +12,4 @@ psycopg2
 # rasterio[s3] >= 1.0a9 --no-binary rasterio
 https://github.com/mojodna/rasterio/archive/floating-warped-vrts.tar.gz
 scipy
+shapely
