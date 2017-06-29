@@ -255,10 +255,10 @@ def render(
 
     # apply buffer
     bounds_orig = bounds
-    shape = [dim + (2 * effective_buffer) for dim in shape]
-    bounds = [p - (effective_buffer * resolution[i % 2]) if i < 2 else
-              p + (effective_buffer * resolution[i % 2])
-              for i, p in enumerate(bounds)]
+    shape = tuple(dim + (2 * effective_buffer) for dim in shape)
+    bounds = tuple(p - (effective_buffer * resolution[i % 2]) if i < 2 else
+                   p + (effective_buffer * resolution[i % 2])
+                   for i, p in enumerate(bounds))
 
     left = right = bottom = top = offset
 

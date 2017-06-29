@@ -56,10 +56,10 @@ class MemoryAdapter(SourceAdapter):
         ]
 
         # Pick only the attributes we care about
-        results = [
+        results = (
             (attr['url'], attr['source'], attr['resolution'])
             for (geom, attr) in results
-        ]
+        )
 
         return results
 
