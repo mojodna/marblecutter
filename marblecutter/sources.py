@@ -26,7 +26,7 @@ class MemoryAdapter(SourceAdapter):
         zoom = get_zoom(max(resolution))
         ((left, right), (bottom, top)) = warp.transform(
             bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
-        bounds_geom = box(left, right, bottom, top)
+        bounds_geom = box(left, bottom, right, top)
         bounds_centroid = bounds_geom.centroid
 
         # Filter by zoom level and intersecting geometries
@@ -40,8 +40,10 @@ class MemoryAdapter(SourceAdapter):
         results = sorted(
             results,
             key=lambda (geom, attr): (
-                attr['resolution'],
-                geom.distance(bounds_centroid))
+                attr['priority'],
+                int(attr['resolution']),
+                bounds_centroid.distance(geom.centroid),
+            )
         )
 
         # Remove duplicate URLs
