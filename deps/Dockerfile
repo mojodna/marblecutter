@@ -29,12 +29,12 @@ RUN \
 # Fetch GDAL
 
 RUN \
-  mkdir -p /tmp/gdal-dev && \
-  curl -L https://github.com/OSGeo/gdal/archive/2.2.tar.gz | tar zxf - -C /tmp/gdal-dev --strip-components=1
+  mkdir -p /tmp/gdal && \
+  curl -L http://download.osgeo.org/gdal/2.2.1/gdal-2.2.1.tar.gz | tar zxf - -C /tmp/gdal --strip-components=1
 
 # Build + install GDAL
 
-WORKDIR /tmp/gdal-dev/gdal
+WORKDIR /tmp/gdal
 
 RUN \
   ./configure \
@@ -69,7 +69,7 @@ RUN \
 # Add GDAL libs to the function zip
 
 RUN \
-  strip lib/libgdal.so.20.2.0 && \
+  strip lib/libgdal.so.20.3.0 && \
   strip lib/libproj.so.12.0.0
 
 RUN \

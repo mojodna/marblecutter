@@ -27,12 +27,12 @@ RUN \
 # Fetch GDAL
 
 RUN \
-  mkdir -p /tmp/gdal-dev && \
-  curl -L https://github.com/OSGeo/gdal/archive/2.2.tar.gz | tar zxf - -C /tmp/gdal-dev --strip-components=1
+  mkdir -p /tmp/gdal && \
+  curl -L http://download.osgeo.org/gdal/2.2.1/gdal-2.2.1.tar.gz | tar zxf - -C /tmp/gdal --strip-components=1
 
 # Build + install GDAL
 
-WORKDIR /tmp/gdal-dev/gdal
+WORKDIR /tmp/gdal
 
 RUN \
   ./configure \
