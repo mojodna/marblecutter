@@ -8,7 +8,6 @@ from rasterio import warp
 from rasterio.crs import CRS
 from shapely.geometry import box
 
-
 Infinity = float("inf")
 WGS84_CRS = CRS.from_epsg(4326)
 
@@ -61,8 +60,8 @@ class MemoryAdapter(SourceAdapter):
 
         # Pick only the attributes we care about
         results = [
-            (attr['url'], attr['source'], attr['resolution'])
-            for (geom, attr) in results
+            (a['url'], a['source'], a['resolution'])
+            for (_, a) in results
         ]
 
         return results
