@@ -1,3 +1,7 @@
+import logging
+import os
+import urlparse
+
 from marblecutter import get_zoom
 from psycopg2.pool import ThreadedConnectionPool
 from rasterio import warp
@@ -65,12 +69,22 @@ class MemoryAdapter(SourceAdapter):
 
 
 class PostGISAdapter(SourceAdapter):
-    def __init__(self, database_url):
+    def __init__(self, database_url=os.getenv("DATABASE_URL")):
+        urlparse.uses_netloc.append('postgis')
+        urlparse.uses_netloc.append('postgres')
+        url = urlparse.urlparse(database_url)
+
         self._pool = ThreadedConnectionPool(
             1,
             16,
-            database_url,
+            database=url.path[1:],
+            user=url.username,
+            password=url.password,
+            host=url.hostname,
+            port=url.port,
         )
+
+        self._log = logging.getLogger(__name__)
 
     def get_sources(self, (bounds, bounds_crs), resolution):
         zoom = get_zoom(max(resolution))
