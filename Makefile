@@ -21,7 +21,7 @@ deploy: project.json
 
 install: project.json
 
-project.json: project.json.hbs node_modules/.bin/interp
+project.json: project.json.hbs .env node_modules/.bin/interp
 	interp < $< > $@
 
 node_modules/.bin/interp:
