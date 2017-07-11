@@ -6,8 +6,7 @@
   "timeout": 15,
   "role": "arn:aws:iam::{{AWS_ACCOUNT_ID}}:role/tiler_lambda_function",
   "environment": {
-    "S3_BUCKET": "{{S3_BUCKET}}",
-    "S3_PREFIX": "{{S3_PREFIX}}",
+    "DATABASE_URL": "{{DATABASE_URL}}",
     "SERVER_NAME": "{{AWS_SERVER_NAME}}",
     "CPL_TMPDIR": "/tmp",
     "GDAL_CACHEMAX": "512",
