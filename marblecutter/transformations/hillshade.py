@@ -5,13 +5,12 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 from rasterio import transform
 from rasterio import warp
-from rasterio.crs import CRS
 from rasterio.warp import Resampling
 
+from .utils import apply_latitude_adjustments
 from .. import get_resolution_in_meters, get_zoom
 
 BUFFER = 4
-WGS84_CRS = CRS.from_epsg(4326)
 
 # from http://www.shadedrelief.com/web_relief/
 EXAGGERATION = {
@@ -57,19 +56,7 @@ def transformation(resample=True, add_slopeshade=True):
         # invert resolutions for hillshading purposes
         dy *= -1
 
-        # interpolate latitudes
-
-        ys = np.interp(
-            np.arange(height), [0, height - 1], [bounds[3], bounds[1]])
-        xs = np.empty_like(ys)
-        xs.fill(bounds[0])
-
-        longitudes, latitudes = warp.transform(crs, WGS84_CRS, xs, ys)
-
-        factors = 1 / np.cos(np.radians(latitudes))
-
-        # convert to 2d array, rotate 270º, scale data
-        data = data * np.rot90(np.atleast_2d(factors), 3)
+        data = apply_latitude_adjustments(data, (bounds, crs))
 
         resample_factor = RESAMPLING.get(zoom, 1.0)
         aff = transform.from_bounds(*bounds, width=width, height=height)

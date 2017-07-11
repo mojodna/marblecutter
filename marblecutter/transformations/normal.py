@@ -6,6 +6,7 @@ import bisect
 
 import numpy as np
 
+from .utils import apply_latitude_adjustments
 from .. import get_resolution_in_meters
 
 BUFFER = 4
@@ -58,7 +59,7 @@ def transformation():
             raise Exception("Can't produce normals from multiple bands")
 
         (dx, dy) = get_resolution_in_meters((bounds, crs), (height, width))
-        data = data[0]
+        data = apply_latitude_adjustments(data, (bounds, crs))[0]
 
         ygrad, xgrad = np.gradient(data, 2)
         img = np.dstack((-1.0 / dx * xgrad, 1.0 / dy * ygrad,
