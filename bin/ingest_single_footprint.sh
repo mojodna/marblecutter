@@ -46,7 +46,7 @@ cat << EOF
   WHERE filename='${filename}';
   UPDATE footprints SET
     min_zoom=approximate_zoom - 3,
-    max_zoom=approximate_zoom,
+    max_zoom=20,
     source='${source}',
     url='${transcoded_uri}',
     wkb_geometry=ST_Multi(ST_Buffer(wkb_geometry::geography, resolution * 120)::geometry)
