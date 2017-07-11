@@ -11,6 +11,7 @@ from mercantile import Tile
 
 from . import skadi, tiling
 from .formats import ColorRamp, GeoTIFF, PNG
+from .sources import PostGISAdapter
 from .transformations import Hillshade, Normal, Terrarium
 
 
@@ -29,6 +30,7 @@ HILLSHADE_TRANSFORMATION = Hillshade(resample=True, add_slopeshade=True)
 NORMAL_TRANSFORMATION = Normal()
 PNG_FORMAT = PNG()
 TERRARIUM_TRANSFORMATION = Terrarium()
+POSTGIS_ADAPTER = PostGISAdapter()
 
 class InvalidTileRequest(Exception): # noqa
     status_code = 404
@@ -94,7 +96,7 @@ def preview(renderer): # noqa
 def render_geotiff(z, x, y): # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, format=GEOTIFF_FORMAT, scale=2)
+    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=GEOTIFF_FORMAT, scale=2)
 
     return data, 200, headers
 
@@ -104,7 +106,7 @@ def render_geotiff(z, x, y): # noqa
 def render_hillshade_png(z, x, y, scale=1): # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, format=HILLSHADE_FORMAT, transformation=HILLSHADE_TRANSFORMATION, scale=scale)
+    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=HILLSHADE_FORMAT, transformation=HILLSHADE_TRANSFORMATION, scale=scale)
 
     return data, 200, headers
 
@@ -113,7 +115,7 @@ def render_hillshade_png(z, x, y, scale=1): # noqa
 def render_hillshade_tiff(z, x, y): # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, format=GEOTIFF_FORMAT, transformation=HILLSHADE_TRANSFORMATION, scale=2)
+    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=GEOTIFF_FORMAT, transformation=HILLSHADE_TRANSFORMATION, scale=2)
 
     return data, 200, headers
 
@@ -123,7 +125,7 @@ def render_hillshade_tiff(z, x, y): # noqa
 def render_buffered_normal(z, x, y, scale=1): # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, format=PNG_FORMAT, transformation=NORMAL_TRANSFORMATION, scale=scale, buffer=2)
+    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=PNG_FORMAT, transformation=NORMAL_TRANSFORMATION, scale=scale, buffer=2)
 
     return data, 200, headers
 
@@ -133,7 +135,7 @@ def render_buffered_normal(z, x, y, scale=1): # noqa
 def render_normal(z, x, y, scale=1): # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, format=PNG_FORMAT, transformation=NORMAL_TRANSFORMATION, scale=scale)
+    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=PNG_FORMAT, transformation=NORMAL_TRANSFORMATION, scale=scale)
 
     return data, 200, headers
 
@@ -150,7 +152,7 @@ def render_skadi(_, tile): # noqa
 def render_terrarium(z, x, y, scale=1): # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, format=PNG_FORMAT, transformation=TERRARIUM_TRANSFORMATION, scale=scale)
+    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=PNG_FORMAT, transformation=TERRARIUM_TRANSFORMATION, scale=scale)
 
     return data, 200, headers
 
