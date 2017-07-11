@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 import math
+import warnings
 
 from haversine import haversine
 import numpy as np
@@ -204,6 +205,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
     # open the mask separately so we can take advantage of its overviews
     try:
+        warnings.simplefilter("ignore")
         with rasterio.open("{}.msk".format(src.name), crs=src.crs) as mask_src:
             with WarpedVRT(
                 mask_src,
@@ -214,6 +216,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 dst_height=dst_height,
                 dst_transform=dst_transform,
             ) as mask_vrt:
+                warnings.simplefilter("default")
                 dst_window = vrt.window(*bounds)
 
                 mask = mask_vrt.read(
