@@ -6,7 +6,6 @@ from marblecutter import get_zoom
 from psycopg2.pool import ThreadedConnectionPool
 from rasterio import warp
 from rasterio.crs import CRS
-from shapely.geometry import box
 
 Infinity = float("inf")
 WGS84_CRS = CRS.from_epsg(4326)
@@ -25,6 +24,8 @@ class MemoryAdapter(SourceAdapter):
         self._sources.append((geometry, attributes))
 
     def get_sources(self, (bounds, bounds_crs), resolution):
+        from shapely.geometry import box
+
         results = []
         zoom = get_zoom(max(resolution))
         ((left, right), (bottom, top)) = warp.transform(
