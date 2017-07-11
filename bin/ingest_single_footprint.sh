@@ -45,7 +45,7 @@ cat << EOF
     approximate_zoom=least(22, ceil(log(2.0, ((2 * pi() * 6378137) / (${resolution} * 256))::numeric)))
   WHERE filename='${filename}';
   UPDATE footprints SET
-    min_zoom=approximate_zoom - 3,
+    min_zoom=greatest(0, approximate_zoom - 4),
     max_zoom=20,
     source='${source}',
     url='${transcoded_uri}',
