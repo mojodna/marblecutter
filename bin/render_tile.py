@@ -6,22 +6,22 @@ import logging
 
 import click
 from marblecutter import tiling
-from marblecutter.formats import ColorRamp, GeoTIFF, PNG
+from marblecutter.formats import PNG, ColorRamp, GeoTIFF
+from marblecutter.sources import PostGISAdapter
 from marblecutter.transformations import Hillshade, Normal, Terrarium
 from mercantile import Tile
 
 logging.basicConfig(level=logging.WARNING)
 
-TRANSFORMATIONS = {
-    "hillshade": Hillshade(),
-    "normal": Normal(),
-    "terrarium": Terrarium(),
-}
-
 FORMATS = {
     "color-ramp": ColorRamp(),
     "geotiff": GeoTIFF(),
     "png": PNG(),
+}
+TRANSFORMATIONS = {
+    "hillshade": Hillshade(),
+    "normal": Normal(),
+    "terrarium": Terrarium(),
 }
 
 
@@ -44,8 +44,10 @@ def render_tile(
 ):
     z, x, y = map(int, tile.split("/"))
     tile = Tile(x, y, z)
+
     (headers, data) = tiling.render_tile(
         tile,
+        PostGISAdapter(),
         format=FORMATS[format],
         transformation=TRANSFORMATIONS.get(transformation),
         scale=scale,
