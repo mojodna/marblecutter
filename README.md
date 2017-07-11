@@ -1,55 +1,40 @@
-# OpenAerialMap Dynamic Tiler
+# Marblecutter
 
-This is a standalone (Python / Flask) and Lambda-based dynamic tiler for S3-hosted GeoTIFFs.
+This is a standalone (Python / Flask) and Lambda-based dynamic tiler for S3-hosted GeoTIFFs. It is
+also a set of utilities for transcoding and otherwise preparing raster data for rendering by the
+tiler.
 
 More information:
 
 * [Introducing the AWS Lambda Tiler](https://hi.stamen.com/stamen-aws-lambda-tiler-blog-post-76fc1138a145#.j644z9qvw)
 
-## Command Line Tools
+## Development
 
-The command line tools (in `bin/`) require `bash`, `jq`, `python`, and `rasterio`.
+Development is best done using [Docker](https://docker.com/), as there are a number of dependencies,
+some of which remain unpackaged for common OSes (e.g. GDAL-2.2+).
 
-Transcode source scene:
-
-```bash
-bin/transcode.sh \
-  http://hotosm-oam.s3.amazonaws.com/uploads/2016-10-11/57fca69e84ae75bb00ec751f/scene/0/scene-0-image-0-DG-103001005E85AC00.tif \
-  57fca69e84ae75bb00ec751f.tif
-```
-
-Add external overviews:
+If you're going to be experimenting with mosaicking in any form, `docker-compose` makes things even
+easier, as it packages marblecutter alongside a PostGIS database containing footprints and other
+metadata about imagery.
 
 ```bash
-bin/make_overviews.sh 57fca69e84ae75bb00ec751f.tif
+# build
+docker-compose build
+
+# start (requires that Postgres has been populated with appropriate footprint data)
+docker-compose up
 ```
 
-Write back to S3:
+The transcoding and metadata tools can be used from the images built by `docker-compose`:
 
 ```bash
-aws s3 cp \
-  57fca69e84ae75bb00ec751f.tif \
-  s3://oam-dynamic-tiler-tmp/sources/57fca69e84ae75bb00ec751f/index.tif \
-  --acl public-read
-aws s3 cp \
-  57fca69e84ae75bb00ec751f.tif.ovr \
-  s3://oam-dynamic-tiler-tmp/sources/57fca69e84ae75bb00ec751f/index.tif.ovr \
-  --acl public-read
+docker-compose run web bash
+process.sh ...
 ```
 
-Create warped VRT and write to S3:
+## AWS Lambda / API Gateway
 
-```bash
-id=57fc935b84ae75bb00ec751b; bin/make_vrt.sh $id | aws s3 cp - s3://oam-dynamic-tiler-tmp/sources/${id}/index.vrt
-```
-
-Generate metadata JSON and write to S3:
-
-```bash
-id=57fc935b84ae75bb00ec751b; bin/get_metadata.py $id | aws s3 cp - s3://oam-dynamic-tiler-tmp/sources/${id}/index.json
-```
-
-## lambda
+`project.json.hbs` defines an [`apex`](http://apex.run/) project that can be deployed to AWS Lambda.
 
 Create IAM role: `tiler_lambda_function` with Trust Relationship policy document:
 
