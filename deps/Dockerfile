@@ -591,6 +591,7 @@ RUN \
     PIL/.libs/libtiff-* \
     PIL/.libs/libz-* \
     matplotlib/.libs/libpng16-* \
+    matplotlib/.libs/libz-* \
     numpy/.libs/libgfortran-* \
     numpy/.libs/libopenblasp-r0-* \
     psycopg2/.libs/libcom_err-* \
