@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 import math
+import os
 import warnings
 
 from haversine import haversine
@@ -319,7 +320,11 @@ def render(
     headers = {
         "Content-Type": content_type,
         "X-Imagery-Sources": ", ".join(s[1].split('/', 3)[3] for s in sources_used),
-        "X-Timers": ", ".join("{}: {:0.2f}".format(*s) for s in stats),
     }
+
+    if os.environ.get('MARBLECUTTER_DEBUG_TIMERS'):
+        headers.update({
+            "X-Timers": ", ".join("{}: {:0.2f}".format(*s) for s in stats)
+        })
 
     return (headers, formatted)
