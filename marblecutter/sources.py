@@ -114,6 +114,7 @@ class PostGISAdapter(SourceAdapter):
                 WHERE wkb_geometry && ST_SetSRID(
                     'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)
                     AND %(zoom)s BETWEEN min_zoom AND max_zoom
+                    AND enabled = true
                 ORDER BY url
             ) AS _
             ORDER BY priority ASC, rounded_resolution ASC, distance ASC
