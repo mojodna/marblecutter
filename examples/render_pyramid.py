@@ -131,7 +131,7 @@ def build_source_index(tile):
                         wkb_geometry,
                         ST_GeomFromText(%s, 4326)
                     )
-                    AND enabled
+                    AND enabled = true
                 """, (bbox.to_wkt(),))
 
             for row in cur:
