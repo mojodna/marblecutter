@@ -49,7 +49,7 @@ RENDER_COMBINATIONS = [
 
 
 # From https://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
-def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
+def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, max_delay=60, logger=None):
     def deco_retry(f):
         @wraps(f)
         def f_retry(*args, **kwargs):
@@ -66,6 +66,7 @@ def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
                     time.sleep(mdelay)
                     mtries -= 1
                     mdelay *= backoff
+                    mdelay = min(mdelay, max_delay)
             return f(*args, **kwargs)
 
         return f_retry  # true decorator
@@ -73,7 +74,7 @@ def retry(ExceptionToCheck, tries=4, delay=3, backoff=2, logger=None):
     return deco_retry
 
 
-@retry((Exception,), logger=logger)
+@retry((Exception,), tries=30, logger=logger)
 def write_to_s3(bucket, key_prefix, tile, tile_type, data, key_suffix,
                 headers, overwrite=False):
     key = '{}/{}/{}/{}{}'.format(
