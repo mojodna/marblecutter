@@ -38,7 +38,6 @@ ogr2ogr \
   /vsistdout/ /vsistdin/
 
 # Update the data we just added to include info about resolution, etc.
-# ... 120 is the number of pixels to buffer; it's the sample value for rio footprint + 20%
 cat << EOF
   UPDATE footprints SET
     resolution=${resolution},
@@ -48,7 +47,6 @@ cat << EOF
     min_zoom=greatest(0, approximate_zoom - 4),
     max_zoom=20,
     source='${source}',
-    url='${transcoded_uri}',
-    wkb_geometry=ST_Multi(ST_Buffer(wkb_geometry::geography, resolution * 120)::geometry)
+    url='${transcoded_uri}'
   WHERE filename='${filename}';
 EOF
