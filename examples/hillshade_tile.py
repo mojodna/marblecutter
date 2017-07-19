@@ -6,6 +6,7 @@ import logging
 
 from marblecutter import tiling
 from marblecutter.formats import ColorRamp, GeoTIFF
+from marblecutter.sources import PostGISAdapter
 from marblecutter.transformations import Hillshade
 from mercantile import Tile
 
@@ -16,7 +17,11 @@ if __name__ == "__main__":
 
     hillshade = Hillshade(resample=True, add_slopeshade=True)
     (headers, data) = tiling.render_tile(
-        tile, format=GeoTIFF(), transformation=hillshade, scale=1)
+        tile,
+        PostGISAdapter(),
+        format=GeoTIFF(),
+        transformation=hillshade,
+        scale=1)
 
     print("Headers: ", headers)
 
@@ -24,7 +29,8 @@ if __name__ == "__main__":
               "w") as f:
         f.write(data)
 
-    (headers, data) = tiling.render_tile(tile, format=GeoTIFF())
+    (headers, data) = tiling.render_tile(
+        tile, PostGISAdapter(), format=GeoTIFF())
 
     print("Headers: ", headers)
 
@@ -33,7 +39,11 @@ if __name__ == "__main__":
 
     # tile = Tile(654, 1582, 12)
     (headers, data) = tiling.render_tile(
-        tile, format=ColorRamp("png"), transformation=hillshade, scale=2)
+        tile,
+        PostGISAdapter(),
+        format=ColorRamp("png"),
+        transformation=hillshade,
+        scale=2)
 
     print("Headers: ", headers)
 

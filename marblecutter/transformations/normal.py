@@ -7,9 +7,7 @@ import bisect
 import numpy as np
 
 from .. import get_resolution_in_meters
-from .utils import apply_latitude_adjustments
-
-BUFFER = 4
+from .utils import TransformationBase, apply_latitude_adjustments
 
 
 # Generate a table of heights suitable for use as hypsometric tinting. These
@@ -51,8 +49,13 @@ def _height_mapping_func(h):
     return 255 - bisect.bisect_left(HEIGHT_TABLE, h)
 
 
-def transformation():
-    def _transform((data, (bounds, crs))):
+class Normal(TransformationBase):
+    BUFFER = 4
+
+    def __init__(self, buffer=0):
+        self.buffer = self.BUFFER + buffer
+
+    def transform(self, (data, (bounds, crs))):
         (count, height, width) = data.shape
 
         if count != 1:
@@ -96,6 +99,3 @@ def transformation():
         # components of the normal, and h is an index into a hypsometric tint
         # table (see HEIGHT_TABLE).
         return (np.dstack((img, hyps)), "RGBA")
-
-    _transform.buffer = BUFFER
-    return _transform

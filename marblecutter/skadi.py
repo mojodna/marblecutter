@@ -34,8 +34,13 @@ def _parse_skadi_tile(tile_name):
     return None
 
 
-def render_tile(tile):
+def render_tile(tile, source_provider):
     """Render a tile into gzipped HGT."""
     bounds = _bbox(*_parse_skadi_tile(tile))
 
-    return render((bounds, SKADI_CRS), SHAPE, SKADI_CRS, format=SKADI_FORMAT)
+    return render(
+        (bounds, SKADI_CRS),
+        source_provider,
+        SHAPE,
+        SKADI_CRS,
+        format=SKADI_FORMAT)

@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # TODO repeat top/bottom if appropriate
     # TODO wrap on sides if appropriate
     (headers, data) = tiling.render_tile(
-        tile, format=PNG(), transformation=Normal(), scale=2, buffer=2)
+        tile, format=PNG(), transformation=Normal(buffer=2), scale=2)
 
     print("Headers: ", headers)
 

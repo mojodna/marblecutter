@@ -2,8 +2,9 @@
 # coding=utf-8
 from __future__ import absolute_import
 
-from . import hillshade, normal, terrarium
+from . import buffer, hillshade, normal, terrarium
 
-Hillshade = hillshade.transformation
-Normal = normal.transformation
-Terrarium = terrarium.transformation
+Buffer = buffer.Buffer
+Hillshade = hillshade.Hillshade
+Normal = normal.Normal
+Terrarium = terrarium.Terrarium

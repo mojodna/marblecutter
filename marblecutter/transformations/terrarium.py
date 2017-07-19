@@ -4,9 +4,11 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
+from .utils import TransformationBase
 
-def transformation():
-    def _transform((data, (bounds, crs))):
+
+class Terrarium(TransformationBase):
+    def transform(self, (data, (bounds, crs))):
         (count, height, width) = data.shape
 
         if count != 1:
@@ -17,8 +19,8 @@ def transformation():
         #   R = int(height) / 256
         #   G = int(height) % 256
         #   B = int(frac(height) * 256)
-        # For nodata, we'll use R=0, which corresponds to height < 32,513 which is
-        # lower than any depth on Earth.
+        # For nodata, we'll use R=0, which corresponds to height < 32,513 which
+        # is lower than any depth on Earth.
 
         pixels = data[0]
         pixels.fill_value = 0
@@ -32,5 +34,3 @@ def transformation():
         b = ((pixels * 256) % 256).astype(np.uint8)
 
         return (np.dstack((r, g, b)), 'RGB')
-
-    return _transform

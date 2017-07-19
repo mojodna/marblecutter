@@ -20,7 +20,7 @@ from rasterio.windows import Window
 from scipy.interpolate import RectBivariateSpline
 
 from . import mosaic
-from marblecutter.stats import Timer
+from .stats import Timer
 
 WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
@@ -52,7 +52,7 @@ def _nodata(dtype):
 
 
 def crop((data, (bounds, data_crs)), data_format, offsets):
-    left, right, bottom, top = offsets
+    left, bottom, right, top = offsets
 
     if _isimage(data_format):
         width, height, _ = data.shape
@@ -97,7 +97,7 @@ def get_resolution_in_meters((bounds, crs), (height, width)):
 
 def get_source(path):
     """Cached source opening."""
-    with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS='.vrt,.tif,.ovr,.msk'):
+    with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".vrt,.tif,.ovr,.msk"):
         return rasterio.open(path)
 
 
@@ -198,8 +198,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 np.linspace(c[0], c[1], num=width))[np.newaxis]
         else:
             data = vrt.read(
-                out_shape=(vrt.count, height, width),
-                window=dst_window)
+                out_shape=(vrt.count, height, width), window=dst_window)
 
         # mask with NODATA values
         if vrt.nodata is not None:
@@ -225,8 +224,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 dst_window = vrt.window(*bounds)
 
                 mask = mask_vrt.read(
-                    out_shape=(vrt.count, height, width),
-                    window=dst_window)
+                    out_shape=(vrt.count, height, width), window=dst_window)
 
                 data.mask = data.mask | ~mask
     except Exception:
@@ -236,90 +234,50 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     return (data, (bounds, bounds_crs))
 
 
-# TODO does buffer actually belong here, vs. being the responsibility of the
-# calling code?
 def render((bounds, bounds_crs),
            sources_store,
            shape,
            target_crs,
            format,
-           transformation=None,
-           buffer=0):
+           transformation=None):
     """Render data intersecting bounds into shape using an optional
     transformation."""
-    resolution = get_resolution((bounds, bounds_crs), shape)
     resolution_m = get_resolution_in_meters((bounds, bounds_crs), shape)
     stats = []
 
-    effective_buffer = buffer
-    offset = 0
-
-    if transformation and hasattr(transformation, 'buffer'):
-        effective_buffer = buffer + transformation.buffer
-        offset = transformation.buffer
-
-    # apply buffer
-    bounds_orig = bounds
-    shape = [dim + (2 * effective_buffer) for dim in shape]
-    bounds = [
-        p - (effective_buffer * resolution[i % 2])
-        if i < 2 else p + (effective_buffer * resolution[i % 2])
-        for i, p in enumerate(bounds)
-    ]
-
-    left = right = bottom = top = offset
-
-    # adjust bounds + shape if bounds extends outside the extent
-    extent = get_extent(bounds_crs)
-
-    if bounds[0] < extent[0]:
-        shape[1] -= effective_buffer
-        bounds[0] = bounds_orig[0]
-        left = 0
-
-    if bounds[2] > extent[2]:
-        shape[1] -= effective_buffer
-        bounds[2] = bounds_orig[2]
-        right = 0
-
-    if bounds[1] < extent[1]:
-        shape[0] -= effective_buffer
-        bounds[1] = bounds_orig[1]
-        bottom = 0
-
-    if bounds[3] > extent[3]:
-        shape[0] -= effective_buffer
-        bounds[3] = bounds_orig[3]
-        top = 0
+    if transformation:
+        (bounds, bounds_crs), shape, (left, bottom, right,
+                                      top) = transformation.expand(
+                                          (bounds, bounds_crs), shape)
 
     with Timer() as t:
         sources = sources_store.get_sources((bounds, bounds_crs), resolution_m)
-    stats.append(('get sources', t.elapsed))
+    stats.append(("get sources", t.elapsed))
 
     with Timer() as t:
         (sources_used, data, (data_bounds, data_crs)) = mosaic.composite(
             sources, (bounds, bounds_crs), shape, target_crs)
-    stats.append(('composite', t.elapsed))
+    stats.append(("composite", t.elapsed))
 
     data_format = "raw"
 
-    with Timer() as t:
-        if transformation:
-            (data, data_format) = transformation((data, (data_bounds,
-                                                         data_crs)))
-    stats.append(('transform', t.elapsed))
+    if transformation:
+        with Timer() as t:
+            (data, data_format) = transformation.transform((data, (data_bounds,
+                                                                   data_crs)))
+        stats.append(("transform", t.elapsed))
 
-    with Timer() as t:
-        if effective_buffer > buffer:
-            (data, (data_bounds, data_crs)) = crop(
+        with Timer() as t:
+            (data, (data_bounds, data_crs)) = transformation.postprocess(
                 (data, (data_bounds, data_crs)), data_format, (left, right,
                                                                bottom, top))
-    stats.append(('crop', t.elapsed))
+
+        stats.append(("postprocess", t.elapsed))
 
     with Timer() as t:
         (content_type, formatted) = format((data, (data_bounds, data_crs)),
                                            data_format)
-    stats.append(('format', t.elapsed))
+    stats.append(("format", t.elapsed))
 
     headers = {
         "Content-Type": content_type,

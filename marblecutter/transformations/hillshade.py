@@ -8,7 +8,7 @@ from rasterio import transform, warp
 from rasterio.warp import Resampling
 
 from .. import get_resolution_in_meters, get_zoom
-from .utils import apply_latitude_adjustments
+from .utils import TransformationBase, apply_latitude_adjustments
 
 BUFFER = 4
 
@@ -44,8 +44,12 @@ RESAMPLING = {
 }
 
 
-def transformation(resample=True, add_slopeshade=True):
-    def _transform((data, (bounds, crs))):
+class Hillshade(TransformationBase):
+    def __init__(self, resample=True, add_slopeshade=True):
+        self.resample = resample
+        self.add_slopeshade = add_slopeshade
+
+    def transform(self, (data, (bounds, crs))):
         (count, height, width) = data.shape
 
         if count != 1:
@@ -61,10 +65,11 @@ def transformation(resample=True, add_slopeshade=True):
         resample_factor = RESAMPLING.get(zoom, 1.0)
         aff = transform.from_bounds(*bounds, width=width, height=height)
 
-        if resample and resample_factor != 1.0:
+        if self.resample and resample_factor != 1.0:
             # resample data according to Tom Paterson's chart
 
-            # create an empty target array that's the shape of the resampled tile (e.g. 80% of 260x260px)
+            # create an empty target array that's the shape of the resampled
+            # tile (e.g. 80% of 260x260px)
             resampled_height = int(round(height * resample_factor))
             resampled_width = int(round(width * resample_factor))
             resampled = np.empty(
@@ -74,7 +79,8 @@ def transformation(resample=True, add_slopeshade=True):
             newaff = transform.from_bounds(
                 *bounds, width=resampled_width, height=resampled_height)
 
-            # downsample using GDAL's reprojection functionality (which gives us access to different resampling algorithms)
+            # downsample using GDAL's reprojection functionality (which gives
+            # us access to different resampling algorithms)
             warp.reproject(
                 data,
                 resampled,
@@ -84,7 +90,8 @@ def transformation(resample=True, add_slopeshade=True):
                 dst_crs=crs,
                 resampling=Resampling.bilinear, )
 
-            # reproject / resample the mask so that intermediate operations can also use it
+            # reproject / resample the mask so that intermediate operations
+            # can also use it
             if np.any(data.mask):
                 warp.reproject(
                     data.mask.astype(np.uint8),
@@ -105,7 +112,7 @@ def transformation(resample=True, add_slopeshade=True):
                 dy=dy,
                 vert_exag=EXAGGERATION.get(zoom, 1.0), )
 
-            if add_slopeshade:
+            if self.add_slopeshade:
                 ss = slopeshade(
                     resampled,
                     dx=dx,
@@ -117,7 +124,8 @@ def transformation(resample=True, add_slopeshade=True):
             # scale hillshade values (0.0-1.0) to integers (0-255)
             hs = (255.0 * hs).astype(np.uint8)
 
-            # create an empty target array that's the shape of the target tile + buffers (e.g. 260x260px)
+            # create an empty target array that's the shape of the target tile
+            # + buffers (e.g. 260x260px)
             resampled_hs = np.empty(shape=data.shape, dtype=hs.dtype)
 
             # upsample (invert the previous reprojection)
@@ -138,7 +146,7 @@ def transformation(resample=True, add_slopeshade=True):
                 dy=dy,
                 vert_exag=EXAGGERATION.get(zoom, 1.0), )
 
-            if add_slopeshade:
+            if self.add_slopeshade:
                 ss = slopeshade(
                     data[0],
                     dx=dx,
@@ -156,10 +164,6 @@ def transformation(resample=True, add_slopeshade=True):
         hs.fill_value = 0
 
         return (hs, "raw")
-
-    _transform.buffer = BUFFER
-
-    return _transform
 
 
 def _hillshade(elevation,
