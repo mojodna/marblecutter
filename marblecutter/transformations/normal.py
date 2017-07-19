@@ -50,10 +50,7 @@ def _height_mapping_func(h):
 
 
 class Normal(TransformationBase):
-    BUFFER = 4
-
-    def __init__(self, buffer=0):
-        self.buffer = self.BUFFER + buffer
+    buffer = 4
 
     def transform(self, (data, (bounds, crs))):
         (count, height, width) = data.shape

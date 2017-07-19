@@ -56,17 +56,21 @@ def crop((data, (bounds, data_crs)), data_format, offsets):
 
     if _isimage(data_format):
         width, height, _ = data.shape
+        t = transform.from_bounds(*bounds, width=width, height=height)
 
         data = data[top:height - bottom, left:width - right, :]
 
-        return (data, (None, None))
+        cropped_window = windows.Window(left, top, width, height)
+        cropped_bounds = windows.bounds(cropped_window, t)
+
+        return (data, (cropped_bounds, data_crs))
 
     _, height, width = data.shape
     t = transform.from_bounds(*bounds, width=width, height=height)
 
     data = data[:, top:height - bottom, left:width - right]
 
-    cropped_window = windows.Window(left, top, *data.shape[1:])
+    cropped_window = windows.Window(left, top, width, height)
     cropped_bounds = windows.bounds(cropped_window, t)
 
     return (data, (cropped_bounds, data_crs))
@@ -172,9 +176,9 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                              target_window.num_rows / 2)
 
             r, c = dst_window
-            window = Window.from_ranges(
-                (r[0] - buffer_pixels[1], r[1] + buffer_pixels[1]),
-                (c[0] - buffer_pixels[0], c[1] + buffer_pixels[0]))
+            window = Window.from_ranges((max(
+                0, r[0] - buffer_pixels[1]), r[1] + buffer_pixels[1]), (max(
+                    0, c[0] - buffer_pixels[0]), c[1] + buffer_pixels[0]))
 
             data = vrt.read(1, window=window)
 
@@ -246,9 +250,8 @@ def render((bounds, bounds_crs),
     stats = []
 
     if transformation:
-        (bounds, bounds_crs), shape, (left, bottom, right,
-                                      top) = transformation.expand(
-                                          (bounds, bounds_crs), shape)
+        (bounds, bounds_crs), shape, offsets = transformation.expand(
+            (bounds, bounds_crs), shape)
 
     with Timer() as t:
         sources = sources_store.get_sources((bounds, bounds_crs), resolution_m)
@@ -269,8 +272,7 @@ def render((bounds, bounds_crs),
 
         with Timer() as t:
             (data, (data_bounds, data_crs)) = transformation.postprocess(
-                (data, (data_bounds, data_crs)), data_format, (left, right,
-                                                               bottom, top))
+                (data, (data_bounds, data_crs)), data_format, offsets)
 
         stats.append(("postprocess", t.elapsed))
 
@@ -280,13 +282,16 @@ def render((bounds, bounds_crs),
     stats.append(("format", t.elapsed))
 
     headers = {
-        "Content-Type": content_type,
-        "X-Imagery-Sources": ", ".join(s[1].split('/', 3)[3] for s in sources_used),
+        "Content-Type":
+        content_type,
+        "X-Imagery-Sources":
+        ", ".join(s[1].split('/', 3)[3] for s in sources_used),
     }
 
     if os.environ.get('MARBLECUTTER_DEBUG_TIMERS'):
         headers.update({
-            "X-Timers": ", ".join("{}: {:0.2f}".format(*s) for s in stats)
+            "X-Timers":
+            ", ".join("{}: {:0.2f}".format(*s) for s in stats)
         })
 
     return (headers, formatted)

@@ -6,19 +6,67 @@ import logging
 
 from marblecutter import tiling
 from marblecutter.formats import PNG
+from marblecutter.sources import PostGISAdapter
 from marblecutter.transformations import Normal
 from mercantile import Tile
 
 logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
-    tile = Tile(324, 787, 11)
-    # TODO repeat top/bottom if appropriate
-    # TODO wrap on sides if appropriate
+    zoom = 2
+
+    tile = Tile(0, 0, zoom)
     (headers, data) = tiling.render_tile(
-        tile, format=PNG(), transformation=Normal(buffer=2), scale=2)
+        tile,
+        PostGISAdapter(),
+        format=PNG(),
+        transformation=Normal(collar=2),
+        scale=2)
 
     print("Headers: ", headers)
 
-    with open("tmp/11_324_787_buffered_normal.png", "w") as f:
+    with open("tmp/{}_{}_{}_buffered_normal.png".format(
+            tile.z, tile.x, tile.y), "w") as f:
+        f.write(data)
+
+    tile = Tile(0, 2**zoom - 1, zoom)
+    (headers, data) = tiling.render_tile(
+        tile,
+        PostGISAdapter(),
+        format=PNG(),
+        transformation=Normal(collar=2),
+        scale=2)
+
+    print("Headers: ", headers)
+
+    with open("tmp/{}_{}_{}_buffered_normal.png".format(
+            tile.z, tile.x, tile.y), "w") as f:
+        f.write(data)
+
+    tile = Tile(2**2 - 1, 2**zoom - 1, zoom)
+    (headers, data) = tiling.render_tile(
+        tile,
+        PostGISAdapter(),
+        format=PNG(),
+        transformation=Normal(collar=2),
+        scale=2)
+
+    print("Headers: ", headers)
+
+    with open("tmp/{}_{}_{}_buffered_normal.png".format(
+            tile.z, tile.x, tile.y), "w") as f:
+        f.write(data)
+
+    tile = Tile(2**zoom - 1, 0, zoom)
+    (headers, data) = tiling.render_tile(
+        tile,
+        PostGISAdapter(),
+        format=PNG(),
+        transformation=Normal(collar=2),
+        scale=2)
+
+    print("Headers: ", headers)
+
+    with open("tmp/{}_{}_{}_buffered_normal.png".format(
+            tile.z, tile.x, tile.y), "w") as f:
         f.write(data)

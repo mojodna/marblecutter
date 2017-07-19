@@ -10,8 +10,6 @@ from rasterio.warp import Resampling
 from .. import get_resolution_in_meters, get_zoom
 from .utils import TransformationBase, apply_latitude_adjustments
 
-BUFFER = 4
-
 # from http://www.shadedrelief.com/web_relief/
 EXAGGERATION = {
     0: 45.0,
@@ -45,7 +43,10 @@ RESAMPLING = {
 
 
 class Hillshade(TransformationBase):
+    buffer = 4
+
     def __init__(self, resample=True, add_slopeshade=True):
+        TransformationBase.__init__(self)
         self.resample = resample
         self.add_slopeshade = add_slopeshade
 
