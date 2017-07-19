@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 import numpy as np
+
 from rasterio import transform
 from rasterio.io import MemoryFile
 
@@ -19,8 +20,8 @@ def format():
         (count, height, width) = data.shape
 
         if count == 1:
-            resolution = get_resolution_in_meters(
-                (data_bounds, data_crs), (height, width))
+            resolution = get_resolution_in_meters((data_bounds, data_crs),
+                                                  (height, width))
 
             # downsample to int16 if ground resolution is more than 10 meters
             # (at the equator)

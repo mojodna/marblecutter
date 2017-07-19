@@ -60,10 +60,8 @@ class MemoryAdapter(SourceAdapter):
         ]
 
         # Pick only the attributes we care about
-        results = [
-            (a['url'], a['source'], a['resolution'])
-            for (_, a) in results
-        ]
+        results = [(a['url'], a['source'], a['resolution'])
+                   for (_, a) in results]
 
         return results
 
@@ -81,8 +79,7 @@ class PostGISAdapter(SourceAdapter):
             user=url.username,
             password=url.password,
             host=url.hostname,
-            port=url.port,
-        )
+            port=url.port, )
 
         self._log = logging.getLogger(__name__)
 

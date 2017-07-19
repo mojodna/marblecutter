@@ -10,10 +10,9 @@ from flask_cors import CORS
 from mercantile import Tile
 
 from . import skadi, tiling
-from .formats import ColorRamp, GeoTIFF, PNG
+from .formats import PNG, ColorRamp, GeoTIFF
 from .sources import PostGISAdapter
 from .transformations import Hillshade, Normal, Terrarium
-
 
 LOG = logging.getLogger(__name__)
 
@@ -32,29 +31,30 @@ PNG_FORMAT = PNG()
 TERRARIUM_TRANSFORMATION = Terrarium()
 POSTGIS_ADAPTER = PostGISAdapter()
 
-class InvalidTileRequest(Exception): # noqa
+
+class InvalidTileRequest(Exception):  # noqa
     status_code = 404
 
-    def __init__(self, message, status_code=None, payload=None): # noqa
+    def __init__(self, message, status_code=None, payload=None):  # noqa
         Exception.__init__(self)
         self.message = message
         if status_code is not None:
             self.status_code = status_code
         self.payload = payload
 
-    def to_dict(self): # noqa
+    def to_dict(self):  # noqa
         rv = dict(self.payload or ())
         rv['message'] = self.message
         return rv
 
 
 @app.route("/favicon.ico")
-def favicon(): # noqa
+def favicon():  # noqa
     return '', 404
 
 
 @app.route("/<renderer>/")
-def meta(renderer): # noqa
+def meta(renderer):  # noqa
     if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium"]:
         return '', 404
 
@@ -74,7 +74,7 @@ def meta(renderer): # noqa
 
 
 @app.route("/<renderer>/preview")
-def preview(renderer): # noqa
+def preview(renderer):  # noqa
     if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium"]:
         return '', 404
 
@@ -82,66 +82,84 @@ def preview(renderer): # noqa
         return render_template(
             "preview.html",
             tilejson_url=url_for(
-                "meta",
-                _external=True,
-                _scheme="",
-                renderer=renderer
-            ),
+                "meta", _external=True, _scheme="", renderer=renderer),
         ), 200, {
             "Content-Type": "text/html"
         }
 
 
 @app.route("/geotiff/<int:z>/<int:x>/<int:y>.tif")
-def render_geotiff(z, x, y): # noqa
+def render_geotiff(z, x, y):  # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=GEOTIFF_FORMAT, scale=2)
+    headers, data = tiling.render_tile(
+        tile, POSTGIS_ADAPTER, format=GEOTIFF_FORMAT, scale=2)
 
     return data, 200, headers
 
 
 @app.route("/hillshade/<int:z>/<int:x>/<int:y>.png")
 @app.route("/hillshade/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_hillshade_png(z, x, y, scale=1): # noqa
+def render_hillshade_png(z, x, y, scale=1):  # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=HILLSHADE_FORMAT, transformation=HILLSHADE_TRANSFORMATION, scale=scale)
+    headers, data = tiling.render_tile(
+        tile,
+        POSTGIS_ADAPTER,
+        format=HILLSHADE_FORMAT,
+        transformation=HILLSHADE_TRANSFORMATION,
+        scale=scale)
 
     return data, 200, headers
 
 
 @app.route("/hillshade/<int:z>/<int:x>/<int:y>.tif")
-def render_hillshade_tiff(z, x, y): # noqa
+def render_hillshade_tiff(z, x, y):  # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=GEOTIFF_FORMAT, transformation=HILLSHADE_TRANSFORMATION, scale=2)
+    headers, data = tiling.render_tile(
+        tile,
+        POSTGIS_ADAPTER,
+        format=GEOTIFF_FORMAT,
+        transformation=HILLSHADE_TRANSFORMATION,
+        scale=2)
 
     return data, 200, headers
 
 
 @app.route("/buffered_normal/<int:z>/<int:x>/<int:y>.png")
 @app.route("/buffered_normal/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_buffered_normal(z, x, y, scale=1): # noqa
+def render_buffered_normal(z, x, y, scale=1):  # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=PNG_FORMAT, transformation=NORMAL_TRANSFORMATION, scale=scale, buffer=2)
+    headers, data = tiling.render_tile(
+        tile,
+        POSTGIS_ADAPTER,
+        format=PNG_FORMAT,
+        transformation=NORMAL_TRANSFORMATION,
+        scale=scale,
+        buffer=2)
 
     return data, 200, headers
 
 
 @app.route("/normal/<int:z>/<int:x>/<int:y>.png")
 @app.route("/normal/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_normal(z, x, y, scale=1): # noqa
+def render_normal(z, x, y, scale=1):  # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=PNG_FORMAT, transformation=NORMAL_TRANSFORMATION, scale=scale)
+    headers, data = tiling.render_tile(
+        tile,
+        POSTGIS_ADAPTER,
+        format=PNG_FORMAT,
+        transformation=NORMAL_TRANSFORMATION,
+        scale=scale)
 
     return data, 200, headers
 
 
 @app.route("/skadi/<_>/<tile>.hgt.gz")
-def render_skadi(_, tile): # noqa
+def render_skadi(_, tile):  # noqa
     headers, data = skadi.render_tile(tile)
 
     return data, 200, headers
@@ -149,16 +167,21 @@ def render_skadi(_, tile): # noqa
 
 @app.route("/terrarium/<int:z>/<int:x>/<int:y>.png")
 @app.route("/terrarium/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_terrarium(z, x, y, scale=1): # noqa
+def render_terrarium(z, x, y, scale=1):  # noqa
     tile = Tile(x, y, z)
 
-    headers, data = tiling.render_tile(tile, POSTGIS_ADAPTER, format=PNG_FORMAT, transformation=TERRARIUM_TRANSFORMATION, scale=scale)
+    headers, data = tiling.render_tile(
+        tile,
+        POSTGIS_ADAPTER,
+        format=PNG_FORMAT,
+        transformation=TERRARIUM_TRANSFORMATION,
+        scale=scale)
 
     return data, 200, headers
 
 
 @app.errorhandler(InvalidTileRequest)
-def handle_invalid_tile_request(error): # noqa
+def handle_invalid_tile_request(error):  # noqa
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
 
@@ -166,7 +189,7 @@ def handle_invalid_tile_request(error): # noqa
 
 
 @app.errorhandler(IOError)
-def handle_ioerror(error): # noqa
+def handle_ioerror(error):  # noqa
     LOG.warn(error)
 
     return "", 500

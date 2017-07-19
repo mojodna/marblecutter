@@ -1,6 +1,6 @@
 # noqa
 # coding=utf-8
-from __future__ import division, absolute_import
+from __future__ import absolute_import, division
 
 import re
 
@@ -17,11 +17,8 @@ SKADI_TILE_NAME_PATTERN = re.compile('^([NS])([0-9]{2})([EW])([0-9]{3})$')
 
 
 def _bbox(x, y):
-    return (
-        (x - 180) - HALF_ARC_SEC,
-        (y - 90) - HALF_ARC_SEC,
-        (x - 179) + HALF_ARC_SEC,
-        (y - 89) + HALF_ARC_SEC)
+    return ((x - 180) - HALF_ARC_SEC, (y - 90) - HALF_ARC_SEC,
+            (x - 179) + HALF_ARC_SEC, (y - 89) + HALF_ARC_SEC)
 
 
 def _parse_skadi_tile(tile_name):

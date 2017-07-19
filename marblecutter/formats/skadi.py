@@ -6,6 +6,7 @@ from gzip import GzipFile
 from io import BytesIO
 
 import numpy as np
+
 from rasterio import transform
 from rasterio.io import MemoryFile
 

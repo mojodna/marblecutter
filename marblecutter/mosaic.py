@@ -5,6 +5,7 @@ from __future__ import absolute_import, division, print_function
 import logging
 
 import numpy as np
+
 from rasterio import warp
 
 LOG = logging.getLogger(__name__)
@@ -18,13 +19,12 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     canvas = np.ma.empty(
         (1, height, width),
         dtype=np.float32,
-        fill_value=_nodata(np.float32),
-    )
+        fill_value=_nodata(np.float32), )
     canvas.mask = True
     canvas.fill_value = _nodata(np.float32)
 
-    ((left, right), (bottom, top)) = warp.transform(
-        bounds_crs, target_crs, bounds[::2], bounds[1::2])
+    ((left, right), (bottom, top)) = warp.transform(bounds_crs, target_crs,
+                                                    bounds[::2], bounds[1::2])
     canvas_bounds = (left, bottom, right, top)
 
     sources_used = list()
@@ -40,8 +40,8 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
         # TODO ask for a buffer here, get back an updated bounding box
         # reflecting it
         # TODO NamedTuple for bounds (bounds + CRS)
-        window_data = read_window(
-            src, (canvas_bounds, target_crs), (height, width))
+        window_data = read_window(src, (canvas_bounds, target_crs), (height,
+                                                                     width))
 
         if not window_data:
             continue
@@ -60,10 +60,8 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     return (sources_used, canvas, (canvas_bounds, target_crs))
 
 
-def paste(
-    (window_data, (window_bounds, window_crs)),
-    (canvas, (canvas_bounds, canvas_crs))
-):
+def paste((window_data, (window_bounds, window_crs)), (canvas, (canvas_bounds,
+                                                                canvas_crs))):
     """ "Reproject" src data into the correct position within a larger image"""
     if window_crs != canvas_crs:
         raise Exception(
@@ -74,8 +72,7 @@ def paste(
             "Bounds must match: {} != {}".format(window_bounds, canvas_bounds))
 
     if window_data.shape != canvas.shape:
-        raise Exception(
-            "Data shapes must match: {} != {}".format(
-                window_data.shape, canvas.shape))
+        raise Exception("Data shapes must match: {} != {}".format(
+            window_data.shape, canvas.shape))
 
     return np.ma.where(canvas.mask & ~window_data.mask, window_data, canvas)

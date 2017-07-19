@@ -6,8 +6,8 @@ import bisect
 
 import numpy as np
 
-from .utils import apply_latitude_adjustments
 from .. import get_resolution_in_meters
+from .utils import apply_latitude_adjustments
 
 BUFFER = 4
 
@@ -25,10 +25,10 @@ def _generate_mapping_table():
     for i in range(0, 11):
         table.append(-11000 + i * 1000)
     table.append(-100)
-    table.append( -50)
-    table.append( -20)
-    table.append( -10)
-    table.append(  -1)
+    table.append(-50)
+    table.append(-20)
+    table.append(-10)
+    table.append(-1)
     for i in range(0, 150):
         table.append(20 * i)
     for i in range(0, 60):
@@ -63,7 +63,7 @@ def transformation():
 
         ygrad, xgrad = np.gradient(data, 2)
         img = np.dstack((-1.0 / dx * xgrad, 1.0 / dy * ygrad,
-                            np.ones(data.shape)))
+                         np.ones(data.shape)))
 
         # first, we normalise to unit vectors. this puts each element of img
         # in the range (-1, 1). the "einsum" stuff is serious black magic, but

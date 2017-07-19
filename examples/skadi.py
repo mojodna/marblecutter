@@ -8,7 +8,6 @@ from marblecutter import skadi
 
 logging.basicConfig(level=logging.INFO)
 
-
 if __name__ == "__main__":
     tile = "N38W123"
     (headers, data) = skadi.render_tile(tile)

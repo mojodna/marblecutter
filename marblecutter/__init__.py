@@ -52,7 +52,7 @@ def _nodata(dtype):
 
 
 def crop((data, (bounds, data_crs)), data_format, offsets):
-    left,  right, bottom, top = offsets
+    left, right, bottom, top = offsets
 
     if _isimage(data_format):
         width, height, _ = data.shape
@@ -102,8 +102,10 @@ def get_source(path):
 
 
 def get_zoom(resolution, op=round):
-    return int(op(math.log((2 * math.pi * 6378137) /
-                           (resolution * 256)) / math.log(2)))
+    return int(
+        op(
+            math.log((2 * math.pi * 6378137) / (resolution * 256)) / math.log(
+                2)))
 
 
 def read_window(src, (bounds, bounds_crs), (height, width)):
@@ -115,15 +117,18 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     if bounds_crs == WEB_MERCATOR_CRS:
         # special case for web mercator; use a target image size that most
         # closely matches the source resolution (and is a power of 2)
-        zoom = get_zoom(max(get_resolution_in_meters(
-            (src.bounds, src.crs), (src.height, src.width))), op=math.ceil)
+        zoom = get_zoom(
+            max(
+                get_resolution_in_meters((src.bounds, src.crs), (src.height,
+                                                                 src.width))),
+            op=math.ceil)
 
-        dst_width = dst_height = (2 ** zoom) * 256
+        dst_width = dst_height = (2**zoom) * 256
         resolution = ((extent[2] - extent[0]) / dst_width,
                       (extent[3] - extent[1]) / dst_height)
 
-        dst_transform = Affine(resolution[0], 0.0, extent[0],
-                               0.0, -resolution[1], extent[3])
+        dst_transform = Affine(resolution[0], 0.0, extent[0], 0.0,
+                               -resolution[1], extent[3])
     else:
         # use a target image size that most closely matches the target
         # resolution
@@ -140,31 +145,31 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             dst_height *= 2
             resolution = [res / 2 for res in resolution]
 
-        dst_transform = Affine(resolution[0], 0.0, extent[0],
-                               0.0, -resolution[1], extent[3])
+        dst_transform = Affine(resolution[0], 0.0, extent[0], 0.0,
+                               -resolution[1], extent[3])
 
     with WarpedVRT(
-        src,
-        src_nodata=src.nodata,
-        dst_crs=bounds_crs,
-        dst_width=dst_width,
-        dst_height=dst_height,
-        dst_transform=dst_transform,
-        resampling=Resampling.lanczos,
-    ) as vrt:
+            src,
+            src_nodata=src.nodata,
+            dst_crs=bounds_crs,
+            dst_width=dst_width,
+            dst_height=dst_height,
+            dst_transform=dst_transform,
+            resampling=Resampling.lanczos) as vrt:
         dst_window = vrt.window(*bounds)
 
-        scale_factor = (round(dst_window.num_cols / width, 6),
-                        round(dst_window.num_rows / height, 6))
+        scale_factor = (round(dst_window.num_cols / width, 6), round(
+            dst_window.num_rows / height, 6))
 
         if vrt.count == 1 and (scale_factor[0] < 1 or scale_factor[1] < 1):
             scaled_transform = vrt.transform * Affine.scale(*scale_factor)
             target_window = windows.from_bounds(
                 *bounds, transform=scaled_transform, boundless=True)
 
-            # buffer needs to be 50% of the target size in order for spine knots to match between
-            # adjacent tiles
-            buffer_pixels = (target_window.num_cols / 2, target_window.num_rows / 2)
+            # buffer needs to be 50% of the target size in order for spine
+            # knots to match between adjacent tiles
+            buffer_pixels = (target_window.num_cols / 2,
+                             target_window.num_rows / 2)
 
             r, c = dst_window
             window = Window.from_ranges(
@@ -175,12 +180,14 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
             # use world pixels as indices
             r, c = window
-            x = np.linspace(c[0] / scale_factor[0],
-                            c[1] / scale_factor[0],
-                            num=data.shape[1])
-            y = np.linspace(r[0] / scale_factor[1],
-                            r[1] / scale_factor[1],
-                            num=data.shape[0])
+            x = np.linspace(
+                c[0] / scale_factor[0],
+                c[1] / scale_factor[0],
+                num=data.shape[1])
+            y = np.linspace(
+                r[0] / scale_factor[1],
+                r[1] / scale_factor[1],
+                num=data.shape[0])
 
             interp = RectBivariateSpline(y, x, data)
 
@@ -188,13 +195,11 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             r, c = target_window
             data = interp(
                 np.linspace(r[0], r[1], num=height),
-                np.linspace(c[0], c[1], num=width),
-            )[np.newaxis]
+                np.linspace(c[0], c[1], num=width))[np.newaxis]
         else:
             data = vrt.read(
                 out_shape=(vrt.count, height, width),
-                window=dst_window,
-            )
+                window=dst_window)
 
         # mask with NODATA values
         if vrt.nodata is not None:
@@ -209,21 +214,19 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
         warnings.simplefilter("ignore")
         with rasterio.open("{}.msk".format(src.name), crs=src.crs) as mask_src:
             with WarpedVRT(
-                mask_src,
-                src_crs=src.crs,
-                src_transform=src.transform,
-                dst_crs=bounds_crs,
-                dst_width=dst_width,
-                dst_height=dst_height,
-                dst_transform=dst_transform,
-            ) as mask_vrt:
+                    mask_src,
+                    src_crs=src.crs,
+                    src_transform=src.transform,
+                    dst_crs=bounds_crs,
+                    dst_width=dst_width,
+                    dst_height=dst_height,
+                    dst_transform=dst_transform) as mask_vrt:
                 warnings.simplefilter("default")
                 dst_window = vrt.window(*bounds)
 
                 mask = mask_vrt.read(
                     out_shape=(vrt.count, height, width),
-                    window=dst_window,
-                )
+                    window=dst_window)
 
                 data.mask = data.mask | ~mask
     except Exception:
@@ -235,15 +238,13 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
 # TODO does buffer actually belong here, vs. being the responsibility of the
 # calling code?
-def render(
-    (bounds, bounds_crs),
-    sources_store,
-    shape,
-    target_crs,
-    format,
-    transformation=None,
-    buffer=0
-):
+def render((bounds, bounds_crs),
+           sources_store,
+           shape,
+           target_crs,
+           format,
+           transformation=None,
+           buffer=0):
     """Render data intersecting bounds into shape using an optional
     transformation."""
     resolution = get_resolution((bounds, bounds_crs), shape)
@@ -260,9 +261,11 @@ def render(
     # apply buffer
     bounds_orig = bounds
     shape = [dim + (2 * effective_buffer) for dim in shape]
-    bounds = [p - (effective_buffer * resolution[i % 2]) if i < 2 else
-              p + (effective_buffer * resolution[i % 2])
-              for i, p in enumerate(bounds)]
+    bounds = [
+        p - (effective_buffer * resolution[i % 2])
+        if i < 2 else p + (effective_buffer * resolution[i % 2])
+        for i, p in enumerate(bounds)
+    ]
 
     left = right = bottom = top = offset
 
@@ -302,19 +305,20 @@ def render(
 
     with Timer() as t:
         if transformation:
-            (data, data_format) = transformation((data, (data_bounds, data_crs)))
+            (data, data_format) = transformation((data, (data_bounds,
+                                                         data_crs)))
     stats.append(('transform', t.elapsed))
 
     with Timer() as t:
         if effective_buffer > buffer:
             (data, (data_bounds, data_crs)) = crop(
-                (data, (data_bounds, data_crs)),
-                data_format,
-                (left, right, bottom, top))
+                (data, (data_bounds, data_crs)), data_format, (left, right,
+                                                               bottom, top))
     stats.append(('crop', t.elapsed))
 
     with Timer() as t:
-        (content_type, formatted) = format((data, (data_bounds, data_crs)), data_format)
+        (content_type, formatted) = format((data, (data_bounds, data_crs)),
+                                           data_format)
     stats.append(('format', t.elapsed))
 
     headers = {

@@ -3,12 +3,12 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
-from rasterio import transform
-from rasterio import warp
+
+from rasterio import transform, warp
 from rasterio.warp import Resampling
 
-from .utils import apply_latitude_adjustments
 from .. import get_resolution_in_meters, get_zoom
+from .utils import apply_latitude_adjustments
 
 BUFFER = 4
 
@@ -67,11 +67,12 @@ def transformation(resample=True, add_slopeshade=True):
             # create an empty target array that's the shape of the resampled tile (e.g. 80% of 260x260px)
             resampled_height = int(round(height * resample_factor))
             resampled_width = int(round(width * resample_factor))
-            resampled = np.empty(shape=(resampled_height, resampled_width),
-                                 dtype=data.dtype)
+            resampled = np.empty(
+                shape=(resampled_height, resampled_width), dtype=data.dtype)
             resampled_mask = np.empty(shape=(resampled.shape))
 
-            newaff = transform.from_bounds(*bounds, width=resampled_width, height=resampled_height)
+            newaff = transform.from_bounds(
+                *bounds, width=resampled_width, height=resampled_height)
 
             # downsample using GDAL's reprojection functionality (which gives us access to different resampling algorithms)
             warp.reproject(
@@ -81,8 +82,7 @@ def transformation(resample=True, add_slopeshade=True):
                 dst_transform=newaff,
                 src_crs=crs,
                 dst_crs=crs,
-                resampling=Resampling.bilinear,
-            )
+                resampling=Resampling.bilinear, )
 
             # reproject / resample the mask so that intermediate operations can also use it
             if np.any(data.mask):
@@ -93,25 +93,24 @@ def transformation(resample=True, add_slopeshade=True):
                     dst_transform=newaff,
                     src_crs=crs,
                     dst_crs=crs,
-                    resampling=Resampling.nearest,
-                )
+                    resampling=Resampling.nearest, )
 
                 resampled = np.ma.masked_array(resampled, mask=resampled_mask)
             else:
                 resampled = np.ma.masked_array(resampled)
 
-            hs = _hillshade(resampled,
+            hs = _hillshade(
+                resampled,
                 dx=dx,
                 dy=dy,
-                vert_exag=EXAGGERATION.get(zoom, 1.0),
-            )
+                vert_exag=EXAGGERATION.get(zoom, 1.0), )
 
             if add_slopeshade:
-                ss = slopeshade(resampled,
+                ss = slopeshade(
+                    resampled,
                     dx=dx,
                     dy=dy,
-                    vert_exag=EXAGGERATION.get(zoom, 1.0)
-                )
+                    vert_exag=EXAGGERATION.get(zoom, 1.0))
 
                 hs *= ss
 
@@ -129,23 +128,22 @@ def transformation(resample=True, add_slopeshade=True):
                 dst_transform=aff,
                 src_crs=crs,
                 dst_crs=crs,
-                resampling=Resampling.bilinear,
-            )
+                resampling=Resampling.bilinear, )
 
             hs = np.ma.masked_array(resampled_hs, mask=data.mask)
         else:
-            hs = _hillshade(data[0],
+            hs = _hillshade(
+                data[0],
                 dx=dx,
                 dy=dy,
-                vert_exag=EXAGGERATION.get(zoom, 1.0),
-            )
+                vert_exag=EXAGGERATION.get(zoom, 1.0), )
 
             if add_slopeshade:
-                ss = slopeshade(data[0],
+                ss = slopeshade(
+                    data[0],
                     dx=dx,
                     dy=dy,
-                    vert_exag=EXAGGERATION.get(zoom, 1.0)
-                )
+                    vert_exag=EXAGGERATION.get(zoom, 1.0))
 
                 # hs *= 0.8
                 hs *= ss
@@ -164,7 +162,13 @@ def transformation(resample=True, add_slopeshade=True):
     return _transform
 
 
-def _hillshade(elevation, azdeg=315, altdeg=45, vert_exag=1, dx=1, dy=1, fraction=1.):
+def _hillshade(elevation,
+               azdeg=315,
+               altdeg=45,
+               vert_exag=1,
+               dx=1,
+               dy=1,
+               fraction=1.):
     """
     This is a slightly modified version of
     matplotlib.colors.LightSource.hillshade, modified to remove the contrast

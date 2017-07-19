@@ -24,9 +24,7 @@ def render_tile(tile):
 
 def queue_tile(tile):
     print(tile)
-    POOL.apply_async(
-        render_tile,
-        args=[tile])
+    POOL.apply_async(render_tile, args=[tile])
 
 
 if __name__ == "__main__":
@@ -34,10 +32,10 @@ if __name__ == "__main__":
     # prevent them from actually being created thought
     for ns in ("N", "S"):
         for lat in range(1):
-        # for lat in range(90):
+            # for lat in range(90):
             for ew in ("E", "W"):
                 for lon in range(1):
-                # for lon in range(180):
+                    # for lon in range(180):
                     tile = "{}{:02d}{}{:03d}".format(ns, lat, ew, lon)
                     queue_tile(tile)
 

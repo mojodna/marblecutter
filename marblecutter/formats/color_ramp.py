@@ -5,28 +5,25 @@ from __future__ import absolute_import, print_function
 from StringIO import StringIO
 
 import matplotlib
+
 # pick a matplotlib backend to pre-empt loading addition modules
 matplotlib.use("Agg")
-from matplotlib.colors import LinearSegmentedColormap
+
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import LinearSegmentedColormap
+
 
 CONTENT_TYPES = {
     "png": "image/png",
 }
 
 GREY_HILLS_RAMP = {
-    "red": [(0.0, 0.0, 0.0),
-            (0.25, 0.0, 0.0),
-            (180 / 255.0, 0.5, 0.5),
+    "red": [(0.0, 0.0, 0.0), (0.25, 0.0, 0.0), (180 / 255.0, 0.5, 0.5),
             (1.0, 170 / 255.0, 170 / 255.0)],
-    "green": [(0.0, 0.0, 0.0),
-              (0.25, 0.0, 0.0),
-              (180 / 255.0, 0.5, 0.5),
+    "green": [(0.0, 0.0, 0.0), (0.25, 0.0, 0.0), (180 / 255.0, 0.5, 0.5),
               (1.0, 170 / 255.0, 170 / 255.0)],
-    "blue": [(0.0, 0.0, 0.0),
-             (0.25, 0.0, 0.0),
-             (180 / 255.0, 0.5, 0.5),
+    "blue": [(0.0, 0.0, 0.0), (0.25, 0.0, 0.0), (180 / 255.0, 0.5, 0.5),
              (1.0, 170 / 255.0, 170 / 255.0)],
 }
 
@@ -48,8 +45,7 @@ def format(output_format="png", colormap=GREY_HILLS):
             cmap=colormap,
             vmin=0,
             vmax=255,
-            format=output_format,
-        )
+            format=output_format)
 
         return (CONTENT_TYPES[output_format], out.getvalue())
 
