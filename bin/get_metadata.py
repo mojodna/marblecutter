@@ -4,16 +4,13 @@
 from __future__ import print_function
 
 import json
-import math
-import os
 import sys
 
 import arrow
 import click
 import rasterio
-from rasterio.warp import transform_bounds
-
 from get_zoom import get_resolution, get_zoom, get_zoom_offset
+from rasterio.warp import transform_bounds
 
 
 @click.command(context_settings={
@@ -29,55 +26,55 @@ from get_zoom import get_resolution, get_zoom, get_zoom_offset
 @click.argument("_", nargs=-1, type=click.UNPROCESSED)
 @click.argument("prefix")
 def get_metadata(
-    include_mask,
-    title,
-    acquisition_start,
-    acquisition_end,
-    provider,
-    platform,
-    uploaded_at,
-    prefix,
-    _,
-):
+        include_mask,
+        title,
+        acquisition_start,
+        acquisition_end,
+        provider,
+        platform,
+        uploaded_at,
+        prefix,
+        _, ):
     scene = "{}.tif".format(prefix)
-    source = "{}_warped.vrt".format(prefix)
-    mask_vrt = "{}_warped_mask.vrt".format(prefix)
     footprint = "{}_footprint.json".format(prefix)
 
     with rasterio.Env():
         try:
             with rasterio.open(scene) as src:
-                bounds = transform_bounds(src.crs, {'init': 'epsg:4326'}, *src.bounds)
+                bounds = transform_bounds(src.crs, {'init': 'epsg:4326'},
+                                          *src.bounds)
                 approximate_zoom = get_zoom(scene)
                 # TODO tune this for DEM data instead
                 maxzoom = approximate_zoom + 3
-                minzoom = max(approximate_zoom - get_zoom_offset(src.width, src.height, approximate_zoom), 0)
+                minzoom = max(approximate_zoom - get_zoom_offset(
+                    src.width, src.height, approximate_zoom), 0)
 
                 meta = {
-                  "bounds": bounds,
-                  "center": [(bounds[0] + bounds[2]) / 2, (bounds[1] + bounds[3]) / 2, (minzoom + approximate_zoom) / 2],
-                  "maxzoom": maxzoom,
-                  "meta": {
-                    "approximateZoom": approximate_zoom,
-                    "footprint": footprint,
-                    "height": src.height,
-                    "source": source,
-                    "width": src.width,
-                    "resolution": get_resolution(scene),
-                  },
-                  "minzoom": minzoom,
-                  "name": title or source,
-                  "tilejson": "2.1.0"
+                    "bounds": bounds,
+                    "center": [(bounds[0] + bounds[2]) / 2,
+                               (bounds[1] + bounds[3]) / 2,
+                               (minzoom + approximate_zoom) / 2],
+                    "maxzoom": maxzoom,
+                    "meta": {
+                        "approximateZoom": approximate_zoom,
+                        "footprint": footprint,
+                        "height": src.height,
+                        "source": scene,
+                        "width": src.width,
+                        "resolution": get_resolution(scene),
+                    },
+                    "minzoom": minzoom,
+                    "name": title or scene,
+                    "tilejson": "2.1.0"
                 }
 
-                if include_mask:
-                    meta["meta"]["mask"] = mask_vrt
-
                 if acquisition_start:
-                    meta["meta"]["acquisitionStart"] = arrow.get(acquisition_start).for_json()
+                    meta["meta"]["acquisitionStart"] = arrow.get(
+                        acquisition_start).for_json()
 
                 if acquisition_end:
-                    meta["meta"]["acquisitionEnd"] = arrow.get(acquisition_end).for_json()
+                    meta["meta"]["acquisitionEnd"] = arrow.get(
+                        acquisition_end).for_json()
 
                 if platform:
                     meta["meta"]["platform"] = platform
@@ -86,7 +83,8 @@ def get_metadata(
                     meta["meta"]["provider"] = provider
 
                 if uploaded_at:
-                    meta["meta"]["uploadedAt"] = arrow.get(uploaded_at).for_json()
+                    meta["meta"]["uploadedAt"] = arrow.get(
+                        uploaded_at).for_json()
 
                 print(json.dumps(meta))
         except (IOError, rasterio._err.CPLE_HttpResponseError) as e:
