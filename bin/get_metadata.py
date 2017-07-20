@@ -76,6 +76,9 @@ def get_metadata(
                     meta["meta"]["acquisitionEnd"] = arrow.get(
                         acquisition_end).for_json()
 
+                if include_mask:
+                    meta["meta"]["mask"] = "{}.msk".format(scene)
+
                 if platform:
                     meta["meta"]["platform"] = platform
 
