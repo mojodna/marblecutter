@@ -150,12 +150,6 @@ if [ -f ${intermediate}.msk ]; then
   #   perl -pe "s|${gdal_output}|$(basename $output)|" | \
   #   perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
   #   aws s3 cp - ${output}.vrt
-
-  # 5. create footprint
-  >&2 echo "Generating footprint..."
-  rio shapes --mask --as-mask --sampling 100 --precision 6 --with-nodata $intermediate | \
-    perl -pe "s|$(basename $intermediate)|$(basename $output).tif|g" | \
-    aws s3 cp - ${output}_footprint.json
 else
   mask=0
 
@@ -171,15 +165,7 @@ else
   #   perl -pe "s|${gdal_output}|$(basename $output)|" | \
   #   perl -pe 's|(relativeToVRT=)"0"|$1"1"|' | \
   #   aws s3 cp - ${output}.vrt
-
-  # 4. create footprint (bounds of image)
-  >&2 echo "Generating footprint..."
-  rio shapes --mask --as-mask --sampling 100 --precision 6 --with-nodata $intermediate | \
-    perl -pe "s|$(basename $intermediate)|$(basename $output).tif|g" | \
-    aws s3 cp - ${output}_footprint.json
 fi
-
-rm -f ${intermediate}*
 
 # # 6. create thumbnail
 # >&2 echo "Generating thumbnail..."
@@ -200,10 +186,24 @@ rm -f ${intermediate}*
 # 9. create and upload metadata
 >&2 echo "Generating metadata..."
 if [ "$mask" -eq 1 ]; then
-  get_metadata.py --include-mask "${args[@]}" $output | aws s3 cp - ${output}.json
+  meta=$(get_metadata.py --include-mask "${args[@]}" $output)
 else
-  get_metadata.py "${args[@]}" $output | aws s3 cp - ${output}.json
+  meta=$(get_metadata.py "${args[@]}" $output)
 fi
+echo $meta | aws s3 cp - ${output}.json
+
+# 5. create footprint
+>&2 echo "Generating footprint..."
+info=$(rio info $intermediate)
+gdalwarp -r average \
+  -ts $[$(jq -r .width <<< $info) / 100] $[$(jq -r .height <<< $info) / 100] \
+  -srcnodata $(jq -r .nodata <<< $info) \
+  $intermediate ${intermediate/.tif/_small.tif}
+rio shapes --mask --as-mask --precision 6 ${intermediate/.tif/_small.tif} | \
+  jq --argjson resolution $(jq .meta.resolution <<< $meta) --arg filename "$(basename $output).tif" '{"type": "Feature", "properties": {"filename": $filename, "resolution": $resolution}, "geometry": {"type": "MultiPolygon", "coordinates": [.features[].geometry.coordinates]}}' | \
+  aws s3 cp - ${output}_footprint.json
+
+rm -f ${intermediate}*
 
 # # 10. Upload OIN metadata
 # aws s3 cp - ${output}_meta.json <<< $metadata
