@@ -18,7 +18,7 @@ ext=${input##*.}
 
 if [[ "$ext" == "zip" ]]; then
   # assume it's a zipped TIFF
-  inner_source=$(unzip -ql ${input} | grep tif | head -1 | awk '{print $4}')
+  inner_source=$(unzip -ql ${input} | grep "tif$\|dem$" | head -1 | awk '{print $4}')
 
   if [[ -z "$inner_source" ]]; then
     >&2 echo "Could not find a TIFF inside ${input}"
@@ -27,7 +27,7 @@ if [[ "$ext" == "zip" ]]; then
 
   input="zip://${input}!${inner_source}"
 elif [[ "$input" =~ \.tar\.gz$ ]]; then
-  inner_source=$(tar ztf ${input} | grep tif | head -1)
+  inner_source=$(tar ztf ${input} | grep "tif$" | head -1)
 
   if [[ -z "$inner_source" ]]; then
     >&2 echo "Could not find a TIFF inside ${input}"
