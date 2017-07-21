@@ -114,6 +114,15 @@ RUN \
     PIL/_util.pyc \
     _posixsubprocess.so \
     affine/__init__.pyc \
+    attr/__init__.pyc \
+    attr/_compat.pyc \
+    attr/_config.pyc \
+    attr/_funcs.pyc \
+    attr/_make.pyc \
+    attr/converters.pyc \
+    attr/exceptions.pyc \
+    attr/filters.pyc \
+    attr/validators.pyc \
     click/__init__.pyc \
     click/_compat.pyc \
     click/_unicodefun.pyc \
@@ -357,6 +366,7 @@ RUN \
     pyparsing.pyc \
     rasterio/__init__.pyc \
     rasterio/_base.so \
+    rasterio/_copy.so \
     rasterio/_crs.so \
     rasterio/_env.so \
     rasterio/_err.so \
@@ -446,6 +456,20 @@ RUN \
     scipy/linalg/matfuncs.pyc \
     scipy/linalg/misc.pyc \
     scipy/linalg/special_matrices.pyc \
+    scipy/misc/__init__.pyc \
+    scipy/misc/common.pyc \
+    scipy/misc/doccer.pyc \
+    scipy/misc/pilutil.pyc \
+    scipy/ndimage/__init__.pyc \
+    scipy/ndimage/_nd_image.so \
+    scipy/ndimage/_ni_label.so \
+    scipy/ndimage/_ni_support.pyc \
+    scipy/ndimage/filters.pyc \
+    scipy/ndimage/fourier.pyc \
+    scipy/ndimage/interpolation.pyc \
+    scipy/ndimage/measurements.pyc \
+    scipy/ndimage/morphology.pyc \
+    scipy/ndimage/io.pyc \
     scipy/optimize/__init__.pyc \
     scipy/optimize/_basinhopping.pyc \
     scipy/optimize/_cobyla.so \

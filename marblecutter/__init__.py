@@ -18,7 +18,7 @@ from rasterio.vrt import WarpedVRT
 from rasterio.warp import Resampling
 from rasterio.windows import Window
 from scipy.interpolate import RectBivariateSpline, SmoothBivariateSpline
-from scipy.misc import imresize
+from scipy import ndimage
 
 from . import mosaic
 from .stats import Timer
@@ -217,10 +217,12 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                     np.linspace(r[0], r[1], num=height),
                     np.linspace(c[0], c[1], num=width))[np.newaxis]
 
+                scaled_mask = ndimage.zoom(
+                    mask, (height / mask.shape[0], width / mask.shape[1]),
+                    order=0)
+
                 # apply a scaled version of the mask
-                data = np.ma.masked_array(
-                    data,
-                    mask=imresize(mask, (height, width), interp='nearest'))
+                data = np.ma.masked_array(data, mask=scaled_mask)
             else:
                 # convert unmasked values to world pixels
                 interp = RectBivariateSpline(ys, xs, data)
