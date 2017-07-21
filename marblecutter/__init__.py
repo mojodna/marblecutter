@@ -162,28 +162,27 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             resampling=Resampling.lanczos) as vrt:
         dst_window = vrt.window(*bounds)
 
-        scale_factor = (round(dst_window.num_cols / width, 6), round(
-            dst_window.num_rows / height, 6))
+        scale_factor = (round(dst_window.width / width, 6), round(
+            dst_window.height / height, 6))
 
         if vrt.count == 1 and (scale_factor[0] < 1 or scale_factor[1] < 1):
             scaled_transform = vrt.transform * Affine.scale(*scale_factor)
             target_window = windows.from_bounds(
-                *bounds, transform=scaled_transform, boundless=True)
+                *bounds, transform=scaled_transform)
 
             # buffer needs to be 50% of the target size in order for spine
             # knots to match between adjacent tiles
-            buffer_pixels = (target_window.num_cols / 2,
-                             target_window.num_rows / 2)
+            buffer_pixels = (target_window.width / 2, target_window.height / 2)
 
-            r, c = dst_window
-            window = Window.from_ranges((max(
+            r, c = dst_window.toranges()
+            window = Window.from_slices((max(
                 0, r[0] - buffer_pixels[1]), r[1] + buffer_pixels[1]), (max(
                     0, c[0] - buffer_pixels[0]), c[1] + buffer_pixels[0]))
 
             data = vrt.read(1, window=window)
 
             # use world pixels as indices
-            r, c = window
+            r, c = window.toranges()
             x = np.linspace(
                 c[0] / scale_factor[0],
                 c[1] / scale_factor[0],
@@ -196,7 +195,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             interp = RectBivariateSpline(y, x, data)
 
             # set target coordinates for interpolation using world pixels
-            r, c = target_window
+            r, c = target_window.toranges()
             data = interp(
                 np.linspace(r[0], r[1], num=height),
                 np.linspace(c[0], c[1], num=width))[np.newaxis]

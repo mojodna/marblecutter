@@ -9,7 +9,7 @@ mercantile >= 0.10.0
 numpy == 1.13.1
 Pillow == 4.1.1
 psycopg2 == 2.7.1
-# rasterio[s3] >= 1.0a9 --no-binary rasterio
-https://github.com/mojodna/rasterio/archive/floating-warped-vrts.tar.gz
+# rasterio[s3] >= 1.0a10 --no-binary rasterio
+https://github.com/mapbox/rasterio/archive/e94e52b.tar.gz
 scipy == 0.19.0
 shapely == 1.5.17.post1
