@@ -17,7 +17,8 @@ from rasterio.transform import Affine
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import Resampling
 from rasterio.windows import Window
-from scipy.interpolate import RectBivariateSpline
+from scipy.interpolate import RectBivariateSpline, SmoothBivariateSpline
+from scipy.misc import imresize
 
 from . import mosaic
 from .stats import Timer
@@ -170,7 +171,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             target_window = windows.from_bounds(
                 *bounds, transform=scaled_transform)
 
-            # buffer needs to be 50% of the target size in order for spine
+            # buffer needs to be 50% of the target size in order for spline
             # knots to match between adjacent tiles
             buffer_pixels = (target_window.width / 2, target_window.height / 2)
 
@@ -181,33 +182,65 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
             data = vrt.read(1, window=window)
 
+            # mask with NODATA values
+            if vrt.nodata is not None:
+                data = _mask(data, vrt.nodata)
+            else:
+                data = np.ma.masked_array(data, mask=False)
+
+            mask = data.mask
+
             # use world pixels as indices
             r, c = window.toranges()
-            x = np.linspace(
+            xs = np.linspace(
                 c[0] / scale_factor[0],
                 c[1] / scale_factor[0],
                 num=data.shape[1])
-            y = np.linspace(
+            ys = np.linspace(
                 r[0] / scale_factor[1],
                 r[1] / scale_factor[1],
                 num=data.shape[0])
 
-            interp = RectBivariateSpline(y, x, data)
+            if mask.any():
+                # look up unmasked values
+                x, y = np.where(~mask)
+                flattened = data.ravel()
 
-            # set target coordinates for interpolation using world pixels
-            r, c = target_window.toranges()
-            data = interp(
-                np.linspace(r[0], r[1], num=height),
-                np.linspace(c[0], c[1], num=width))[np.newaxis]
+                # convert unmasked values to world pixels
+                interp = SmoothBivariateSpline(
+                    np.take(ys, y),
+                    np.take(xs, x), flattened[np.where(~flattened.mask)])
+
+                # set target coordinates for interpolation using world pixels
+                r, c = target_window.toranges()
+                data = interp(
+                    np.linspace(r[0], r[1], num=height),
+                    np.linspace(c[0], c[1], num=width))[np.newaxis]
+
+                # apply a scaled version of the mask
+                data = np.ma.masked_array(
+                    data,
+                    mask=imresize(mask, (height, width), interp='nearest'))
+            else:
+                # convert unmasked values to world pixels
+                interp = RectBivariateSpline(ys, xs, data)
+
+                # set target coordinates for interpolation using world pixels
+                r, c = target_window.toranges()
+                data = interp(
+                    np.linspace(r[0], r[1], num=height),
+                    np.linspace(c[0], c[1], num=width))[np.newaxis]
+
+                data = np.ma.masked_array(data, mask=False)
         else:
             data = vrt.read(
                 out_shape=(vrt.count, height, width), window=dst_window)
 
-        # mask with NODATA values
-        if vrt.nodata is not None:
-            data = _mask(data, vrt.nodata)
-        else:
-            data = np.ma.masked_array(data, mask=False)
+            # mask with NODATA values
+            if vrt.nodata is not None:
+                data = _mask(data, vrt.nodata)
+            else:
+                data = np.ma.masked_array(data, mask=False)
 
         data = data.astype(np.float32)
 
