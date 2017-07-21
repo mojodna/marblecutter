@@ -56,7 +56,6 @@ def get_metadata(
                                (minzoom + approximate_zoom) / 2],
                     "maxzoom": maxzoom,
                     "meta": {
-                        "approximateZoom": approximate_zoom,
                         "footprint": footprint,
                         "height": src.height,
                         "source": scene,
