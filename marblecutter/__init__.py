@@ -170,9 +170,14 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             target_window = windows.from_bounds(
                 *bounds, transform=scaled_transform)
 
-            # buffer needs to be 50% of the target size in order for spline
-            # knots to match between adjacent tiles
-            buffer_pixels = (target_window.width / 2, target_window.height / 2)
+            # buffer apparently needs to be 50% of the target size in order
+            # for spline knots to match between adjacent tiles
+            # however, to avoid creating overly-large uncropped areas, we
+            # limit the buffer size to 2048px on a side
+            buffer_pixels = (min(target_window.width / 2,
+                                 math.ceil(2048 * scale_factor[0])), min(
+                                     target_window.height / 2,
+                                     math.ceil(2048 * scale_factor[1])))
 
             r, c = dst_window.toranges()
             window = Window.from_slices((max(
@@ -201,7 +206,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             data = ndimage.zoom(
                 # prevent resulting values from producing cliffs
                 data.astype(np.float32),
-                (1 / scale_factor[0], 1 / scale_factor[1]),
+                (round(1 / scale_factor[0]), round(1 / scale_factor[1])),
                 order=order)[np.newaxis]
 
             scaled_buffer = (int((data.shape[2] - height) / 2), int(
