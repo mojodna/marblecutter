@@ -200,7 +200,7 @@ gdalwarp -r average \
   -srcnodata $(jq -r .nodata <<< $info) \
   $intermediate ${intermediate/.tif/_small.tif}
 rio shapes --mask --as-mask --precision 6 ${intermediate/.tif/_small.tif} | \
-  jq --argjson resolution $(jq .meta.resolution <<< $meta) --arg filename "$(basename $output).tif" '{"type": "Feature", "properties": {"filename": $filename, "resolution": $resolution}, "geometry": {"type": "MultiPolygon", "coordinates": [.features[].geometry.coordinates]}}' | \
+  rio_shapes_to_multipolygon.py --argfloat resolution=$(jq .meta.resolution <<< $meta) --argstr filename="$(basename $output).tif" | \
   aws s3 cp - ${output}_footprint.json
 
 rm -f ${intermediate}*
