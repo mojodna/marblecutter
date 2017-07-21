@@ -201,7 +201,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 r[1] / scale_factor[1],
                 num=data.shape[0])
 
-            if mask.any():
+            if mask.any() and False:
                 # look up unmasked values
                 x, y = np.where(~mask)
                 flattened = data.ravel()
