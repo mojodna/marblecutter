@@ -192,9 +192,12 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             else:
                 data = np.ma.masked_array(data, mask=False)
 
-            # crop the mask so we only pay attention to target pixels
-            mask = data.mask[int(buffer_pixels[1]):int(-buffer_pixels[1]),
-                             int(buffer_pixels[0]):int(-buffer_pixels[0])]
+            mask = data.mask
+
+            if len(mask.shape) > 0:
+                # crop the mask so we only pay attention to target pixels
+                mask = mask[int(buffer_pixels[1]):int(-buffer_pixels[1]),
+                            int(buffer_pixels[0]):int(-buffer_pixels[0])]
 
             order = 3
 
