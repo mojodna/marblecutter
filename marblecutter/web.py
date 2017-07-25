@@ -17,7 +17,7 @@ from .transformations import Hillshade, Normal, Terrarium
 LOG = logging.getLogger(__name__)
 
 app = Flask("marblecutter")
-CORS(app)
+CORS(app, send_wildcard=True)
 
 app.config["APPLICATION_ROOT"] = os.getenv("APPLICATION_ROOT")
 app.config["PREFERRED_URL_SCHEME"] = os.getenv("PREFERRED_URL_SCHEME", "http")
