@@ -212,12 +212,12 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 (round(1 / scale_factor[0]), round(1 / scale_factor[1])),
                 order=order)[np.newaxis]
 
-            scaled_buffer = (int((data.shape[2] - height) / 2), int(
-                (data.shape[1] - width) / 2))
+            scaled_buffer = (int((data.shape[2] - width) / 2), int(
+                (data.shape[1] - height) / 2))
 
             # crop data
             data = data[:, scaled_buffer[1]:-scaled_buffer[1], scaled_buffer[
-                1]:-scaled_buffer[1]]
+                0]:-scaled_buffer[0]]
         else:
             data = vrt.read(
                 out_shape=(vrt.count, height, width), window=dst_window)
