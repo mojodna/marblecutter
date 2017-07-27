@@ -194,16 +194,16 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
             mask = data.mask
 
-            if len(mask.shape) > 0:
-                # crop the mask so we only pay attention to target pixels
-                mask = mask[int(buffer_pixels[1]):int(-buffer_pixels[1]),
-                            int(buffer_pixels[0]):int(-buffer_pixels[0])]
-
             order = 3
 
             if mask.any():
                 # need to preserve NODATA; drop spline interpolation order to 1
                 order = 1
+
+            if len(mask.shape) > 0:
+                # crop the mask so we only pay attention to target pixels
+                mask = mask[int(buffer_pixels[1]):int(-buffer_pixels[1]),
+                            int(buffer_pixels[0]):int(-buffer_pixels[0])]
 
             # resample data, respecting NODATA values
             data = ndimage.zoom(
