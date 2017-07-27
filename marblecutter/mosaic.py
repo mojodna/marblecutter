@@ -75,4 +75,7 @@ def paste((window_data, (window_bounds, window_crs)), (canvas, (canvas_bounds,
         raise Exception("Data shapes must match: {} != {}".format(
             window_data.shape, canvas.shape))
 
-    return np.ma.where(canvas.mask & ~window_data.mask, window_data, canvas)
+    merged = np.ma.where(canvas.mask & ~window_data.mask, window_data, canvas)
+    merged.fill_value = canvas.fill_value
+
+    return merged
