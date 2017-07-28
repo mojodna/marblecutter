@@ -200,33 +200,45 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 # need to preserve NODATA; drop spline interpolation order to 1
                 order = 1
 
-            if len(mask.shape) > 0:
-                # crop the mask so we only pay attention to target pixels
-                mask = mask[int(buffer_pixels[1]):int(-buffer_pixels[1]),
-                            int(buffer_pixels[0]):int(-buffer_pixels[0])]
+            LOG.info(
+                "Applying spline interpolation with order %d (scale factor: %s)",
+                order, scale_factor)
 
             # resample data, respecting NODATA values
             data = ndimage.zoom(
                 # prevent resulting values from producing cliffs
                 data.astype(np.float32),
                 (round(1 / scale_factor[0]), round(1 / scale_factor[1])),
-                order=order)[np.newaxis]
+                order=order)
 
-            scaled_buffer = (int((data.shape[2] - width) / 2), int(
-                (data.shape[1] - height) / 2))
+            scaled_buffer = (int((data.shape[1] - width) / 2), int(
+                (data.shape[0] - height) / 2))
 
             # crop data
-            data = data[:, scaled_buffer[1]:-scaled_buffer[1], scaled_buffer[
-                0]:-scaled_buffer[0]]
+            data = data[scaled_buffer[1]:-scaled_buffer[1], scaled_buffer[0]:
+                        -scaled_buffer[0]]
+
+            if len(mask.shape) > 0:
+                mask = ndimage.zoom(
+                    mask, (round(1 / scale_factor[0]), round(
+                        1 / scale_factor[1])),
+                    mode='nearest')
+
+                # crop mask
+                mask = mask[scaled_buffer[1]:-scaled_buffer[1], scaled_buffer[
+                    0]:-scaled_buffer[0]]
+
+            # copy the mask over
+            data = np.ma.masked_array(data, mask=mask)[np.newaxis]
         else:
             data = vrt.read(
                 out_shape=(vrt.count, height, width), window=dst_window)
 
-        # mask with NODATA values
-        if vrt.nodata is not None:
-            data = _mask(data, vrt.nodata)
-        else:
-            data = np.ma.masked_array(data, mask=False)
+            # mask with NODATA values
+            if vrt.nodata is not None:
+                data = _mask(data, vrt.nodata)
+            else:
+                data = np.ma.masked_array(data, mask=False)
 
         data = data.astype(np.float32)
 
