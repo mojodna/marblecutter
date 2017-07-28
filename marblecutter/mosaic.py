@@ -11,6 +11,13 @@ from rasterio import warp
 LOG = logging.getLogger(__name__)
 
 
+def mask_outliers(data, m=2.):
+    d = np.abs(data - np.median(data.compressed()))
+    mdev = np.median(d.compressed())
+    s = d / mdev if mdev else 0.
+    return np.where(s < m, False, True)
+
+
 def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     """Composite data from sources into a single raster covering bounds, but in
     the target CRS."""
@@ -45,6 +52,12 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
 
         if not window_data:
             continue
+
+        data, _ = window_data
+        if data.mask.any():
+            # mask outliers
+            data.mask[0] = np.logical_or(data.mask[0],
+                                         mask_outliers(data[0], 100.))
 
         # paste (and reproject) the resulting data onto a canvas
         # TODO NamedTuple for data (data + bounds)
