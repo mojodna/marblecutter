@@ -68,6 +68,10 @@ class MemoryAdapter(SourceAdapter):
 
 class PostGISAdapter(SourceAdapter):
     def __init__(self, database_url=os.getenv("DATABASE_URL")):
+        if database_url is None:
+            raise Exception(
+                "Database URL must be provided, either as an arg or as DATABASE_URL."
+            )
         urlparse.uses_netloc.append('postgis')
         urlparse.uses_netloc.append('postgres')
         url = urlparse.urlparse(database_url)
