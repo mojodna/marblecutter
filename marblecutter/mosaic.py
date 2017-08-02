@@ -38,17 +38,17 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
 
     # iterate over available sources, sorted by decreasing resolution
     for (url, source_name, resolution) in sources:
-        src = get_source(url)
-        sources_used.append((source_name, url))
+        with get_source(url) as src:
+            sources_used.append((source_name, url))
 
-        LOG.info("Compositing %s (%s)...", url, source_name)
+            LOG.info("Compositing %s (%s)...", url, source_name)
 
-        # read a window from the source data
-        # TODO ask for a buffer here, get back an updated bounding box
-        # reflecting it
-        # TODO NamedTuple for bounds (bounds + CRS)
-        window_data = read_window(src, (canvas_bounds, target_crs), (height,
-                                                                     width))
+            # read a window from the source data
+            # TODO ask for a buffer here, get back an updated bounding box
+            # reflecting it
+            # TODO NamedTuple for bounds (bounds + CRS)
+            window_data = read_window(src, (canvas_bounds, target_crs),
+                                      (height, width))
 
         if not window_data:
             continue
