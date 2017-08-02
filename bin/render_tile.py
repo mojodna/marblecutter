@@ -26,7 +26,6 @@ TRANSFORMATIONS = {
 
 
 @click.command()
-@click.option("-b", "--buffer", help="Buffer", default=0, type=int)
 @click.option("-f", "--format", help="Format", default="geotiff")
 @click.option(
     "-o", "--output", help="Output file",
@@ -35,7 +34,6 @@ TRANSFORMATIONS = {
 @click.option("-t", "--transformation", help="Transformation", default=None)
 @click.argument("tile", type=str)
 def render_tile(
-    buffer,
     format,
     output,
     scale,
@@ -50,8 +48,7 @@ def render_tile(
         PostGISAdapter(),
         format=FORMATS[format],
         transformation=TRANSFORMATIONS.get(transformation),
-        scale=scale,
-        buffer=buffer)
+        scale=scale)
 
     [click.echo("{}: {}".format(k, v), err=True) for k, v in headers.items()]
 
