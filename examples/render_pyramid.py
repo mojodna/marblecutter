@@ -170,6 +170,7 @@ def render_tile(tile, format, transformation, sources):
 
 def render_tile_and_put_to_s3(tile, s3_details, sources):
     s3_bucket, s3_key_prefix = s3_details
+    # Each thread needs its own boto3 Session object – it's not threadsafe
     session = boto3.session.Session()
     s3 = session.resource('s3')
     bucket = s3.Bucket(s3_bucket)
