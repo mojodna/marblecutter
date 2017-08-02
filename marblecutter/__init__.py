@@ -165,7 +165,9 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
         scale_factor = (round(dst_window.width / width, 6), round(
             dst_window.height / height, 6))
 
-        if vrt.count == 1 and (scale_factor[0] < 1 or scale_factor[1] < 1):
+        if vrt.count == 1 and (
+                scale_factor[0] < 1 or scale_factor[1] < 1
+        ) and round(dst_window.width) > 1.0 and round(dst_window.height) > 1.0:
             scaled_transform = vrt.transform * Affine.scale(*scale_factor)
             target_window = windows.from_bounds(
                 *bounds, transform=scaled_transform)
