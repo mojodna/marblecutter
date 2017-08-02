@@ -144,7 +144,7 @@ def build_source_index(tile):
                         ST_GeomFromText(%s, 4326)
                     )
                     AND enabled = true
-                """, (bbox.to_wkt()))
+                """, (bbox.to_wkt(),))
 
             for row in cur:
                 row = dict(row)
