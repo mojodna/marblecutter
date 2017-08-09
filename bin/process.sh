@@ -195,6 +195,8 @@ echo $meta | aws s3 cp - ${output}.json
 # 5. create footprint
 >&2 echo "Generating footprint..."
 info=$(rio info $intermediate)
+# resample using 'average' so that rescaled pixels containing _some_ values
+# don't end up as NODATA
 gdalwarp -r average \
   -ts $[$(jq -r .width <<< $info) / 100] $[$(jq -r .height <<< $info) / 100] \
   -srcnodata $(jq -r .nodata <<< $info) \
