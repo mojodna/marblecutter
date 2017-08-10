@@ -278,7 +278,8 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 dst_window = vrt.window(*bounds)
 
                 mask = mask_vrt.read(
-                    out_shape=(vrt.count, height, width), window=dst_window)
+                    out_shape=(mask_vrt.count, height, width),
+                    window=dst_window)
 
                 data.mask = data.mask | ~mask
     except Exception:

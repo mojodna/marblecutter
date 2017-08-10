@@ -180,7 +180,7 @@ def render_terrarium(z, x, y, scale=1):  # noqa
 
     return data, 200, headers
 
-OAM_JSON_CATALOG = OAMJSONCatalog("http://oin-hotosm.s3.amazonaws.com/5796733584ae75bb00ec746a/0/579674e02b67227a79b4fd52.json")
+OAM_JSON_CATALOG = OAMJSONCatalog("https://oin-hotosm.s3.amazonaws.com/598c1938a260c700113db249/0/03610f03-adb4-4fa7-bd21-bf68f46694f7.json")
 
 
 @app.route("/oam/<int:z>/<int:x>/<int:y>.png")

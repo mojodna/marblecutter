@@ -150,38 +150,6 @@ class OAMJSONCatalog(Catalog):
     def __init__(self, uri):
         rsp = requests.get(uri)
 
-        """
-{
-  "name": "Nguna-Taloa",
-  "bounds": [
-    168.3805985918213,
-    -17.48455452893895,
-    168.38891800755255,
-    -17.48022892413382
-  ],
-  "minzoom": 9,
-  "meta": {
-    "footprint": "http://oin-hotosm.s3.amazonaws.com/5796733584ae75bb00ec746a/0/579674e02b67227a79b4fd52_footprint.json",
-    "source": "http://oin-hotosm.s3.amazonaws.com/5796733584ae75bb00ec746a/0/579674e02b67227a79b4fd52_warped.vrt",
-    "approximateZoom": 22,
-    "width": 26399,
-    "height": 14038,
-    "acquisitionStart": "2015-04-02T07:00:00.000Z",
-    "acquisitionEnd": "2015-04-02T07:00:00.000Z",
-    "platform": "uav",
-    "provider": "Government of Vanuatu",
-    "uploadedAt": "2016-07-25T00:00:00.000Z",
-    "oinMetadataUrl": "http://oin-hotosm.s3.amazonaws.com/5796733584ae75bb00ec746a/0/579674e02b67227a79b4fd52_meta.json"
-  },
-  "maxzoom": 25,
-  "tilejson": "2.1.0",
-  "center": [
-    168.38475829968692,
-    -17.482391726536385,
-    15
-  ]
-}
-        """
         self._meta = rsp.json()
         LOG.info("meta: %s", self._meta)
         self._bbox = box(*self._meta['bounds'])
@@ -195,7 +163,7 @@ class OAMJSONCatalog(Catalog):
             return [
                 (self._meta['meta']['source'].replace('_warped.vrt', '.tif'),
                  self._meta['name'],
-                 0.03325)
+                 0.06746000000000432)
             ]
 
         return []
