@@ -9,7 +9,7 @@ from flask import Flask, jsonify, render_template, url_for
 from flask_cors import CORS
 from mercantile import Tile
 
-from . import skadi, tiling
+from . import NoDataAvailable, skadi, tiling
 from .catalogs import OAMJSONCatalog, PostGISCatalog
 from .formats import PNG, ColorRamp, GeoTIFF
 from .transformations import Hillshade, Image, Normal, Terrarium
@@ -204,6 +204,11 @@ def handle_invalid_tile_request(error):  # noqa
     response.status_code = error.status_code
 
     return response
+
+
+@app.errorhandler(NoDataAvailable)
+def handle_no_data_available(error):  # noqa
+    return "", 404
 
 
 @app.errorhandler(IOError)

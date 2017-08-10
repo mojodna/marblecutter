@@ -33,6 +33,10 @@ EXTENTS = {
 }
 
 
+class NoDataAvailable(Exception):
+    pass
+
+
 def _isimage(data_format):
     return data_format.upper() in ["RGB", "RGBA"]
 
@@ -307,6 +311,9 @@ def render((bounds, bounds_crs),
         (sources_used, data, (data_bounds, data_crs)) = mosaic.composite(
             sources, (bounds, bounds_crs), shape, target_crs)
     stats.append(("composite", t.elapsed))
+
+    if data is None:
+        raise NoDataAvailable()
 
     data_format = "raw"
 
