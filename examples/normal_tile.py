@@ -5,8 +5,8 @@ from __future__ import print_function
 import logging
 
 from marblecutter import tiling
+from marblecutter.catalogs import PostGISCatalog
 from marblecutter.formats import PNG
-from marblecutter.sources import PostGISAdapter
 from marblecutter.transformations import Normal
 from mercantile import Tile
 
@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 if __name__ == "__main__":
     tile = Tile(324, 787, 11)
     (headers, data) = tiling.render_tile(
-        tile, PostGISAdapter(), format=PNG(), transformation=Normal(), scale=2)
+        tile, PostGISCatalog(), format=PNG(), transformation=Normal(), scale=2)
 
     print("Headers: ", headers)
 

@@ -11,12 +11,12 @@ Infinity = float("inf")
 WGS84_CRS = CRS.from_epsg(4326)
 
 
-class SourceAdapter(object):
+class Catalog(object):
     def get_sources(self, (bounds, bounds_crs), resolution):
         raise NotImplemented
 
 
-class MemoryAdapter(SourceAdapter):
+class MemoryCatalog(Catalog):
     def __init__(self):
         self._sources = []
 
@@ -66,7 +66,7 @@ class MemoryAdapter(SourceAdapter):
         return results
 
 
-class PostGISAdapter(SourceAdapter):
+class PostGISCatalog(Catalog):
     def __init__(self, database_url=os.getenv("DATABASE_URL")):
         if database_url is None:
             raise Exception(

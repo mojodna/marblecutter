@@ -10,8 +10,8 @@ from flask_cors import CORS
 from mercantile import Tile
 
 from . import skadi, tiling
+from .catalogs import PostGISCatalog
 from .formats import PNG, ColorRamp, GeoTIFF
-from .sources import PostGISAdapter
 from .transformations import Hillshade, Normal, Terrarium
 
 LOG = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ HILLSHADE_TRANSFORMATION = Hillshade(resample=True, add_slopeshade=True)
 NORMAL_TRANSFORMATION = Normal()
 PNG_FORMAT = PNG()
 TERRARIUM_TRANSFORMATION = Terrarium()
-POSTGIS_ADAPTER = PostGISAdapter()
+POSTGIS_CATALOG = PostGISCatalog()
 
 
 class InvalidTileRequest(Exception):  # noqa
@@ -93,7 +93,7 @@ def render_geotiff(z, x, y):  # noqa
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
-        tile, POSTGIS_ADAPTER, format=GEOTIFF_FORMAT, scale=2)
+        tile, POSTGIS_CATALOG, format=GEOTIFF_FORMAT, scale=2)
 
     return data, 200, headers
 
@@ -105,7 +105,7 @@ def render_hillshade_png(z, x, y, scale=1):  # noqa
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_ADAPTER,
+        POSTGIS_CATALOG,
         format=HILLSHADE_FORMAT,
         transformation=HILLSHADE_TRANSFORMATION,
         scale=scale)
@@ -119,7 +119,7 @@ def render_hillshade_tiff(z, x, y):  # noqa
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_ADAPTER,
+        POSTGIS_CATALOG,
         format=GEOTIFF_FORMAT,
         transformation=HILLSHADE_TRANSFORMATION,
         scale=2)
@@ -134,7 +134,7 @@ def render_buffered_normal(z, x, y, scale=1):  # noqa
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_ADAPTER,
+        POSTGIS_CATALOG,
         format=PNG_FORMAT,
         transformation=NORMAL_TRANSFORMATION,
         scale=scale,
@@ -150,7 +150,7 @@ def render_normal(z, x, y, scale=1):  # noqa
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_ADAPTER,
+        POSTGIS_CATALOG,
         format=PNG_FORMAT,
         transformation=NORMAL_TRANSFORMATION,
         scale=scale)
@@ -172,7 +172,7 @@ def render_terrarium(z, x, y, scale=1):  # noqa
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_ADAPTER,
+        POSTGIS_CATALOG,
         format=PNG_FORMAT,
         transformation=TERRARIUM_TRANSFORMATION,
         scale=scale)

@@ -18,8 +18,8 @@ import mercantile
 import psycopg2
 import psycopg2.extras
 from marblecutter import tiling
+from marblecutter.catalogs import MemoryCatalog
 from marblecutter.formats import PNG, GeoTIFF
-from marblecutter.sources import MemoryAdapter
 from marblecutter.stats import Timer
 from marblecutter.transformations import Normal, Terrarium
 from mercantile import Tile
@@ -124,7 +124,7 @@ def write_to_s3(bucket,
 
 
 def build_source_index(tile):
-    source_cache = MemoryAdapter()
+    source_cache = MemoryCatalog()
     bbox = box(*mercantile.bounds(tile))
 
     database_url = os.environ.get('DATABASE_URL')

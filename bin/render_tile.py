@@ -6,8 +6,8 @@ import logging
 
 import click
 from marblecutter import tiling
+from marblecutter.catalogs import PostGISCatalog
 from marblecutter.formats import PNG, ColorRamp, GeoTIFF
-from marblecutter.sources import PostGISAdapter
 from marblecutter.transformations import Hillshade, Normal, Terrarium
 from mercantile import Tile
 
@@ -45,7 +45,7 @@ def render_tile(
 
     (headers, data) = tiling.render_tile(
         tile,
-        PostGISAdapter(),
+        PostGISCatalog(),
         format=FORMATS[format],
         transformation=TRANSFORMATIONS.get(transformation),
         scale=scale)

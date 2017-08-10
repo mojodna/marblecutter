@@ -5,13 +5,13 @@ from __future__ import print_function
 import logging
 
 from marblecutter import skadi
-from marblecutter.sources import PostGISAdapter
+from marblecutter.catalogs import PostGISCatalog
 
 logging.basicConfig(level=logging.INFO)
 
 if __name__ == "__main__":
     tile = "N38W123"
-    (headers, data) = skadi.render_tile(tile, PostGISAdapter())
+    (headers, data) = skadi.render_tile(tile, PostGISCatalog())
 
     print("Headers: ", headers)
 

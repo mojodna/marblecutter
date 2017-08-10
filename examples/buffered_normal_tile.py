@@ -5,8 +5,8 @@ from __future__ import print_function
 import logging
 
 from marblecutter import tiling
+from marblecutter.catalogs import PostGISCatalog
 from marblecutter.formats import PNG
-from marblecutter.sources import PostGISAdapter
 from marblecutter.transformations import Normal
 from mercantile import Tile
 
@@ -18,7 +18,7 @@ if __name__ == "__main__":
     tile = Tile(0, 0, zoom)
     (headers, data) = tiling.render_tile(
         tile,
-        PostGISAdapter(),
+        PostGISCatalog(),
         format=PNG(),
         transformation=Normal(collar=2),
         scale=2)
@@ -32,7 +32,7 @@ if __name__ == "__main__":
     tile = Tile(0, 2**zoom - 1, zoom)
     (headers, data) = tiling.render_tile(
         tile,
-        PostGISAdapter(),
+        PostGISCatalog(),
         format=PNG(),
         transformation=Normal(collar=2),
         scale=2)
@@ -46,7 +46,7 @@ if __name__ == "__main__":
     tile = Tile(2**2 - 1, 2**zoom - 1, zoom)
     (headers, data) = tiling.render_tile(
         tile,
-        PostGISAdapter(),
+        PostGISCatalog(),
         format=PNG(),
         transformation=Normal(collar=2),
         scale=2)
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     tile = Tile(2**zoom - 1, 0, zoom)
     (headers, data) = tiling.render_tile(
         tile,
-        PostGISAdapter(),
+        PostGISCatalog(),
         format=PNG(),
         transformation=Normal(collar=2),
         scale=2)
