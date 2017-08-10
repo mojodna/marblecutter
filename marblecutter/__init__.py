@@ -121,11 +121,12 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     if bounds_crs == WEB_MERCATOR_CRS:
         # special case for web mercator; use a target image size that most
         # closely matches the source resolution (and is a power of 2)
-        zoom = min(22, get_zoom(
-            max(
-                get_resolution_in_meters((src.bounds, src.crs), (src.height,
-                                                                 src.width))),
-            op=math.ceil))
+        zoom = min(22,
+                   get_zoom(
+                       max(
+                           get_resolution_in_meters((src.bounds, src.crs), (
+                               src.height, src.width))),
+                       op=math.ceil))
 
         dst_width = dst_height = (2**zoom) * 256
         resolution = ((extent[2] - extent[0]) / dst_width,
@@ -151,6 +152,19 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
         dst_transform = Affine(resolution[0], 0.0, extent[0], 0.0,
                                -resolution[1], extent[3])
+
+    # Some OAM sources have invalid NODATA values (-1000 for a file with a
+    # dtype of Byte). rasterio returns None under these circumstances
+    # (indistinguishable from sources that actually have no NODATA values).
+    # Providing a synthetic value "correctly" masks the output at the expense
+    # of masking valid pixels with that value. This was previously (partially;
+    # in the form of the bounding box but not NODATA pixels) addressed by
+    # creating a VRT that mapped the mask to an alpha channel (something we
+    # can't do w/o adding nDstAlphaBand to rasterio/_warp.pyx).
+    #
+    # Creating external masks and reading them separately (as below) is a
+    # better solution, particularly as it avoids artifacts introduced when the
+    # NODATA values are resampled using something other than nearest neighbor.
 
     with WarpedVRT(
             src,

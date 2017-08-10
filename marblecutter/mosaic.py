@@ -23,16 +23,9 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     the target CRS."""
     from . import _nodata, get_source, read_window
 
-    # TODO do this the first time through the loop so we know how many bands to create
-    canvas = np.ma.empty(
-        (3, height, width),
-        dtype=np.float32,
-        fill_value=_nodata(np.float32))
-    canvas.mask = True
-    canvas.fill_value = _nodata(np.float32)
-
     ((left, right), (bottom, top)) = warp.transform(bounds_crs, target_crs,
                                                     bounds[::2], bounds[1::2])
+    canvas = None
     canvas_bounds = (left, bottom, right, top)
 
     sources_used = list()
@@ -40,6 +33,16 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     # iterate over available sources, sorted by decreasing resolution
     for (url, source_name, resolution) in sources:
         with get_source(url) as src:
+            if canvas is None:
+                # infer the number of bands to use from the first available
+                # source
+                canvas = np.ma.empty(
+                    (src.count, height, width),
+                    dtype=np.float32,
+                    fill_value=_nodata(np.float32))
+                canvas.mask = True
+                canvas.fill_value = _nodata(np.float32)
+
             sources_used.append((source_name, url))
 
             LOG.info("Compositing %s (%s)...", url, source_name)
