@@ -121,11 +121,11 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     if bounds_crs == WEB_MERCATOR_CRS:
         # special case for web mercator; use a target image size that most
         # closely matches the source resolution (and is a power of 2)
-        zoom = get_zoom(
+        zoom = min(22, get_zoom(
             max(
                 get_resolution_in_meters((src.bounds, src.crs), (src.height,
                                                                  src.width))),
-            op=math.ceil)
+            op=math.ceil))
 
         dst_width = dst_height = (2**zoom) * 256
         resolution = ((extent[2] - extent[0]) / dst_width,
