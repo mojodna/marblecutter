@@ -23,10 +23,11 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     the target CRS."""
     from . import _nodata, get_source, read_window
 
+    # TODO do this the first time through the loop so we know how many bands to create
     canvas = np.ma.empty(
-        (1, height, width),
+        (3, height, width),
         dtype=np.float32,
-        fill_value=_nodata(np.float32), )
+        fill_value=_nodata(np.float32))
     canvas.mask = True
     canvas.fill_value = _nodata(np.float32)
 

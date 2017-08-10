@@ -10,9 +10,9 @@ from flask_cors import CORS
 from mercantile import Tile
 
 from . import skadi, tiling
-from .catalogs import PostGISCatalog
+from .catalogs import OAMJSONCatalog, PostGISCatalog
 from .formats import PNG, ColorRamp, GeoTIFF
-from .transformations import Hillshade, Normal, Terrarium
+from .transformations import Hillshade, Image, Normal, Terrarium
 
 LOG = logging.getLogger(__name__)
 
@@ -26,6 +26,7 @@ app.config["PREFERRED_URL_SCHEME"] = os.getenv("PREFERRED_URL_SCHEME", "http")
 GEOTIFF_FORMAT = GeoTIFF()
 HILLSHADE_FORMAT = ColorRamp()
 HILLSHADE_TRANSFORMATION = Hillshade(resample=True, add_slopeshade=True)
+IMAGE_TRANSFORMATION = Image()
 NORMAL_TRANSFORMATION = Normal()
 PNG_FORMAT = PNG()
 TERRARIUM_TRANSFORMATION = Terrarium()
@@ -55,7 +56,7 @@ def favicon():  # noqa
 
 @app.route("/<renderer>/")
 def meta(renderer):  # noqa
-    if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium"]:
+    if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium", "oam"]:
         return '', 404
 
     meta = {
@@ -75,7 +76,7 @@ def meta(renderer):  # noqa
 
 @app.route("/<renderer>/preview")
 def preview(renderer):  # noqa
-    if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium"]:
+    if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium", "oam"]:
         return '', 404
 
     with app.app_context():
@@ -175,6 +176,23 @@ def render_terrarium(z, x, y, scale=1):  # noqa
         POSTGIS_CATALOG,
         format=PNG_FORMAT,
         transformation=TERRARIUM_TRANSFORMATION,
+        scale=scale)
+
+    return data, 200, headers
+
+OAM_JSON_CATALOG = OAMJSONCatalog("http://oin-hotosm.s3.amazonaws.com/5796733584ae75bb00ec746a/0/579674e02b67227a79b4fd52.json")
+
+
+@app.route("/oam/<int:z>/<int:x>/<int:y>.png")
+@app.route("/oam/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
+def render_oam(z, x, y, scale=1):  # noqa
+    tile = Tile(x, y, z)
+
+    headers, data = tiling.render_tile(
+        tile,
+        OAM_JSON_CATALOG,
+        format=PNG_FORMAT,
+        transformation=IMAGE_TRANSFORMATION,
         scale=scale)
 
     return data, 200, headers

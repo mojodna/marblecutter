@@ -6,8 +6,10 @@ from marblecutter import get_zoom
 from psycopg2.pool import ThreadedConnectionPool
 from rasterio import warp
 from rasterio.crs import CRS
+import requests
 
 Infinity = float("inf")
+LOG = logging.getLogger(__name__)
 WGS84_CRS = CRS.from_epsg(4326)
 
 
@@ -139,3 +141,61 @@ class PostGISCatalog(Catalog):
                 return cur.fetchall()
         finally:
             self._pool.putconn(conn)
+
+
+from shapely.geometry import box
+
+
+class OAMJSONCatalog(Catalog):
+    def __init__(self, uri):
+        rsp = requests.get(uri)
+
+        """
+{
+  "name": "Nguna-Taloa",
+  "bounds": [
+    168.3805985918213,
+    -17.48455452893895,
+    168.38891800755255,
+    -17.48022892413382
+  ],
+  "minzoom": 9,
+  "meta": {
+    "footprint": "http://oin-hotosm.s3.amazonaws.com/5796733584ae75bb00ec746a/0/579674e02b67227a79b4fd52_footprint.json",
+    "source": "http://oin-hotosm.s3.amazonaws.com/5796733584ae75bb00ec746a/0/579674e02b67227a79b4fd52_warped.vrt",
+    "approximateZoom": 22,
+    "width": 26399,
+    "height": 14038,
+    "acquisitionStart": "2015-04-02T07:00:00.000Z",
+    "acquisitionEnd": "2015-04-02T07:00:00.000Z",
+    "platform": "uav",
+    "provider": "Government of Vanuatu",
+    "uploadedAt": "2016-07-25T00:00:00.000Z",
+    "oinMetadataUrl": "http://oin-hotosm.s3.amazonaws.com/5796733584ae75bb00ec746a/0/579674e02b67227a79b4fd52_meta.json"
+  },
+  "maxzoom": 25,
+  "tilejson": "2.1.0",
+  "center": [
+    168.38475829968692,
+    -17.482391726536385,
+    15
+  ]
+}
+        """
+        self._meta = rsp.json()
+        LOG.info("meta: %s", self._meta)
+        self._bbox = box(*self._meta['bounds'])
+
+    def get_sources(self, (bounds, bounds_crs), resolution):
+        ((left, right), (bottom, top)) = warp.transform(
+            bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
+        bounds_geom = box(left, bottom, right, top)
+
+        if self._bbox.intersects(bounds_geom):
+            return [
+                (self._meta['meta']['source'].replace('_warped.vrt', '.tif'),
+                 self._meta['name'],
+                 0.03325)
+            ]
+
+        return []
