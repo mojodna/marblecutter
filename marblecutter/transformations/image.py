@@ -24,4 +24,14 @@ class Image(TransformationBase):
         else:
             a = np.full((rgb.shape[:-1]), 255, np.uint8)
 
+            # Nearblack filtering for collar removal--partial, as edge values
+            # will have been resampled in such a way that they don't retain
+            # their crispness.
+            # See https://stackoverflow.com/a/22631583 for neighborhood
+            # filtering
+            # sums = np.add.reduce(data)
+            # threshold = 64
+            # a = np.logical_and(sums > threshold, sums <
+            #                    (255 * 3) - threshold).astype(np.uint8) * 255
+
         return (np.dstack((rgb, a)), 'RGBA')
