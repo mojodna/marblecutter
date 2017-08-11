@@ -143,27 +143,80 @@ class PostGISCatalog(Catalog):
             self._pool.putconn(conn)
 
 
+from itertools import chain
 from shapely.geometry import box
 
 
-class OAMJSONCatalog(Catalog):
+class OAMSceneCatalog(Catalog):
     def __init__(self, uri):
-        rsp = requests.get(uri)
+        scene = requests.get(uri).json()
 
-        self._meta = rsp.json()
-        LOG.info("meta: %s", self._meta)
-        self._bbox = box(*self._meta['bounds'])
+        self._box = box(*scene['bounds'])
+        self._bounds = scene['bounds']
+        self._center = scene['center']
+        self._maxzoom = scene['maxzoom']
+        self._minzoom = scene['minzoom']
+        self._name = scene['name']
+
+        self._sources = [
+            OINMetaCatalog(
+                source['meta']['source'].replace('_warped.vrt', '_meta.json'))
+            for source in reversed(scene['meta']['sources'])
+        ]
+
+    def get_sources(self, (bounds, bounds_crs), resolution):
+        return chain(*[
+            s.get_sources((bounds, bounds_crs), resolution)
+            for s in self._sources
+        ])
+
+    @property
+    def bounds(self):
+        return self._bounds
+
+    @property
+    def center(self):
+        return self._center
+
+    @property
+    def minzoom(self):
+        return self._minzoom
+
+    @property
+    def maxzoom(self):
+        return self._maxzoom
+
+
+class OINMetaCatalog(Catalog):
+    def __init__(self, uri):
+        oin_meta = requests.get(uri).json()
+
+        self._box = box(*oin_meta['bbox'])
+        self._bounds = oin_meta['bbox']
+        self._name = oin_meta['title']
+        self._resolution = oin_meta['gsd']
+        self._source = oin_meta['uuid']
 
     def get_sources(self, (bounds, bounds_crs), resolution):
         ((left, right), (bottom, top)) = warp.transform(
             bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
         bounds_geom = box(left, bottom, right, top)
 
-        if self._bbox.intersects(bounds_geom):
-            return [
-                (self._meta['meta']['source'].replace('_warped.vrt', '.tif'),
-                 self._meta['name'],
-                 0.06746000000000432)
-            ]
+        if self._box.intersects(bounds_geom):
+            return [(self._source, self._name, self._resolution)]
 
         return []
+
+    @property
+    def bounds(self):
+        return self._bounds
+
+    @property
+    def minzoom(self):
+        # TODO calculate this according to the resolution
+        return 0
+
+    @property
+    def maxzoom(self):
+        # TODO calculate this according to the resolution
+        return 22

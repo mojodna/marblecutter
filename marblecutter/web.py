@@ -5,12 +5,13 @@ from __future__ import absolute_import
 import logging
 import os
 
+from cachetools.func import lru_cache
 from flask import Flask, jsonify, render_template, url_for
 from flask_cors import CORS
 from mercantile import Tile
 
 from . import NoDataAvailable, skadi, tiling
-from .catalogs import OAMJSONCatalog, PostGISCatalog
+from .catalogs import OAMSceneCatalog, OINMetaCatalog, PostGISCatalog
 from .formats import PNG, ColorRamp, GeoTIFF
 from .transformations import Hillshade, Image, Normal, Terrarium
 
@@ -56,7 +57,7 @@ def favicon():  # noqa
 
 @app.route("/<renderer>/")
 def meta(renderer):  # noqa
-    if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium", "oam"]:
+    if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium"]:
         return '', 404
 
     meta = {
@@ -76,7 +77,7 @@ def meta(renderer):  # noqa
 
 @app.route("/<renderer>/preview")
 def preview(renderer):  # noqa
-    if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium", "oam"]:
+    if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium"]:
         return '', 404
 
     with app.app_context():
@@ -180,17 +181,79 @@ def render_terrarium(z, x, y, scale=1):  # noqa
 
     return data, 200, headers
 
-OAM_JSON_CATALOG = OAMJSONCatalog("https://oin-hotosm.s3.amazonaws.com/598c1938a260c700113db249/0/03610f03-adb4-4fa7-bd21-bf68f46694f7.json")
+
+# 598c1938a260c700113db249/0/03610f03-adb4-4fa7-bd21-bf68f46694f7
+
+S3_BUCKET = "oin-hotosm"
 
 
-@app.route("/oam/<int:z>/<int:x>/<int:y>.png")
-@app.route("/oam/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_oam(z, x, y, scale=1):  # noqa
+@lru_cache()
+def make_catalog(scene_id, scene_idx, image_id=None):
+    if image_id:
+        return OINMetaCatalog("https://{}.s3.amazonaws.com/{}/{}/{}_meta.json".
+                              format(S3_BUCKET, scene_id, scene_idx, image_id))
+
+    return OAMSceneCatalog("https://{}.s3.amazonaws.com/{}/{}/scene.json".
+                           format(S3_BUCKET, scene_id, scene_idx))
+
+
+@app.route('/<id>/<int:scene_idx>/')
+@app.route('/<id>/<int:scene_idx>/<image_id>/')
+def meta_oam(id, scene_idx, image_id=None):
+    catalog = make_catalog(id, scene_idx, image_id)
+
+    meta = {
+        "minzoom": catalog.minzoom,
+        "maxzoom": catalog.maxzoom,
+        "bounds": catalog.bounds,
+    }
+
+    with app.app_context():
+        meta["tiles"] = [
+            "{}{{z}}/{{x}}/{{y}}.png".format(
+                url_for(
+                    "meta_oam",
+                    id=id,
+                    scene_idx=scene_idx,
+                    image_id=image_id,
+                    _external=True))
+        ]
+
+    return jsonify(meta)
+
+
+@app.route('/<id>/<int:scene_idx>/preview')
+@app.route('/<id>/<int:scene_idx>/<image_id>/preview')
+def preview_oam(id, scene_idx, image_id=None):
+    # load the catalog so it will fail if the source doesn't exist
+    make_catalog(id, scene_idx, image_id)
+
+    with app.app_context():
+        return render_template(
+            "preview.html",
+            tilejson_url=url_for(
+                "meta_oam",
+                id=id,
+                scene_idx=scene_idx,
+                image_id=image_id,
+                _external=True,
+                _scheme="")), 200, {
+                    "Content-Type": "text/html"
+                }
+
+
+@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
+@app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
+@app.route(
+    '/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
+)
+def render_oam(id, scene_idx, z, x, y, image_id=None, scale=1):  # noqa
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
         tile,
-        OAM_JSON_CATALOG,
+        make_catalog(id, scene_idx, image_id),
         format=PNG_FORMAT,
         transformation=IMAGE_TRANSFORMATION,
         scale=scale)
