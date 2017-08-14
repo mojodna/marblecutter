@@ -26,8 +26,16 @@ class Catalog(object):
         return [0, 0, 2]
 
     @property
+    def id(self):
+        return None
+
+    @property
     def maxzoom(self):
         return 22
+
+    @property
+    def metadata_url(self):
+        return None
 
     @property
     def minzoom(self):
@@ -36,6 +44,14 @@ class Catalog(object):
     @property
     def name(self):
         return "Untitled"
+
+    @property
+    def provider(self):
+        return None
+
+    @property
+    def provider_url(self):
+        return None
 
     def get_sources(self, (bounds, bounds_crs), resolution):
         raise NotImplemented
@@ -216,7 +232,9 @@ class OINMetaCatalog(Catalog):
 
         self._box = box(*oin_meta['bbox'])
         self._bounds = oin_meta['bbox']
+        self._metadata_url = uri
         self._name = oin_meta['title']
+        self._provider = oin_meta['provider']
         self._resolution = oin_meta['gsd']
         self._source = oin_meta['uuid']
 
@@ -227,7 +245,7 @@ class OINMetaCatalog(Catalog):
             approximate_zoom - 3
         ]
         self._maxzoom = approximate_zoom + 3
-        self._minzoom = approximate_zoom - 5
+        self._minzoom = approximate_zoom - 10
 
     def get_sources(self, (bounds, bounds_crs), resolution):
         ((left, right), (bottom, top)) = warp.transform(
@@ -248,8 +266,16 @@ class OINMetaCatalog(Catalog):
         return self._center
 
     @property
+    def id(self):
+        return self._name
+
+    @property
     def maxzoom(self):
         return self._maxzoom
+
+    @property
+    def metadata_url(self):
+        return self._metadata_url
 
     @property
     def minzoom(self):
@@ -258,3 +284,7 @@ class OINMetaCatalog(Catalog):
     @property
     def name(self):
         return self._name
+
+    @property
+    def provider(self):
+        return self._provider

@@ -7,12 +7,12 @@
     xsi:schemaLocation="http://www.opengis.net/wmts/1.0 http://schemas.opengis.net/wmts/1.0/wmtsGetCapabilities_response.xsd"
     version="1.0.0">
     <ows:ServiceIdentification>
-        <ows:Title>Mapzen Elevation</ows:Title>
+        <ows:Title>{{ title }}</ows:Title>
         <ows:ServiceType>OGC WMTS</ows:ServiceType>
         <ows:ServiceTypeVersion>1.0.0</ows:ServiceTypeVersion>
         <ows:ServiceProvider>
-           <ows:ProviderName>Mapzen</ows:ProviderName>
-           <ows:ProviderSite xlink:href="https://mapzen.com/" />
+           <ows:ProviderName>{{ provider }}</ows:ProviderName>
+           <ows:ProviderSite xlink:href="{{ provider_url }}" />
            <ows:ServiceContact />
         </ows:ServiceProvider>
     </ows:ServiceIdentification>
@@ -48,13 +48,13 @@
 
     <Contents>
         <Layer>
-            <ows:Title>{{ meta['name'] }}</ows:Title>
+            <ows:Title>{{ title }}</ows:Title>
             <ows:Identifier>{{ id }}</ows:Identifier>
             <ows:WGS84BoundingBox crs="urn:ogc:def:crs:OGC:2:84">
-                <ows:LowerCorner>{{ meta['bounds'][0] }} {{ meta['bounds'][1] }}</ows:LowerCorner>
-                <ows:UpperCorner>{{ meta['bounds'][2] }} {{ meta['bounds'][3] }}</ows:UpperCorner>
+                <ows:LowerCorner>{{ bounds[0] }} {{ bounds[1] }}</ows:LowerCorner>
+                <ows:UpperCorner>{{ bounds[2] }} {{ bounds[3] }}</ows:UpperCorner>
             </ows:WGS84BoundingBox>
-            <ows:Metadata xlink:href="{{ meta['meta'].get('oinMetadataUrl', '') }}"/>
+            <ows:Metadata xlink:href="{{ metadata_url }}"/>
             <Style isDefault="true">
                 <ows:Identifier>default</ows:Identifier>
             </Style>
@@ -70,7 +70,7 @@
           <ows:Identifier>GoogleMapsCompatible</ows:Identifier>
           <ows:SupportedCRS>urn:ogc:def:crs:EPSG:6.18.3:3857</ows:SupportedCRS>
           <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
-        {% for zoom in range(meta['minzoom'], meta['maxzoom'] + 1) %}
+        {% for zoom in range(minzoom, maxzoom + 1) %}
           <TileMatrix>
               <ows:Identifier>{{ zoom }}</ows:Identifier>
               <ScaleDenominator>{{ 279541132.015 / 2 ** zoom }}</ScaleDenominator>

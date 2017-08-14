@@ -7,8 +7,9 @@ import os
 
 from cachetools.func import lru_cache
 from flask import Flask, jsonify, render_template, url_for
-from flask_cors import CORS
 from mercantile import Tile
+
+from flask_cors import CORS
 
 from . import NoDataAvailable, skadi, tiling
 from .catalogs import OAMSceneCatalog, OINMetaCatalog, PostGISCatalog
@@ -221,6 +222,43 @@ def meta_oam(id, scene_idx, image_id=None):
         ]
 
     return jsonify(meta)
+
+
+@app.route('/<id>/<int:scene_idx>/wmts')
+@app.route('/<id>/<int:scene_idx>/<image_id>/wmts')
+def wmts(id, scene_idx, image_id=None):
+    catalog = make_catalog(id, scene_idx, image_id)
+
+    provider = "OpenAerialMap"
+    provider_url = "https://openaerialmap.org/"
+
+    if catalog.provider:
+        provider = "{} ({})".format(provider, catalog.provider)
+
+    with app.app_context():
+        base_url = url_for(
+            "meta_oam",
+            id=id,
+            scene_idx=scene_idx,
+            image_id=image_id,
+            _external=True)
+
+        return render_template(
+            'wmts.xml',
+            base_url=base_url,
+            bounds=catalog.bounds,
+            content_type="image/png",
+            ext="png",
+            id=catalog.id,
+            maxzoom=catalog.maxzoom,
+            metadata_url=catalog.metadata_url,
+            minzoom=catalog.minzoom,
+            provider=provider,
+            provider_url=provider_url,
+            title=catalog.name,
+            ), 200, {
+            'Content-Type': 'application/xml'
+        }
 
 
 @app.route('/<id>/<int:scene_idx>/preview')
