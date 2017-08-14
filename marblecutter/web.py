@@ -182,8 +182,6 @@ def render_terrarium(z, x, y, scale=1):  # noqa
     return data, 200, headers
 
 
-# 598c1938a260c700113db249/0/03610f03-adb4-4fa7-bd21-bf68f46694f7
-
 S3_BUCKET = "oin-hotosm"
 
 
@@ -203,9 +201,12 @@ def meta_oam(id, scene_idx, image_id=None):
     catalog = make_catalog(id, scene_idx, image_id)
 
     meta = {
-        "minzoom": catalog.minzoom,
-        "maxzoom": catalog.maxzoom,
         "bounds": catalog.bounds,
+        "center": catalog.center,
+        "maxzoom": catalog.maxzoom,
+        "minzoom": catalog.minzoom,
+        "name": catalog.name,
+        "tilejson": "2.1.0",
     }
 
     with app.app_context():

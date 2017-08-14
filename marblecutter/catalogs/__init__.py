@@ -7,6 +7,9 @@ from psycopg2.pool import ThreadedConnectionPool
 from rasterio import warp
 from rasterio.crs import CRS
 import requests
+from itertools import chain
+
+from shapely.geometry import box
 
 Infinity = float("inf")
 LOG = logging.getLogger(__name__)
@@ -14,6 +17,26 @@ WGS84_CRS = CRS.from_epsg(4326)
 
 
 class Catalog(object):
+    @property
+    def bounds(self):
+        return [-180, -85.05113, 180, 85.05113]
+
+    @property
+    def center(self):
+        return [0, 0, 2]
+
+    @property
+    def maxzoom(self):
+        return 22
+
+    @property
+    def minzoom(self):
+        return 0
+
+    @property
+    def name(self):
+        return "Untitled"
+
     def get_sources(self, (bounds, bounds_crs), resolution):
         raise NotImplemented
 
@@ -143,10 +166,6 @@ class PostGISCatalog(Catalog):
             self._pool.putconn(conn)
 
 
-from itertools import chain
-from shapely.geometry import box
-
-
 class OAMSceneCatalog(Catalog):
     def __init__(self, uri):
         scene = requests.get(uri).json()
@@ -179,12 +198,16 @@ class OAMSceneCatalog(Catalog):
         return self._center
 
     @property
+    def maxzoom(self):
+        return self._maxzoom
+
+    @property
     def minzoom(self):
         return self._minzoom
 
     @property
-    def maxzoom(self):
-        return self._maxzoom
+    def name(self):
+        return self._name
 
 
 class OINMetaCatalog(Catalog):
@@ -196,6 +219,15 @@ class OINMetaCatalog(Catalog):
         self._name = oin_meta['title']
         self._resolution = oin_meta['gsd']
         self._source = oin_meta['uuid']
+
+        approximate_zoom = get_zoom(self._resolution)
+        self._center = [
+            (self._bounds[0] + self.bounds[2]) / 2,
+            (self._bounds[1] + self.bounds[3]) / 2,
+            approximate_zoom - 3
+        ]
+        self._maxzoom = approximate_zoom + 3
+        self._minzoom = approximate_zoom - 5
 
     def get_sources(self, (bounds, bounds_crs), resolution):
         ((left, right), (bottom, top)) = warp.transform(
@@ -212,11 +244,17 @@ class OINMetaCatalog(Catalog):
         return self._bounds
 
     @property
-    def minzoom(self):
-        # TODO calculate this according to the resolution
-        return 0
+    def center(self):
+        return self._center
 
     @property
     def maxzoom(self):
-        # TODO calculate this according to the resolution
-        return 22
+        return self._maxzoom
+
+    @property
+    def minzoom(self):
+        return self._minzoom
+
+    @property
+    def name(self):
+        return self._name
