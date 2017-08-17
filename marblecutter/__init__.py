@@ -124,7 +124,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
     # TODO use this for DEMs to avoid stairstepping artifacts
     if False and bounds_crs == WEB_MERCATOR_CRS:
-        # special case for web mercator; use a target image size that most
+        # special case for web Mercator; use a target image size that most
         # closely matches the source resolution (and is a power of 2)
         zoom = min(22,
                    get_zoom(
@@ -174,20 +174,45 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             resampling=Resampling.lanczos) as vrt:
         dst_window = vrt.window(*bounds)
 
+        src_resolution_in_meters = get_resolution_in_meters(
+            (src.bounds, src.crs), src.shape)
         scale_factor = (round(dst_window.width / width, 6), round(
             dst_window.height / height, 6))
 
         if vrt.count == 1 and (
                 scale_factor[0] < 1 or scale_factor[1] < 1
+                or src_resolution_in_meters[0] > resolution[0]
+                or src_resolution_in_meters[1] > resolution[1]
         ) and round(dst_window.width) > 1.0 and round(dst_window.height) > 1.0:
-            scaled_transform = vrt.transform * Affine.scale(*scale_factor)
-            target_window = windows.from_bounds(
-                *bounds, transform=scaled_transform)
+            # scale_factor will always be (1.0, 1.0) unless using the web
+            # Mercator-specific calculations
+            # instead, compare source resolution (in m) to resolution (as
+            # scale_factor) and modify dst_window to correspond to a smaller,
+            # lower resolution window (as target_window)
+
+            # TODO sources like ETOPO1 may end up with funky y scale factors
+            # (for web Mercator, due to distortion) if these problems can be
+            # addressed, the web Mercator-specific calculations (above,
+            # disabled) can be removed
+            if (src_resolution_in_meters[0] > resolution[0]
+                    or src_resolution_in_meters[1] > resolution[1]):
+                scale_factor = (resolution[0] / src_resolution_in_meters[0],
+                                resolution[1] / src_resolution_in_meters[1])
+                target_window = Window(dst_window.col_off * scale_factor[0],
+                                       dst_window.row_off * scale_factor[1],
+                                       dst_window.width * scale_factor[0],
+                                       dst_window.height * scale_factor[1])
+            else:
+                scaled_transform = vrt.transform * Affine.scale(*scale_factor)
+                target_window = windows.from_bounds(
+                    *bounds, transform=scaled_transform)
 
             # buffer apparently needs to be 50% of the target size in order
             # for spline knots to match between adjacent tiles
             # however, to avoid creating overly-large uncropped areas, we
             # limit the buffer size to 2048px on a side
+            # TODO the resulting window is still much too large (e.g.
+            # 18/151153/84343@2x)
             buffer_pixels = (min(target_window.width / 2,
                                  math.ceil(2048 * scale_factor[0])), min(
                                      target_window.height / 2,
@@ -218,29 +243,30 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 "Applying spline interpolation with order %d (scale factor: %s)",
                 order, scale_factor)
 
+            zoom = (round(1 / scale_factor[0]), round(1 / scale_factor[1]))
+
+            LOG.info("target dimensions: %s", (data.shape[0] * zoom[0], data.shape[1] * zoom[1]))
+
             # resample data, respecting NODATA values
             data = ndimage.zoom(
                 # prevent resulting values from producing cliffs
                 data.astype(np.float32),
-                (round(1 / scale_factor[0]), round(1 / scale_factor[1])),
+                zoom,
                 order=order)
 
             scaled_buffer = (int((data.shape[1] - width) / 2), int(
                 (data.shape[0] - height) / 2))
 
             # crop data
-            data = data[scaled_buffer[1]:-scaled_buffer[1], scaled_buffer[0]:
-                        -scaled_buffer[0]]
+            data = data[scaled_buffer[1]:scaled_buffer[1] + height,
+                        scaled_buffer[0]:scaled_buffer[0] + width]
 
             if len(mask.shape) > 0:
-                mask = ndimage.zoom(
-                    mask, (round(1 / scale_factor[0]), round(
-                        1 / scale_factor[1])),
-                    mode='nearest')
+                mask = ndimage.zoom(mask, zoom, mode='nearest')
 
                 # crop mask
-                mask = mask[scaled_buffer[1]:-scaled_buffer[1], scaled_buffer[
-                    0]:-scaled_buffer[0]]
+                mask = mask[scaled_buffer[1]:scaled_buffer[1] + height,
+                            scaled_buffer[0]:scaled_buffer[0] + width]
 
             # copy the mask over
             data = np.ma.masked_array(data, mask=mask)[np.newaxis]
