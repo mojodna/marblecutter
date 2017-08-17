@@ -147,13 +147,6 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
         dst_width = (1 / resolution[0]) * extent_width
         dst_height = (1 / resolution[1]) * extent_height
 
-        # ensure that we end up with a clean multiple of the target size (until
-        # rasterio uses floating point window offsets)
-        if width % 2 == 1 or height % 2 == 1:
-            dst_width *= 2
-            dst_height *= 2
-            resolution = [res / 2 for res in resolution]
-
         dst_transform = Affine(resolution[0], 0.0, extent[0], 0.0,
                                -resolution[1], extent[3])
 
