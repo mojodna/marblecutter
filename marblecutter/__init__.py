@@ -11,7 +11,7 @@ from haversine import haversine
 import numpy as np
 import rasterio
 from rasterio import transform
-from rasterio import windows
+from rasterio import warp, windows
 from rasterio.crs import CRS
 from rasterio.transform import Affine
 from rasterio.vrt import WarpedVRT
@@ -29,7 +29,6 @@ LOG = logging.getLogger(__name__)
 EXTENTS = {
     str(WEB_MERCATOR_CRS): (-20037508.342789244, -20037508.342789244,
                             20037508.342789244, 20037508.342789244),
-    str(WGS84_CRS): (-180, -90, 180, 90),
 }
 
 
@@ -142,14 +141,17 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     else:
         # use a target image size that most closely matches the target
         # resolution
-        resolution = get_resolution((bounds, bounds_crs), (height, width))
-        extent_width = extent[2] - extent[0]
-        extent_height = extent[3] - extent[1]
-        dst_width = (1 / resolution[0]) * extent_width
-        dst_height = (1 / resolution[1]) * extent_height
-
-        dst_transform = Affine(resolution[0], 0.0, extent[0], 0.0,
-                               -resolution[1], extent[3])
+        # calculate natural width, height, and transform (so the mask can be
+        # warped)
+        # TODO providing resolution reduces the target dimensions but loses the ability to read
+        # overviews
+        (dst_transform, dst_width,
+         dst_height) = warp.calculate_default_transform(
+             src.crs,
+             bounds_crs,
+             src.width,
+             src.height,
+             *src.bounds)
 
     # Some OAM sources have invalid NODATA values (-1000 for a file with a
     # dtype of Byte). rasterio returns None under these circumstances
@@ -245,7 +247,8 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
             zoom = (round(1 / scale_factor[0]), round(1 / scale_factor[1]))
 
-            LOG.info("target dimensions: %s", (data.shape[0] * zoom[0], data.shape[1] * zoom[1]))
+            LOG.info("target dimensions: %s", (data.shape[0] * zoom[0],
+                                               data.shape[1] * zoom[1]))
 
             # resample data, respecting NODATA values
             data = ndimage.zoom(
