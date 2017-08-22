@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 version = '0.0.0'
 
@@ -10,6 +10,6 @@ setup(
     author='Seth Fitzsimmons',
     author_email='seth@mojodna.net',
     license='BSD',
-    packages=['marblecutter'],
+    packages=find_packages(),
     zip_safe=False,
 )
