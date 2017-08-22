@@ -12,4 +12,7 @@ setup(
     license='BSD',
     packages=find_packages(),
     zip_safe=False,
+    package_data={
+        'marblecutter': ['templates/*'],
+    },
 )
