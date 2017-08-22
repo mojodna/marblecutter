@@ -6,7 +6,7 @@ import logging
 import os
 
 from cachetools.func import lru_cache
-from flask import Flask, jsonify, render_template, url_for
+from flask import Flask, jsonify, render_template, request, url_for
 from mercantile import Tile
 
 from flask_cors import CORS
@@ -21,9 +21,7 @@ LOG = logging.getLogger(__name__)
 app = Flask("marblecutter")
 CORS(app, send_wildcard=True)
 
-app.config["APPLICATION_ROOT"] = os.getenv("APPLICATION_ROOT")
 app.config["PREFERRED_URL_SCHEME"] = os.getenv("PREFERRED_URL_SCHEME", "http")
-# app.config["SERVER_NAME"] = os.getenv("SERVER_NAME", "localhost:8000")
 
 GEOTIFF_FORMAT = GeoTIFF()
 HILLSHADE_FORMAT = ColorRamp()
@@ -32,7 +30,11 @@ IMAGE_TRANSFORMATION = Image()
 NORMAL_TRANSFORMATION = Normal()
 PNG_FORMAT = PNG()
 TERRARIUM_TRANSFORMATION = Terrarium()
-POSTGIS_CATALOG = PostGISCatalog()
+
+
+@lru_cache()
+def catalog():
+    return PostGISCatalog()
 
 
 class InvalidTileRequest(Exception):  # noqa
@@ -56,8 +58,9 @@ def favicon():  # noqa
     return '', 404
 
 
+@app.route("/<prefix>/<renderer>/")
 @app.route("/<renderer>/")
-def meta(renderer):  # noqa
+def meta(renderer, **kwargs):  # noqa
     if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium"]:
         return '', 404
 
@@ -70,14 +73,15 @@ def meta(renderer):  # noqa
     with app.app_context():
         meta["tiles"] = [
             "{}{{z}}/{{x}}/{{y}}.png".format(
-                url_for("meta", _external=True, renderer=renderer))
+                url_for("meta", _external=True, _scheme="", prefix=request.headers.get("X-Stage"), renderer=renderer))
         ]
 
     return jsonify(meta)
 
 
+@app.route("/<prefix>/<renderer>/preview")
 @app.route("/<renderer>/preview")
-def preview(renderer):  # noqa
+def preview(renderer, **kwargs):  # noqa
     if renderer not in ["hillshade", "buffered_normal", "normal", "terrarium"]:
         return '', 404
 
@@ -85,30 +89,33 @@ def preview(renderer):  # noqa
         return render_template(
             "preview.html",
             tilejson_url=url_for(
-                "meta", _external=True, _scheme="", renderer=renderer),
+                "meta", _external=True, _scheme="", prefix=request.headers.get("X-Stage"), renderer=renderer),
         ), 200, {
             "Content-Type": "text/html"
         }
 
 
+@app.route("/<prefix>/geotiff/<int:z>/<int:x>/<int:y>.tif")
 @app.route("/geotiff/<int:z>/<int:x>/<int:y>.tif")
-def render_geotiff(z, x, y):  # noqa
+def render_geotiff(z, x, y, **kwargs):  # noqa
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
-        tile, POSTGIS_CATALOG, format=GEOTIFF_FORMAT, scale=2)
+        tile, catalog(), format=GEOTIFF_FORMAT, scale=2)
 
     return data, 200, headers
 
 
+@app.route("/<prefix>/hillshade/<int:z>/<int:x>/<int:y>.png")
 @app.route("/hillshade/<int:z>/<int:x>/<int:y>.png")
+@app.route("/<prefix>/hillshade/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
 @app.route("/hillshade/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_hillshade_png(z, x, y, scale=1):  # noqa
+def render_hillshade_png(z, x, y, scale=1, **kwargs):  # noqa
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_CATALOG,
+        catalog(),
         format=HILLSHADE_FORMAT,
         transformation=HILLSHADE_TRANSFORMATION,
         scale=scale)
@@ -116,13 +123,14 @@ def render_hillshade_png(z, x, y, scale=1):  # noqa
     return data, 200, headers
 
 
+@app.route("/<prefix>/hillshade/<int:z>/<int:x>/<int:y>.tif")
 @app.route("/hillshade/<int:z>/<int:x>/<int:y>.tif")
-def render_hillshade_tiff(z, x, y):  # noqa
+def render_hillshade_tiff(z, x, y, **kwargs):  # noqa
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_CATALOG,
+        catalog(),
         format=GEOTIFF_FORMAT,
         transformation=HILLSHADE_TRANSFORMATION,
         scale=2)
@@ -130,14 +138,16 @@ def render_hillshade_tiff(z, x, y):  # noqa
     return data, 200, headers
 
 
+@app.route("/<prefix>/buffered_normal/<int:z>/<int:x>/<int:y>.png")
 @app.route("/buffered_normal/<int:z>/<int:x>/<int:y>.png")
+@app.route("/<prefix>/buffered_normal/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
 @app.route("/buffered_normal/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_buffered_normal(z, x, y, scale=1):  # noqa
+def render_buffered_normal(z, x, y, scale=1, **kwargs):  # noqa
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_CATALOG,
+        catalog(),
         format=PNG_FORMAT,
         transformation=NORMAL_TRANSFORMATION,
         scale=scale,
@@ -146,14 +156,16 @@ def render_buffered_normal(z, x, y, scale=1):  # noqa
     return data, 200, headers
 
 
+@app.route("/<prefix>/normal/<int:z>/<int:x>/<int:y>.png")
 @app.route("/normal/<int:z>/<int:x>/<int:y>.png")
+@app.route("/<prefix>/normal/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
 @app.route("/normal/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_normal(z, x, y, scale=1):  # noqa
+def render_normal(z, x, y, scale=1, **kwargs):  # noqa
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_CATALOG,
+        catalog(),
         format=PNG_FORMAT,
         transformation=NORMAL_TRANSFORMATION,
         scale=scale)
@@ -161,21 +173,24 @@ def render_normal(z, x, y, scale=1):  # noqa
     return data, 200, headers
 
 
+@app.route("/<prefix>/skadi/<_>/<tile>.hgt.gz")
 @app.route("/skadi/<_>/<tile>.hgt.gz")
-def render_skadi(_, tile):  # noqa
+def render_skadi(_, tile, **kwargs):  # noqa
     headers, data = skadi.render_tile(tile)
 
     return data, 200, headers
 
 
+@app.route("/<prefix>/terrarium/<int:z>/<int:x>/<int:y>.png")
 @app.route("/terrarium/<int:z>/<int:x>/<int:y>.png")
+@app.route("/<prefix>/terrarium/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
 @app.route("/terrarium/<int:z>/<int:x>/<int:y>@<int:scale>x.png")
-def render_terrarium(z, x, y, scale=1):  # noqa
+def render_terrarium(z, x, y, scale=1, **kwargs):  # noqa
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
         tile,
-        POSTGIS_CATALOG,
+        catalog(),
         format=PNG_FORMAT,
         transformation=TERRARIUM_TRANSFORMATION,
         scale=scale)
@@ -196,9 +211,11 @@ def make_catalog(scene_id, scene_idx, image_id=None):
                            format(S3_BUCKET, scene_id, scene_idx))
 
 
+@app.route('/<prefix>/<id>/<int:scene_idx>/')
 @app.route('/<id>/<int:scene_idx>/')
+@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/')
 @app.route('/<id>/<int:scene_idx>/<image_id>/')
-def meta_oam(id, scene_idx, image_id=None):
+def meta_oam(id, scene_idx, image_id=None, **kwargs):
     catalog = make_catalog(id, scene_idx, image_id)
 
     meta = {
@@ -218,15 +235,19 @@ def meta_oam(id, scene_idx, image_id=None):
                     id=id,
                     scene_idx=scene_idx,
                     image_id=image_id,
-                    _external=True))
+                    prefix=request.headers.get("X-Stage"),
+                    _external=True,
+                    _scheme=""))
         ]
 
     return jsonify(meta)
 
 
+@app.route('/<prefix>/<id>/<int:scene_idx>/wmts')
 @app.route('/<id>/<int:scene_idx>/wmts')
+@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/wmts')
 @app.route('/<id>/<int:scene_idx>/<image_id>/wmts')
-def wmts(id, scene_idx, image_id=None):
+def wmts(id, scene_idx, image_id=None, **kwargs):
     catalog = make_catalog(id, scene_idx, image_id)
 
     provider = "OpenAerialMap"
@@ -241,6 +262,7 @@ def wmts(id, scene_idx, image_id=None):
             id=id,
             scene_idx=scene_idx,
             image_id=image_id,
+            prefix=request.headers.get("X-Stage"),
             _external=True)
 
         return render_template(
@@ -261,9 +283,11 @@ def wmts(id, scene_idx, image_id=None):
         }
 
 
+@app.route('/<prefix>/<id>/<int:scene_idx>/preview')
 @app.route('/<id>/<int:scene_idx>/preview')
+@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/preview')
 @app.route('/<id>/<int:scene_idx>/<image_id>/preview')
-def preview_oam(id, scene_idx, image_id=None):
+def preview_oam(id, scene_idx, image_id=None, **kwargs):
     # load the catalog so it will fail if the source doesn't exist
     make_catalog(id, scene_idx, image_id)
 
@@ -275,19 +299,26 @@ def preview_oam(id, scene_idx, image_id=None):
                 id=id,
                 scene_idx=scene_idx,
                 image_id=image_id,
+                prefix=request.headers.get("X-Stage"),
                 _external=True,
                 _scheme="")), 200, {
                     "Content-Type": "text/html"
                 }
 
 
+@app.route('/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>.png')
+@app.route('/<prefix>/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
 @app.route('/<id>/<int:scene_idx>/<int:z>/<int:x>/<int:y>@<int:scale>x.png')
+@app.route('/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
 @app.route('/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>.png')
+@app.route(
+    '/<prefix>/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
+)
 @app.route(
     '/<id>/<int:scene_idx>/<image_id>/<int:z>/<int:x>/<int:y>@<int:scale>x.png'
 )
-def render_oam(id, scene_idx, z, x, y, image_id=None, scale=1):  # noqa
+def render_oam(id, scene_idx, z, x, y, image_id=None, scale=1, **kwargs):  # noqa
     tile = Tile(x, y, z)
 
     headers, data = tiling.render_tile(
