@@ -9,8 +9,6 @@ from rasterio.crs import CRS
 import requests
 from itertools import chain
 
-from shapely.geometry import box
-
 Infinity = float("inf")
 LOG = logging.getLogger(__name__)
 WGS84_CRS = CRS.from_epsg(4326)
@@ -186,8 +184,6 @@ class OAMSceneCatalog(Catalog):
     def __init__(self, uri):
         scene = requests.get(uri).json()
 
-        self._box = box(*scene['bounds'])
-        self._bounds = scene['bounds']
         self._center = scene['center']
         self._maxzoom = scene['maxzoom']
         self._minzoom = scene['minzoom']
@@ -230,7 +226,6 @@ class OINMetaCatalog(Catalog):
     def __init__(self, uri):
         oin_meta = requests.get(uri).json()
 
-        self._box = box(*oin_meta['bbox'])
         self._bounds = oin_meta['bbox']
         self._metadata_url = uri
         self._name = oin_meta['title']
@@ -250,9 +245,14 @@ class OINMetaCatalog(Catalog):
     def get_sources(self, (bounds, bounds_crs), resolution):
         ((left, right), (bottom, top)) = warp.transform(
             bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
-        bounds_geom = box(left, bottom, right, top)
 
-        if self._box.intersects(bounds_geom):
+        if (
+            self._bounds[0] <= left <= self._bounds[2] or
+            self._bounds[0] <= right <= self._bounds[2]
+        ) and (
+            self._bounds[1] <= bottom <= self._bounds[3] or
+            self._bounds[1] <= top <= self._bounds[3]
+        ):
             return [(self._source, self._name, self._resolution)]
 
         return []
