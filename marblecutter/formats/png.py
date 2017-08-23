@@ -1,4 +1,3 @@
-# noqa
 # coding=utf-8
 from __future__ import absolute_import
 
@@ -11,7 +10,7 @@ from .. import _isimage
 CONTENT_TYPE = "image/png"
 
 
-def format():
+def PNG():
     def _format((data, (data_bounds, data_crs)), data_format):
         if not _isimage(data_format):
             raise Exception("Must be an image format")

@@ -30,7 +30,7 @@ GREY_HILLS_RAMP = {
 GREY_HILLS = LinearSegmentedColormap("grey_hills", GREY_HILLS_RAMP)
 
 
-def format(output_format="png", colormap=GREY_HILLS):
+def ColorRamp(output_format="png", colormap=GREY_HILLS):
     def _format((data, (data_bounds, data_crs)), data_format):
         if data_format is not "raw":
             raise Exception("raw data is required")

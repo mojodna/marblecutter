@@ -1,9 +1,7 @@
-# noqa
 # coding=utf-8
 from __future__ import absolute_import
 
 import numpy as np
-
 from rasterio import transform
 from rasterio.io import MemoryFile
 
@@ -12,7 +10,7 @@ from .. import _nodata, get_resolution_in_meters
 CONTENT_TYPE = "image/tiff"
 
 
-def format():
+def GeoTIFF():
     def _format((data, (data_bounds, data_crs)), data_format):
         if data_format is not "raw":
             raise Exception("raw data is required")
