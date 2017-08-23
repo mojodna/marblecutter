@@ -190,21 +190,20 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             # lower resolution window (as target_window)
 
             # TODO sources like ETOPO1 may end up with funky y scale factors
-            # (for web Mercator, due to distortion) if these problems can be
-            # addressed, the web Mercator-specific calculations (above,
-            # disabled) can be removed
-            if (src_resolution_in_meters[0] > resolution[0]
-                    or src_resolution_in_meters[1] > resolution[1]):
+            # (for web Mercator, due to distortion)
+            # if these problems can be addressed, the web Mercator-specific
+            # calculations (above, for single-band sources) can be removed
+            if scale_factor[0] < 1 or scale_factor[1] < 1:
+                scaled_transform = vrt.transform * Affine.scale(*scale_factor)
+                target_window = windows.from_bounds(
+                    *bounds, transform=scaled_transform)
+            else:
                 scale_factor = (resolution[0] / src_resolution_in_meters[0],
                                 resolution[1] / src_resolution_in_meters[1])
                 target_window = Window(dst_window.col_off * scale_factor[0],
                                        dst_window.row_off * scale_factor[1],
                                        dst_window.width * scale_factor[0],
                                        dst_window.height * scale_factor[1])
-            else:
-                scaled_transform = vrt.transform * Affine.scale(*scale_factor)
-                target_window = windows.from_bounds(
-                    *bounds, transform=scaled_transform)
 
             # buffer apparently needs to be 50% of the target size in order
             # for spline knots to match between adjacent tiles
