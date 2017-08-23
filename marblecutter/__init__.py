@@ -26,11 +26,6 @@ WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
 LOG = logging.getLogger(__name__)
 
-EXTENTS = {
-    str(WEB_MERCATOR_CRS): (-20037508.342789244, -20037508.342789244,
-                            20037508.342789244, 20037508.342789244),
-}
-
 
 class NoDataAvailable(Exception):
     pass
@@ -116,13 +111,8 @@ def get_zoom(resolution, op=round):
 
 
 def read_window(src, (bounds, bounds_crs), (height, width)):
-    try:
-        extent = get_extent(bounds_crs)
-    except KeyError:
-        raise Exception("Unsupported CRS: {}".format(bounds_crs))
-
-    # TODO use this for DEMs to avoid stairstepping artifacts
-    if False and bounds_crs == WEB_MERCATOR_CRS:
+    # TODO use this for DEMs (not all single-band sources) to avoid stairstepping artifacts
+    if src.count == 1 and bounds_crs == WEB_MERCATOR_CRS:
         # special case for web Mercator; use a target image size that most
         # closely matches the source resolution (and is a power of 2)
         zoom = min(22,
@@ -131,6 +121,9 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                            get_resolution_in_meters((src.bounds, src.crs), (
                                src.height, src.width))),
                        op=math.ceil))
+
+        extent = (-20037508.342789244, -20037508.342789244,
+                  20037508.342789244, 20037508.342789244)
 
         dst_width = dst_height = (2**zoom) * 256
         resolution = ((extent[2] - extent[0]) / dst_width,
