@@ -2,9 +2,8 @@
 # coding=utf-8
 from __future__ import absolute_import
 
-from . import color_ramp, geotiff, png, skadi
+from . import color_ramp, geotiff, png
 
 ColorRamp = color_ramp.format
 GeoTIFF = geotiff.format
 PNG = png.format
-Skadi = skadi.format

@@ -11,7 +11,7 @@ from haversine import haversine
 import numpy as np
 import rasterio
 from rasterio import transform
-from rasterio import windows
+from rasterio import warp, windows
 from rasterio.crs import CRS
 from rasterio.transform import Affine
 from rasterio.vrt import WarpedVRT
@@ -29,8 +29,11 @@ LOG = logging.getLogger(__name__)
 EXTENTS = {
     str(WEB_MERCATOR_CRS): (-20037508.342789244, -20037508.342789244,
                             20037508.342789244, 20037508.342789244),
-    str(WGS84_CRS): (-180, -90, 180, 90),
 }
+
+
+class NoDataAvailable(Exception):
+    pass
 
 
 def _isimage(data_format):
@@ -113,21 +116,19 @@ def get_zoom(resolution, op=round):
 
 
 def read_window(src, (bounds, bounds_crs), (height, width)):
-    try:
-        extent = get_extent(bounds_crs)
-    except KeyError:
-        raise Exception("Unsupported CRS: {}".format(bounds_crs))
-
-    if bounds_crs == WEB_MERCATOR_CRS:
-        # special case for web mercator; use a target image size that most
+    # TODO use this for DEMs (not all single-band sources) to avoid stairstepping artifacts
+    if src.count == 1 and bounds_crs == WEB_MERCATOR_CRS:
+        # special case for web Mercator; use a target image size that most
         # closely matches the source resolution (and is a power of 2)
-        zoom = get_zoom(
-            max(
-                get_resolution_in_meters((src.bounds, src.crs), (src.height,
-                                                                 src.width))),
-            op=math.ceil)
+        zoom = min(22,
+                   get_zoom(
+                       max(
+                           get_resolution_in_meters((src.bounds, src.crs), (
+                               src.height, src.width))),
+                       op=math.ceil))
 
         dst_width = dst_height = (2**zoom) * 256
+        extent = get_extent(bounds_crs)
         resolution = ((extent[2] - extent[0]) / dst_width,
                       (extent[3] - extent[1]) / dst_height)
 
@@ -136,21 +137,30 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     else:
         # use a target image size that most closely matches the target
         # resolution
-        resolution = get_resolution((bounds, bounds_crs), (height, width))
-        extent_width = extent[2] - extent[0]
-        extent_height = extent[3] - extent[1]
-        dst_width = (1 / resolution[0]) * extent_width
-        dst_height = (1 / resolution[1]) * extent_height
+        # calculate natural width, height, and transform (so the mask can be
+        # warped)
+        # TODO providing resolution reduces the target dimensions but loses the ability to read
+        # overviews
+        (dst_transform, dst_width,
+         dst_height) = warp.calculate_default_transform(
+             src.crs,
+             bounds_crs,
+             src.width,
+             src.height,
+             *src.bounds)
 
-        # ensure that we end up with a clean multiple of the target size (until
-        # rasterio uses floating point window offsets)
-        if width % 2 == 1 or height % 2 == 1:
-            dst_width *= 2
-            dst_height *= 2
-            resolution = [res / 2 for res in resolution]
-
-        dst_transform = Affine(resolution[0], 0.0, extent[0], 0.0,
-                               -resolution[1], extent[3])
+    # Some OAM sources have invalid NODATA values (-1000 for a file with a
+    # dtype of Byte). rasterio returns None under these circumstances
+    # (indistinguishable from sources that actually have no NODATA values).
+    # Providing a synthetic value "correctly" masks the output at the expense
+    # of masking valid pixels with that value. This was previously (partially;
+    # in the form of the bounding box but not NODATA pixels) addressed by
+    # creating a VRT that mapped the mask to an alpha channel (something we
+    # can't do w/o adding nDstAlphaBand to rasterio/_warp.pyx).
+    #
+    # Creating external masks and reading them separately (as below) is a
+    # better solution, particularly as it avoids artifacts introduced when the
+    # NODATA values are resampled using something other than nearest neighbor.
 
     with WarpedVRT(
             src,
@@ -162,20 +172,45 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             resampling=Resampling.lanczos) as vrt:
         dst_window = vrt.window(*bounds)
 
+        resolution = get_resolution((bounds, bounds_crs), (height, width))
+        src_resolution_in_meters = get_resolution_in_meters(
+            (src.bounds, src.crs), src.shape)
         scale_factor = (round(dst_window.width / width, 6), round(
             dst_window.height / height, 6))
 
         if vrt.count == 1 and (
                 scale_factor[0] < 1 or scale_factor[1] < 1
+                or src_resolution_in_meters[0] > resolution[0]
+                or src_resolution_in_meters[1] > resolution[1]
         ) and round(dst_window.width) > 1.0 and round(dst_window.height) > 1.0:
-            scaled_transform = vrt.transform * Affine.scale(*scale_factor)
-            target_window = windows.from_bounds(
-                *bounds, transform=scaled_transform)
+            # scale_factor will always be (1.0, 1.0) unless using the web
+            # Mercator-specific calculations
+            # instead, compare source resolution (in m) to resolution (as
+            # scale_factor) and modify dst_window to correspond to a smaller,
+            # lower resolution window (as target_window)
+
+            # TODO sources like ETOPO1 may end up with funky y scale factors
+            # (for web Mercator, due to distortion)
+            # if these problems can be addressed, the web Mercator-specific
+            # calculations (above, for single-band sources) can be removed
+            if scale_factor[0] < 1 or scale_factor[1] < 1:
+                scaled_transform = vrt.transform * Affine.scale(*scale_factor)
+                target_window = windows.from_bounds(
+                    *bounds, transform=scaled_transform)
+            else:
+                scale_factor = (resolution[0] / src_resolution_in_meters[0],
+                                resolution[1] / src_resolution_in_meters[1])
+                target_window = Window(dst_window.col_off * scale_factor[0],
+                                       dst_window.row_off * scale_factor[1],
+                                       dst_window.width * scale_factor[0],
+                                       dst_window.height * scale_factor[1])
 
             # buffer apparently needs to be 50% of the target size in order
             # for spline knots to match between adjacent tiles
             # however, to avoid creating overly-large uncropped areas, we
             # limit the buffer size to 2048px on a side
+            # TODO the resulting window is still much too large (e.g.
+            # 18/151153/84343@2x)
             buffer_pixels = (min(target_window.width / 2,
                                  math.ceil(2048 * scale_factor[0])), min(
                                      target_window.height / 2,
@@ -206,29 +241,31 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 "Applying spline interpolation with order %d (scale factor: %s)",
                 order, scale_factor)
 
+            zoom = (round(1 / scale_factor[0]), round(1 / scale_factor[1]))
+
+            LOG.info("target dimensions: %s", (data.shape[0] * zoom[0],
+                                               data.shape[1] * zoom[1]))
+
             # resample data, respecting NODATA values
             data = ndimage.zoom(
                 # prevent resulting values from producing cliffs
                 data.astype(np.float32),
-                (round(1 / scale_factor[0]), round(1 / scale_factor[1])),
+                zoom,
                 order=order)
 
             scaled_buffer = (int((data.shape[1] - width) / 2), int(
                 (data.shape[0] - height) / 2))
 
             # crop data
-            data = data[scaled_buffer[1]:-scaled_buffer[1], scaled_buffer[0]:
-                        -scaled_buffer[0]]
+            data = data[scaled_buffer[1]:scaled_buffer[1] + height,
+                        scaled_buffer[0]:scaled_buffer[0] + width]
 
             if len(mask.shape) > 0:
-                mask = ndimage.zoom(
-                    mask, (round(1 / scale_factor[0]), round(
-                        1 / scale_factor[1])),
-                    mode='nearest')
+                mask = ndimage.zoom(mask, zoom, mode='nearest')
 
                 # crop mask
-                mask = mask[scaled_buffer[1]:-scaled_buffer[1], scaled_buffer[
-                    0]:-scaled_buffer[0]]
+                mask = mask[scaled_buffer[1]:scaled_buffer[1] + height,
+                            scaled_buffer[0]:scaled_buffer[0] + width]
 
             # copy the mask over
             data = np.ma.masked_array(data, mask=mask)[np.newaxis]
@@ -260,7 +297,8 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 dst_window = vrt.window(*bounds)
 
                 mask = mask_vrt.read(
-                    out_shape=(vrt.count, height, width), window=dst_window)
+                    out_shape=(mask_vrt.count, height, width),
+                    window=dst_window)
 
                 data.mask = data.mask | ~mask
     except Exception:
@@ -293,6 +331,9 @@ def render((bounds, bounds_crs),
         (sources_used, data, (data_bounds, data_crs)) = mosaic.composite(
             sources, (bounds, bounds_crs), shape, target_crs)
     stats.append(("composite", t.elapsed))
+
+    if data is None:
+        raise NoDataAvailable()
 
     data_format = "raw"
 

@@ -23,15 +23,9 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     the target CRS."""
     from . import _nodata, get_source, read_window
 
-    canvas = np.ma.empty(
-        (1, height, width),
-        dtype=np.float32,
-        fill_value=_nodata(np.float32), )
-    canvas.mask = True
-    canvas.fill_value = _nodata(np.float32)
-
     ((left, right), (bottom, top)) = warp.transform(bounds_crs, target_crs,
                                                     bounds[::2], bounds[1::2])
+    canvas = None
     canvas_bounds = (left, bottom, right, top)
 
     sources_used = list()
@@ -39,6 +33,16 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
     # iterate over available sources, sorted by decreasing resolution
     for (url, source_name, resolution) in sources:
         with get_source(url) as src:
+            if canvas is None:
+                # infer the number of bands to use from the first available
+                # source
+                canvas = np.ma.empty(
+                    (src.count, height, width),
+                    dtype=np.float32,
+                    fill_value=_nodata(np.float32))
+                canvas.mask = True
+                canvas.fill_value = _nodata(np.float32)
+
             sources_used.append((source_name, url))
 
             LOG.info("Compositing %s (%s)...", url, source_name)
@@ -55,7 +59,8 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
 
         data, _ = window_data
         if data.mask.any():
-            # mask outliers
+            # mask outliers (intended for DEM boundaries)
+            LOG.info("masking outliers")
             data.mask[0] = np.logical_or(data.mask[0],
                                          mask_outliers(data[0], 100.))
 

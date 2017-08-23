@@ -8,15 +8,52 @@ from rasterio import warp
 from rasterio.crs import CRS
 
 Infinity = float("inf")
+LOG = logging.getLogger(__name__)
 WGS84_CRS = CRS.from_epsg(4326)
 
 
-class SourceAdapter(object):
+class Catalog(object):
+    @property
+    def bounds(self):
+        return [-180, -85.05113, 180, 85.05113]
+
+    @property
+    def center(self):
+        return [0, 0, 2]
+
+    @property
+    def id(self):
+        return None
+
+    @property
+    def maxzoom(self):
+        return 22
+
+    @property
+    def metadata_url(self):
+        return None
+
+    @property
+    def minzoom(self):
+        return 0
+
+    @property
+    def name(self):
+        return "Untitled"
+
+    @property
+    def provider(self):
+        return None
+
+    @property
+    def provider_url(self):
+        return None
+
     def get_sources(self, (bounds, bounds_crs), resolution):
         raise NotImplemented
 
 
-class MemoryAdapter(SourceAdapter):
+class MemoryCatalog(Catalog):
     def __init__(self):
         self._sources = []
 
@@ -66,7 +103,7 @@ class MemoryAdapter(SourceAdapter):
         return results
 
 
-class PostGISAdapter(SourceAdapter):
+class PostGISCatalog(Catalog):
     def __init__(self, database_url=os.getenv("DATABASE_URL")):
         if database_url is None:
             raise Exception(
