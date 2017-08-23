@@ -15,4 +15,22 @@ setup(
     package_data={
         'marblecutter': ['static/images/*', 'templates/*'],
     },
+    install_requires=[
+        'haversine',
+        'mercantile',
+        'numpy',
+        'Pillow',
+        'scipy',
+    ],
+    dependency_links=[
+        'https://github.com/mapbox/rasterio/archive/92d5e81.tar.gz#egg=rasterio-1.0a10[s3]'
+    ],
+    extras_require={
+        'color_ramp': 'matplotlib',
+        'postgis': 'psycopg2',
+        'web': [
+            'flask',
+            'flask-cors',
+        ],
+    },
 )
