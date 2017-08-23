@@ -13,6 +13,6 @@ setup(
     packages=find_packages(),
     zip_safe=False,
     package_data={
-        'marblecutter': ['templates/*'],
+        'marblecutter': ['static/*', 'templates/*'],
     },
 )
