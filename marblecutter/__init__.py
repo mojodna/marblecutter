@@ -176,6 +176,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             resampling=Resampling.lanczos) as vrt:
         dst_window = vrt.window(*bounds)
 
+        resolution = get_resolution((bounds, bounds_crs), (height, width))
         src_resolution_in_meters = get_resolution_in_meters(
             (src.bounds, src.crs), src.shape)
         scale_factor = (round(dst_window.width / width, 6), round(
