@@ -26,6 +26,11 @@ WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
 LOG = logging.getLogger(__name__)
 
+EXTENTS = {
+    str(WEB_MERCATOR_CRS): (-20037508.342789244, -20037508.342789244,
+                            20037508.342789244, 20037508.342789244),
+}
+
 
 class NoDataAvailable(Exception):
     pass
@@ -122,10 +127,8 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                                src.height, src.width))),
                        op=math.ceil))
 
-        extent = (-20037508.342789244, -20037508.342789244,
-                  20037508.342789244, 20037508.342789244)
-
         dst_width = dst_height = (2**zoom) * 256
+        extent = get_extent(bounds_crs)
         resolution = ((extent[2] - extent[0]) / dst_width,
                       (extent[3] - extent[1]) / dst_height)
 
