@@ -52,8 +52,9 @@ if __name__ == "__main__":
 
         result = client.submit_job(
             jobName='skadi-' + tile_group[0],
-            jobQueue='tiling-skadi-20170828',
-            overrides={
+            jobDefinition='tiler-skadi',
+            jobQueue='tiling-skadi-20170829',
+            containerOverrides={
                 'command': command_list,
                 'environment': [
                     {'name': 'DATABASE_URL',
