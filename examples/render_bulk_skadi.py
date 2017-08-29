@@ -5,8 +5,6 @@ import argparse
 import boto3
 import botocore
 import logging
-import multiprocessing
-import os
 import time
 from functools import wraps
 from multiprocessing.dummy import Pool
@@ -22,7 +20,7 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 logging.getLogger('marblecutter.mosaic').setLevel(logging.WARNING)
 logger = logging.getLogger('batchtiler')
 
-POOL = Pool(multiprocessing.cpu_count() * 4)
+POOL = Pool(12)
 CATALOG = PostGISAdapter()
 
 

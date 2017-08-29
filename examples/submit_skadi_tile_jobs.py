@@ -62,4 +62,4 @@ if __name__ == "__main__":
             }
         )
 
-        print "name: {jobName}, id: {jobId}".format(result)
+        print "name: {jobName}, id: {jobId}".format(**result)
