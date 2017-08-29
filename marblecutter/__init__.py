@@ -138,15 +138,33 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
         # resolution
         # calculate natural width, height, and transform (so the mask can be
         # warped)
-        # TODO providing resolution reduces the target dimensions but loses the ability to read
-        # overviews
-        (dst_transform, dst_width,
-         dst_height) = warp.calculate_default_transform(
-             src.crs,
-             bounds_crs,
-             src.width,
-             src.height,
-             *src.bounds)
+        # TODO providing resolution reduces the target dimensions but loses the
+        # ability to read overviews
+        try:
+            (dst_transform, dst_width,
+             dst_height) = warp.calculate_default_transform(
+                 src.crs,
+                 bounds_crs,
+                 src.width,
+                 src.height,
+                 *src.bounds)
+        except MemoryError:
+            # raster is overly-large; approximate the transform based on a
+            # scaled-down version and scale it back after
+            scale_factor = 2
+
+            (dst_transform, dst_width,
+             dst_height) = warp.calculate_default_transform(
+                 src.crs,
+                 bounds_crs,
+                 src.width // scale_factor,
+                 src.height // scale_factor,
+                 *src.bounds)
+
+            scale = Affine.scale(scale_factor, scale_factor)
+
+            dst_transform *= ~scale
+            dst_width, dst_height = scale * (dst_width, dst_height)
 
     # Some OAM sources have invalid NODATA values (-1000 for a file with a
     # dtype of Byte). rasterio returns None under these circumstances
