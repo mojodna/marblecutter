@@ -23,7 +23,6 @@ logging.getLogger('marblecutter.mosaic').setLevel(logging.WARNING)
 logger = logging.getLogger('batchtiler')
 
 POOL = Pool(multiprocessing.cpu_count() * 4)
-S3_BUCKET = os.environ.get('S3_BUCKET')
 CATALOG = PostGISAdapter()
 
 
