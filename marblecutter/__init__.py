@@ -140,31 +140,28 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
         # warped)
         # TODO providing resolution reduces the target dimensions but loses the
         # ability to read overviews
-        try:
-            (dst_transform, dst_width,
-             dst_height) = warp.calculate_default_transform(
-                 src.crs,
-                 bounds_crs,
-                 src.width,
-                 src.height,
-                 *src.bounds)
-        except MemoryError:
-            # raster is overly-large; approximate the transform based on a
-            # scaled-down version and scale it back after
-            scale_factor = 2
 
-            (dst_transform, dst_width,
-             dst_height) = warp.calculate_default_transform(
-                 src.crs,
-                 bounds_crs,
-                 src.width // scale_factor,
-                 src.height // scale_factor,
-                 *src.bounds)
+        # if raster is overly-large, approximate the transform based on
+        # a scaled-down version and scale it back after
+        attempts = 0
+        scale_factor = 1
+        dst_transform = None
 
-            scale = Affine.scale(scale_factor, scale_factor)
+        while (dst_transform is None and src.width // scale_factor > 0
+               and src.height // scale_factor > 0):
+            try:
+                (dst_transform, dst_width,
+                 dst_height) = warp.calculate_default_transform(
+                     src.crs, bounds_crs, src.width // scale_factor,
+                     src.height // scale_factor, *src.bounds)
 
-            dst_transform *= ~scale
-            dst_width, dst_height = scale * (dst_width, dst_height)
+                scale = Affine.scale(scale_factor, scale_factor)
+
+                dst_transform *= ~scale
+                dst_width, dst_height = scale * (dst_width, dst_height)
+            except MemoryError:
+                attempts += 1
+                scale_factor = 2 * attempts
 
     # Some OAM sources have invalid NODATA values (-1000 for a file with a
     # dtype of Byte). rasterio returns None under these circumstances
