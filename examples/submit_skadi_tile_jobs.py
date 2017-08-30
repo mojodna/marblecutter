@@ -58,8 +58,9 @@ if __name__ == "__main__":
                 'command': command_list,
                 'environment': [
                     {'name': 'DATABASE_URL',
-                     'value': database_url}
-                ]
+                     'value': database_url},
+                ],
+                'memory': 6000,
             }
         )
 
