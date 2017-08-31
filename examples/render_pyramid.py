@@ -31,7 +31,6 @@ logging.getLogger('botocore').setLevel(logging.WARNING)
 logging.getLogger('marblecutter.mosaic').setLevel(logging.WARNING)
 logger = logging.getLogger('batchtiler')
 
-MAX_ZOOM = 15
 POOL_SIZE = 12
 POOL = Pool(POOL_SIZE)
 
@@ -195,10 +194,10 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
                     obj.bucket_name, obj.key)
 
 
-def queue_tile(tile, s3_details, sources):
+def queue_tile(tile, max_zoom, s3_details, sources):
     queue_render(tile, s3_details, sources)
 
-    if tile.z < MAX_ZOOM:
+    if tile.z < max_zoom:
         for child in mercantile.children(tile):
             queue_tile(child, s3_details, sources)
 
@@ -213,20 +212,24 @@ if __name__ == "__main__":
     parser.add_argument('x', type=int)
     parser.add_argument('y', type=int)
     parser.add_argument('zoom', type=int)
+    parser.add_argument('max_zoom', type=int)
     parser.add_argument('bucket')
-    parser.add_argument('key_prefix')
+    parser.add_argument('--key_prefix')
 
     args = parser.parse_args()
     root = Tile(args.x, args.y, args.zoom)
 
-    logger.info('Caching sources for root tile %s', root)
+    logger.info('Caching sources for root tile %s to zoom %s',
+                root, args.max_zoom)
 
     source_index = build_source_index(root)
 
     logger.info('Running %s processes', POOL_SIZE)
 
-    queue_tile(root, (args.bucket, args.key_prefix), source_index)
+    queue_tile(root, args.max_zoom, (args.bucket, args.key_prefix),
+               source_index)
 
     POOL.close()
     POOL.join()
-    logger.info('Done processing root pyramid %s', root)
+    logger.info('Done processing root pyramid %s to zoom %s',
+                root, args.max_zoom)
