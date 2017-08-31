@@ -25,8 +25,9 @@ if __name__ == "__main__":
 
     for tile in mercantile.tiles(w, s, e, n, [args.zoom]):
         command_list = [
-            'python', 'examples/render_pyramid.py', tile.x, tile.y, tile.zoom,
-            args.max_zoom, args.bucket
+            'python', 'examples/render_pyramid.py',
+            str(tile.x), str(tile.y), str(tile.z),
+            str(args.max_zoom), args.bucket
         ]
 
         if args.key_prefix:
@@ -34,7 +35,7 @@ if __name__ == "__main__":
             command_list.append(args.key_prefix)
 
         result = client.submit_job(
-            jobName='tiler-{}-{}-{}'.format(tile.zoom, tile.x, tile.y),
+            jobName='tiler-{}-{}-{}'.format(tile.z, tile.x, tile.y),
             jobDefinition='tiler',
             jobQueue='tiling-20150606',
             containerOverrides={
