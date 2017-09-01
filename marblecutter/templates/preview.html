@@ -23,6 +23,7 @@ var map = L.map("map", {
   scrollWheelZoom: false,
   attributionControl: false,
   keyboardPanOffset: 256  });
+L.control.geocoder("mapzen-LU6enDV").addTo(map);
 
 $.getJSON("{{ tilejson_url }}", function(data) {
   // provide a default location in the hash, not the L.map (since that will
