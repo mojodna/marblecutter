@@ -48,13 +48,14 @@ $.getJSON("{{ tilejson_url }}", function(data) {
     name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
     var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
         results = regex.exec(location.search);
-    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    return results == null ? null : decodeURIComponent(results[1].replace(/\+/g, " "));
   }
 
   var mediaQuery = "(-webkit-min-device-pixel-ratio: 1.5),\
                     (min--moz-device-pixel-ratio: 1.5),\
                     (-o-min-device-pixel-ratio: 3/2),\
                     (min-resolution: 1.5dppx)";
+
   if (getParameterByName("retina") !== "false" &&
       (getParameterByName("retina") ||
        window.devicePixelRatio > 1 ||
@@ -63,6 +64,15 @@ $.getJSON("{{ tilejson_url }}", function(data) {
   }
 
   L.tileLayer(provider, options).addTo(map);
+
+
+  L.tileLayer(provider, options).addTo(map);
+
+  var context = getParameterByName("context");
+
+  if (context != null && context !== "false") {
+    L.tileLayer('http://{s}.tile.stamen.com/toner-hybrid/{z}/{x}/{y}{r}.png').addTo(map);
+  }
 });
 </script>
 </body>
