@@ -199,7 +199,7 @@ def queue_tile(tile, max_zoom, s3_details, sources):
 
     if tile.z < max_zoom:
         for child in mercantile.children(tile):
-            queue_tile(child, s3_details, sources)
+            queue_tile(child, max_zoom, s3_details, sources)
 
 
 def queue_render(tile, s3_details, sources):
