@@ -20,11 +20,16 @@ def iter_jobs(client, queue_arn, status):
 
 def retry_jobs(queue_arn, since=0):
     client = boto3.client('batch')
+    oldest_timestamp = None
 
     for job_summary in iter_jobs(client, queue_arn, 'FAILED'):
         job_id = job_summary['jobId']
 
         job_data = client.describe_jobs(jobs=[job_id])['jobs'][0]
+
+        stopped_at = job_data['stoppedAt']
+        if oldest_timestamp is None or stopped_at > oldest_timestamp:
+            oldest_timestamp = stopped_at
 
         if job_data['stoppedAt'] <= since:
             print "Skipping job {} ({}) that stopped at {} because it's too old".format(
@@ -55,6 +60,10 @@ def retry_jobs(queue_arn, since=0):
             job_data['stoppedAt'],
             submitted_job['jobId']
         )
+
+    print "Oldest job seen stopped at {}".format(
+        oldest_timestamp
+    )
 
 
 if __name__ == '__main__':
