@@ -79,49 +79,34 @@ def retry(ExceptionToCheck,
     return deco_retry
 
 
-@retry(botocore.exceptions.ClientError, tries=30, logger=logger)
-def write_to_s3(bucket,
-                key_prefix,
-                tile,
-                tile_type,
-                data,
-                key_suffix,
-                headers,
-                overwrite=False):
+def s3_key(tile_type, tile, key_suffix, key_prefix):
     key = '{}/{}/{}/{}{}'.format(
         tile_type,
         tile.z,
         tile.x,
         tile.y,
-        key_suffix, )
+        key_suffix,
+    )
 
     if key_prefix:
         key = '{}/{}'.format(key_prefix, key)
 
-    obj = bucket.Object(key)
-    if overwrite:
-        obj.put(
-            Body=data,
-            ContentType=headers['Content-Type'],
-            Metadata={k: headers[k]
-                      for k in headers if k != 'Content-Type'})
-    else:
-        try:
-            obj.load()
-        except botocore.exceptions.ClientError as e:
-            # If a client error is thrown, then check that it was a 404 error.
-            # If it was a 404 error, then the object does not exist.
-            error_code = int(e.response['Error']['Code'])
-            if error_code == 404:
-                obj.put(
-                    Body=data,
-                    ContentType=headers['Content-Type'],
-                    Metadata={
-                        k: headers[k]
-                        for k in headers if k != 'Content-Type'
-                    })
-            else:
-                raise
+    return key
+
+
+@retry(botocore.exceptions.ClientError, tries=30, logger=logger)
+def write_to_s3(obj,
+                tile,
+                tile_type,
+                data,
+                key_suffix,
+                headers):
+
+    obj.put(
+        Body=data,
+        ContentType=headers['Content-Type'],
+        Metadata={k: headers[k]
+                  for k in headers if k != 'Content-Type'})
 
     return obj
 
@@ -167,6 +152,17 @@ def render_tile_exc_wrapper(tile, s3_details, sources):
         raise
 
 
+def s3_obj_exists(obj):
+    try:
+        obj.load()
+        return True
+    except botocore.exceptions.ClientError, e:
+        error_code = int(e.response['Error']['Code'])
+        if error_code == 404:
+            return False
+        raise
+
+
 @retry((psycopg2.OperationalError, ), logger=logger)
 def render_tile(tile, format, transformation, sources):
     return tiling.render_tile(
@@ -178,27 +174,37 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
     # Each thread needs its own boto3 Session object – it's not threadsafe
     session = boto3.session.Session()
     s3 = session.resource('s3')
-    bucket = s3.Bucket(s3_bucket)
 
     for (type, transformation, format, ext) in RENDER_COMBINATIONS:
+        key = s3_key()
+        obj = s3.Object(s3_bucket, key)
+        if s3_obj_exists(obj):
+            logger.debug(
+                '(%02d/%06d/%06d) Skipping existing %s tile',
+                tile.z, tile.x, tile.y, type,
+            )
+            continue
+
         with Timer() as t:
-            (headers, data) = render_tile(tile, format, transformation,
-                                          sources)
+            (headers, data) = render_tile(
+                tile, format, transformation, sources)
 
         logger.debug(
             '(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes), Source: %s, Timers: %s',
             tile.z, tile.x, tile.y, t.elapsed, type,
             len(data),
-            headers.get('X-Imagery-Sources'), headers.get('X-Timers'))
+            headers.get('X-Imagery-Sources'),
+            headers.get('X-Timers'),
+        )
 
         with Timer() as t:
-            obj = write_to_s3(bucket, s3_key_prefix, tile, type, data, ext,
-                              headers)
+            obj = write_to_s3(obj, tile, type, data, ext, headers)
 
         logger.debug(
             '(%02d/%06d/%06d) Took %0.3fs to write %s tile to s3://%s/%s',
             tile.z, tile.x, tile.y, t.elapsed, type,
-            obj.bucket_name, obj.key)
+            obj.bucket_name, obj.key,
+        )
 
 
 def queue_tile(tile, max_zoom, s3_details, sources):
@@ -210,7 +216,7 @@ def queue_tile(tile, max_zoom, s3_details, sources):
 
 
 def queue_render(tile, s3_details, sources):
-    logger.info('Enqueueing render for tile %s', tile)
+    logger.debug('Enqueueing render for tile %s', tile)
     POOL.apply_async(render_tile_exc_wrapper, args=[tile, s3_details, sources])
 
 
