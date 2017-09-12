@@ -118,11 +118,13 @@ def write_to_s3(bucket,
                         k: headers[k]
                         for k in headers if k != 'Content-Type'
                     })
+            else:
+                raise
 
     return obj
 
 
-def build_source_index(tile):
+def build_source_index(tile, min_zoom, max_zoom):
     source_cache = MemoryAdapter()
     bbox = box(*mercantile.bounds(tile))
 
@@ -142,8 +144,10 @@ def build_source_index(tile):
                         wkb_geometry,
                         ST_GeomFromText(%s, 4326)
                     )
+                    AND min_zoom >= %s
+                    AND max_zoom <= %s
                     AND enabled = true
-                """, (bbox.to_wkt(),))
+                """, (bbox.to_wkt(), min_zoom, max_zoom))
 
             for row in cur:
                 row = dict(row)
@@ -222,7 +226,7 @@ if __name__ == "__main__":
     logger.info('Caching sources for root tile %s to zoom %s',
                 root, args.max_zoom)
 
-    source_index = build_source_index(root)
+    source_index = build_source_index(root, args.zoom, args.min_zoom)
 
     logger.info('Running %s processes', POOL_SIZE)
 
