@@ -28,7 +28,9 @@ logging.basicConfig(level=logging.INFO)
 # Quieting boto messages down a little
 logging.getLogger('boto3.resources.action').setLevel(logging.WARNING)
 logging.getLogger('botocore').setLevel(logging.WARNING)
+logging.getLogger('marblecutter').setLevel(logging.WARNING)
 logging.getLogger('marblecutter.mosaic').setLevel(logging.WARNING)
+logging.getLogger('marblecutter.sources').setLevel(logging.WARNING)
 logger = logging.getLogger('batchtiler')
 
 POOL_SIZE = 12
@@ -183,7 +185,7 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
             (headers, data) = render_tile(tile, format, transformation,
                                           sources)
 
-        logger.info(
+        logger.debug(
             '(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes), Source: %s, Timers: %s',
             tile.z, tile.x, tile.y, t.elapsed, type,
             len(data),
@@ -193,9 +195,10 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
             obj = write_to_s3(bucket, s3_key_prefix, tile, type, data, ext,
                               headers)
 
-        logger.info('(%02d/%06d/%06d) Took %0.3fs to write %s tile to '
-                    's3://%s/%s', tile.z, tile.x, tile.y, t.elapsed, type,
-                    obj.bucket_name, obj.key)
+        logger.debug(
+            '(%02d/%06d/%06d) Took %0.3fs to write %s tile to s3://%s/%s',
+            tile.z, tile.x, tile.y, t.elapsed, type,
+            obj.bucket_name, obj.key)
 
 
 def queue_tile(tile, max_zoom, s3_details, sources):
