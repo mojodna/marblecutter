@@ -33,8 +33,12 @@ logging.getLogger('marblecutter.mosaic').setLevel(logging.WARNING)
 logging.getLogger('marblecutter.sources').setLevel(logging.WARNING)
 logger = logging.getLogger('batchtiler')
 
+if os.environ.get('VERBOSE'):
+    logger.setLevel(logging.DEBUG)
+
 POOL_SIZE = 12
 POOL = Pool(POOL_SIZE)
+OVERWRITE = os.environ.get('OVERWRITE_EXISTING_OBJECTS') == 'true'
 
 GEOTIFF_FORMAT = GeoTIFF()
 PNG_FORMAT = PNG()
@@ -79,7 +83,7 @@ def retry(ExceptionToCheck,
     return deco_retry
 
 
-def s3_key(tile_type, tile, key_suffix, key_prefix):
+def s3_key(key_prefix, tile_type, tile, key_suffix):
     key = '{}/{}/{}/{}{}'.format(
         tile_type,
         tile.z,
@@ -131,10 +135,16 @@ def build_source_index(tile, min_zoom, max_zoom):
                         wkb_geometry,
                         ST_GeomFromText(%s, 4326)
                     )
-                    AND min_zoom >= %s
-                    AND max_zoom <= %s
+                    AND min_zoom <= %s
+                    AND max_zoom >= %s
                     AND enabled = true
                 """, (bbox.to_wkt(), min_zoom, max_zoom))
+
+            logger.info("Found %s sources for tile %s, zoom %s-%s",
+                cur.rowcount, tile, min_zoom, max_zoom)
+
+            if not cur.rowcount:
+                raise ValueError("No sources found for this tile")
 
             for row in cur:
                 row = dict(row)
@@ -176,9 +186,9 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
     s3 = session.resource('s3')
 
     for (type, transformation, format, ext) in RENDER_COMBINATIONS:
-        key = s3_key()
+        key = s3_key(s3_key_prefix, type, tile, ext)
         obj = s3.Object(s3_bucket, key)
-        if s3_obj_exists(obj):
+        if not OVERWRITE and s3_obj_exists(obj):
             logger.debug(
                 '(%02d/%06d/%06d) Skipping existing %s tile',
                 tile.z, tile.x, tile.y, type,
@@ -235,7 +245,7 @@ if __name__ == "__main__":
     logger.info('Caching sources for root tile %s to zoom %s',
                 root, args.max_zoom)
 
-    source_index = build_source_index(root, args.zoom, args.min_zoom)
+    source_index = build_source_index(root, args.zoom, args.max_zoom)
 
     logger.info('Running %s processes', POOL_SIZE)
 
