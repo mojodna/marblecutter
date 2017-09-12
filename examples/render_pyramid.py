@@ -77,7 +77,7 @@ def retry(ExceptionToCheck,
     return deco_retry
 
 
-@retry((Exception, ), tries=30, logger=logger)
+@retry(botocore.exceptions.ClientError, tries=30, logger=logger)
 def write_to_s3(bucket,
                 key_prefix,
                 tile,
