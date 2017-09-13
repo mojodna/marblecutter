@@ -5,6 +5,7 @@ from __future__ import print_function
 import argparse
 import logging
 import os
+import random
 import time
 from functools import wraps
 from multiprocessing.dummy import Pool
@@ -163,20 +164,21 @@ def render_tile_exc_wrapper(tile, s3_details, sources):
 
 
 def s3_obj_exists(obj):
-    try:
-        obj.load()
-        return True
-    except botocore.exceptions.ClientError, e:
-        error_code = int(e.response['Error']['Code'])
-        if error_code == 404:
-            return False
-        raise
+    wait = 0.0
 
+    while True:
+        time.sleep(wait)
 
-@retry((psycopg2.OperationalError, ), logger=logger)
-def render_tile(tile, format, transformation, sources):
-    return tiling.render_tile(
-        tile, sources, format=format, transformation=transformation)
+        try:
+            obj.load()
+            return True
+        except botocore.exceptions.ClientError, e:
+            error_code = int(e.response['Error']['Code'])
+            if error_code == 404:
+                return False
+            else:
+                wait = min(30.0, wait * 2.0) if wait > 0 else 1.0
+                wait += random.uniform(0.0, wait / 2.0)
 
 
 def render_tile_and_put_to_s3(tile, s3_details, sources):
@@ -196,8 +198,8 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
             continue
 
         with Timer() as t:
-            (headers, data) = render_tile(
-                tile, format, transformation, sources)
+            (headers, data) = tiling.render_tile(
+                tile, sources, format=format, transformation=transformation)
 
         logger.debug(
             '(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes), Source: %s, Timers: %s',
