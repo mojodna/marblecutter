@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import argparse
+import hashlib
 import logging
 import os
 import random
@@ -91,6 +92,12 @@ def s3_key(key_prefix, tile_type, tile, key_suffix):
         tile.x,
         tile.y,
         key_suffix,
+    )
+
+    h = hashlib.md5(key).hexdigest()[:6]
+    key = '{}/{}'.format(
+        h,
+        key,
     )
 
     if key_prefix:
