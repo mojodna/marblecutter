@@ -282,7 +282,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 "Applying spline interpolation with order %d (scale factor: %s)",
                 order, scale_factor)
 
-            zoom = (round(1 / scale_factor[0]), round(1 / scale_factor[1]))
+            zoom = (round(1 / scale_factor[1]), round(1 / scale_factor[0]))
 
             LOG.info("target dimensions: %s", (data.shape[0] * zoom[0],
                                                data.shape[1] * zoom[1]))
