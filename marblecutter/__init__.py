@@ -192,8 +192,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             return None
 
         resolution = get_resolution((bounds, bounds_crs), target_shape)
-        src_resolution_in_meters = get_resolution_in_meters(
-            (src.bounds, src.crs), src.shape)
+        src_resolution = get_resolution((vrt.bounds, vrt.crs), vrt.shape)
         scale_factor = (round(window.width / target_shape[1], 6), round(
             window.height / target_shape[0], 6))
 
@@ -222,8 +221,8 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
         if vrt.count == 1 and (
                 scale_factor[0] < 1 or scale_factor[1] < 1
-                or src_resolution_in_meters[0] > resolution[0]
-                or src_resolution_in_meters[1] > resolution[1]
+                or src_resolution[0] > resolution[0]
+                or src_resolution[1] > resolution[1]
         ) and round(dst_window.width) > 1.0 and round(dst_window.height) > 1.0:
             # scale_factor will always be (1.0, 1.0) unless using the web
             # Mercator-specific calculations
@@ -240,8 +239,8 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 target_window = windows.from_bounds(
                     *bounds, transform=scaled_transform)
             else:
-                scale_factor = (resolution[0] / src_resolution_in_meters[0],
-                                resolution[1] / src_resolution_in_meters[1])
+                scale_factor = (resolution[0] / src_resolution[0],
+                                resolution[1] / src_resolution[1])
                 target_window = Window(dst_window.col_off * scale_factor[0],
                                        dst_window.row_off * scale_factor[1],
                                        dst_window.width * scale_factor[0],
