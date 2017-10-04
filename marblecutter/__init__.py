@@ -262,7 +262,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 0, r[0] - buffer_pixels[1]), r[1] + buffer_pixels[1]), (max(
                     0, c[0] - buffer_pixels[0]), c[1] + buffer_pixels[0]))
 
-            data = vrt.read(1, window=window)
+            data = vrt.read(window=window)
 
             # mask with NODATA values
             if vrt.nodata is not None:
@@ -282,10 +282,10 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 "Applying spline interpolation with order %d (scale factor: %s)",
                 order, scale_factor)
 
-            zoom = (round(1 / scale_factor[1]), round(1 / scale_factor[0]))
+            zoom = (1, round(1 / scale_factor[1]), round(1 / scale_factor[0]))
 
-            LOG.info("target dimensions: %s", (data.shape[0] * zoom[0],
-                                               data.shape[1] * zoom[1]))
+            LOG.info("target dimensions: %s", (data.shape[1] * zoom[1],
+                                               data.shape[2] * zoom[2]))
 
             # resample data, respecting NODATA values
             data = ndimage.zoom(
@@ -294,22 +294,22 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 zoom,
                 order=order)
 
-            scaled_buffer = (int((data.shape[1] - width) / 2), int(
-                (data.shape[0] - height) / 2))
+            scaled_buffer = (int((data.shape[2] - width) / 2), int(
+                (data.shape[1] - height) / 2))
 
             # crop data
-            data = data[scaled_buffer[1]:scaled_buffer[1] + height,
+            data = data[:, scaled_buffer[1]:scaled_buffer[1] + height,
                         scaled_buffer[0]:scaled_buffer[0] + width]
 
             if len(mask.shape) > 0:
                 mask = ndimage.zoom(mask, zoom, mode='nearest')
 
                 # crop mask
-                mask = mask[scaled_buffer[1]:scaled_buffer[1] + height,
+                mask = mask[:, scaled_buffer[1]:scaled_buffer[1] + height,
                             scaled_buffer[0]:scaled_buffer[0] + width]
 
             # copy the mask over
-            data = np.ma.masked_array(data, mask=mask)[np.newaxis]
+            data = np.ma.masked_array(data, mask=mask)
         else:
             data = vrt.read(
                 out_shape=(vrt.count, height, width), window=dst_window)
