@@ -36,7 +36,7 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
             if canvas is None:
                 # infer the number of bands to use from the first available
                 # source
-                canvas = np.ma.empty(
+                canvas = np.ma.zeros(
                     (src.count, height, width),
                     dtype=np.float32,
                     fill_value=_nodata(np.float32))
