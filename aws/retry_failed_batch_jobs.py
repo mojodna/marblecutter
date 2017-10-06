@@ -1,5 +1,6 @@
 import argparse
 import boto3
+import time
 
 
 def iter_jobs(client, queue_arn, status):
@@ -18,7 +19,7 @@ def iter_jobs(client, queue_arn, status):
             break
 
 
-def retry_jobs(queue_arn, since=0):
+def retry_jobs(queue_arn, wait=0, since=0):
     client = boto3.client('batch')
     oldest_timestamp = None
 
@@ -61,6 +62,8 @@ def retry_jobs(queue_arn, since=0):
             submitted_job['jobId']
         )
 
+        time.sleep(wait / 1000.0)
+
     print "Oldest job seen stopped at {}".format(
         oldest_timestamp
     )
@@ -73,6 +76,11 @@ if __name__ == '__main__':
         help='The AWS Batch queue ARN to look for failed jobs on'
     )
     parser.add_argument(
+        '--wait',
+        type=int,
+        help='Wait this many milliseconds between each job submission'
+    )
+    parser.add_argument(
         '--since',
         type=int,
         help='Only include jobs that have stopped since this UNIX timestamp'
@@ -80,4 +88,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    retry_jobs(args.queue, since=args.since)
+    retry_jobs(args.queue, wait=args.wait, since=args.since)
