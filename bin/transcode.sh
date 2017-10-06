@@ -35,6 +35,15 @@ elif [[ "$input" =~ \.tar\.gz$ ]]; then
   fi
 
   input="tar://${input}!${inner_source}"
+elif [[ "$input" =~ \.tar$ ]]; then
+  inner_source=$(tar tf ${input} | grep "tif$" | head -1)
+
+  if [[ -z "$inner_source" ]]; then
+    >&2 echo "Could not find a TIFF inside ${input}"
+    exit 1
+  fi
+
+  input="tar://${input}!${inner_source}"
 fi
 
 echo "Transcoding ${input}"
