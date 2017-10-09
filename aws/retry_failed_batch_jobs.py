@@ -78,6 +78,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--wait',
         type=int,
+        default=0,
         help='Wait this many milliseconds between each job submission'
     )
     parser.add_argument(
