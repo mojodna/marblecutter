@@ -10,6 +10,8 @@ if __name__ == "__main__":
     parser.add_argument('zoom', type=int)
     parser.add_argument('max_zoom', type=int)
     parser.add_argument('--key_prefix')
+    parser.add_argument('--overwrite', dest='overwrite',
+                        action='store_true', default=False)
     args = parser.parse_args()
 
     client = boto3.client('batch')
@@ -34,17 +36,24 @@ if __name__ == "__main__":
             command_list.append('--key_prefix')
             command_list.append(args.key_prefix)
 
+        container_overrides = {
+            'command': command_list,
+            'environment': [
+                {'name': 'DATABASE_URL',
+                 'value': database_url},
+            ]
+        }
+
+        if args.overwrite:
+            container_overrides['environment'].append(
+                {'name': 'OVERWRITE_EXISTING_OBJECTS', 'value': 'true'}
+            )
+
         result = client.submit_job(
             jobName='tiler-{}-{}-{}'.format(tile.z, tile.x, tile.y),
             jobDefinition='tiler',
             jobQueue='tiling-20150606',
-            containerOverrides={
-                'command': command_list,
-                'environment': [
-                    {'name': 'DATABASE_URL',
-                     'value': database_url}
-                ]
-            }
+            containerOverrides=container_overrides,
         )
 
         print "name: {jobName}, id: {jobId}".format(**result)
