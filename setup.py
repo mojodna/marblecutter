@@ -20,10 +20,8 @@ setup(
         'mercantile',
         'numpy',
         'Pillow',
+        'rasterio>=1.0a10[s3]',
         'scipy',
-    ],
-    dependency_links=[
-        'https://github.com/mapbox/rasterio/archive/92d5e81.tar.gz#egg=rasterio-1.0a10[s3]'
     ],
     extras_require={
         'color_ramp': 'matplotlib',
