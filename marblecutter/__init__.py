@@ -177,6 +177,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     # better solution, particularly as it avoids artifacts introduced when the
     # NODATA values are resampled using something other than nearest neighbor.
 
+    # TODO resampling alg should be a catalog property
     with WarpedVRT(
             src,
             src_nodata=src.nodata,
