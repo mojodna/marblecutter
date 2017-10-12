@@ -10,6 +10,10 @@ if __name__ == "__main__":
     parser.add_argument('zoom', type=int)
     parser.add_argument('max_zoom', type=int)
     parser.add_argument('--key_prefix')
+    parser.add_argument('--bbox',
+                        default='-180.0,-90.0,180.0,90.0',
+                        help='Bounding box of tiles to submit jobs. '
+                             'format: left,bottom,right,top')
     parser.add_argument('--overwrite', dest='overwrite',
                         action='store_true', default=False)
     args = parser.parse_args()
@@ -23,7 +27,7 @@ if __name__ == "__main__":
     assert args.zoom < args.max_zoom, \
         "Pyramid root zoom must be less than max zoom"
 
-    (w, s, e, n) = (-180.0, -90.0, 180.0, 90.0)
+    (w, s, e, n) = map(float, args.bbox.split(','))
 
     for tile in mercantile.tiles(w, s, e, n, [args.zoom]):
         command_list = [
