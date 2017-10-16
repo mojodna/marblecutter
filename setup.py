@@ -20,7 +20,7 @@ setup(
         'mercantile',
         'numpy',
         'Pillow',
-        'rasterio>=1.0a10[s3]',
+        'rasterio[s3]>=1.0a10',
         'scipy',
     ],
     extras_require={
