@@ -16,7 +16,7 @@ Infinity = float("inf")
 
 
 class PostGISCatalog(Catalog):
-    def __init__(self, database_url=os.getenv("DATABASE_URL")):
+    def __init__(self, table="footprints", database_url=os.getenv("DATABASE_URL"), geometry_column="wkb_geometry"):
         if database_url is None:
             raise Exception(
                 "Database URL must be provided, either as an arg or as DATABASE_URL."
@@ -35,6 +35,8 @@ class PostGISCatalog(Catalog):
             port=url.port, )
 
         self._log = logging.getLogger(__name__)
+        self.table = table
+        self.geometry_column = geometry_column
 
     def get_sources(self, (bounds, bounds_crs), resolution):
         zoom = get_zoom(max(resolution))
@@ -56,19 +58,19 @@ class PostGISCatalog(Catalog):
                     -- group sources by approximate resolution
                     round(resolution) rounded_resolution,
                     -- measure the distance from centroids to prioritize overlap
-                    ST_Centroid(wkb_geometry) <-> ST_Centroid(
+                    ST_Centroid({geometry_column}) <-> ST_Centroid(
                         ST_SetSRID(
                             'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
                             4326)) distance
-                FROM footprints
-                WHERE wkb_geometry && ST_SetSRID(
+                FROM {table}
+                WHERE {geometry_column} && ST_SetSRID(
                     'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)
                     AND %(zoom)s BETWEEN min_zoom AND max_zoom
                     AND enabled = true
                 ORDER BY url
             ) AS _
             ORDER BY priority ASC, rounded_resolution ASC, distance ASC
-        """
+        """.format(table=self.table, geometry_column=self.geometry_column)
 
         # height and width of the CRS
         ((left, right), (bottom, top)) = warp.transform(
