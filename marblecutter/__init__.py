@@ -9,8 +9,8 @@ import warnings
 from haversine import haversine
 import numpy as np
 import rasterio
-from rasterio import transform
-from rasterio import warp, windows
+from rasterio import transform, warp, windows
+from rasterio._err import CPLE_OutOfMemoryError
 from rasterio.crs import CRS
 from rasterio.transform import Affine
 from rasterio.vrt import WarpedVRT
@@ -160,7 +160,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
 
                 dst_transform *= ~scale
                 dst_width, dst_height = scale * (dst_width, dst_height)
-            except MemoryError:
+            except (MemoryError, CPLE_OutOfMemoryError):
                 attempts += 1
                 scale_factor = 2 * attempts
 
