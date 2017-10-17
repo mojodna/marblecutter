@@ -152,6 +152,10 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
         dst_transform = Affine(resolution[0], 0.0, extent[0], 0.0,
                                -resolution[1], extent[3])
 
+    resampling_method = Resampling.lanczos
+    if os.environ.get('RESAMPLING_METHOD'):
+        resampling_method = Resampling[os.environ.get('RESAMPLING_METHOD')]
+
     with WarpedVRT(
             src,
             src_nodata=src.nodata,
@@ -159,7 +163,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             dst_width=dst_width,
             dst_height=dst_height,
             dst_transform=dst_transform,
-            resampling=Resampling.lanczos) as vrt:
+            resampling=resampling_method) as vrt:
         dst_window = vrt.window(*bounds)
 
         scale_factor = (round(dst_window.width / width, 6), round(

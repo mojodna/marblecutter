@@ -10,6 +10,10 @@ if __name__ == "__main__":
     parser.add_argument('zoom', type=int)
     parser.add_argument('max_zoom', type=int)
     parser.add_argument('--key_prefix')
+    parser.add_argument('--vrt_resampling',
+                        help='Resampling method used when creating '
+                             'overviews from WarpedVRT. See '
+                             'https://github.com/mapbox/rasterio/blob/master/rasterio/enums.py#L28.')
     parser.add_argument('--bbox',
                         default='-180.0,-90.0,180.0,90.0',
                         help='Bounding box of tiles to submit jobs. '
@@ -51,6 +55,11 @@ if __name__ == "__main__":
         if args.overwrite:
             container_overrides['environment'].append(
                 {'name': 'OVERWRITE_EXISTING_OBJECTS', 'value': 'true'}
+            )
+
+        if args.vrt_resampling:
+            container_overrides['environment'].append(
+                {'name': 'RESAMPLING_METHOD', 'value': args.vrt_resampling}
             )
 
         result = client.submit_job(
