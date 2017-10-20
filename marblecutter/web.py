@@ -12,6 +12,7 @@ from . import NoDataAvailable
 LOG = logging.getLogger(__name__)
 
 app = Flask("marblecutter")
+app.url_map.strict_slashes = False
 CORS(app, send_wildcard=True)
 
 
