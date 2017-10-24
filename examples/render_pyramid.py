@@ -143,8 +143,7 @@ def build_source_index(tile, min_zoom, max_zoom):
                         wkb_geometry,
                         ST_GeomFromText(%s, 4326)
                     )
-                    AND min_zoom <= %s
-                    AND max_zoom >= %s
+                    AND numrange(min_zoom, max_zoom) && numrange(%s, %s)
                     AND enabled = true
                 """, (bbox.to_wkt(), min_zoom, max_zoom))
 
