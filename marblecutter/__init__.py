@@ -48,10 +48,10 @@ def _mask(data, nodata):
 
 
 def _nodata(dtype):
-    if np.issubdtype(dtype, int):
-        return np.iinfo(dtype).min
-    else:
+    if np.issubdtype(dtype, float):
         return np.finfo(dtype).min
+    else:
+        return np.iinfo(dtype).min
 
 
 def crop(pixel_collection, data_format, offsets):
@@ -187,7 +187,7 @@ def read_window(src, bounds, target_shape):
     # TODO resampling alg should be a catalog property
     with WarpedVRT(
             src,
-            src_nodata=src.nodata or _nodata(src.nodata),
+            src_nodata=src.nodata or _nodata(src.meta['dtype']),
             dst_crs=bounds.crs,
             dst_width=dst_width,
             dst_height=dst_height,
