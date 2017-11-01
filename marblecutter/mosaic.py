@@ -60,7 +60,7 @@ def composite(sources, bounds, dims, target_crs):
             continue
 
         data, _ = window_data
-        if data.mask.any():
+        if data.shape[0] == 1 and data.mask.any():
             # mask outliers (intended for DEM boundaries)
             LOG.info("masking outliers")
             data.mask[0] = np.logical_or(data.mask[0],
