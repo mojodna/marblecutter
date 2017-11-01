@@ -186,7 +186,7 @@ def read_window(src, bounds, target_shape):
     # TODO resampling alg should be a catalog property
     with WarpedVRT(
             src,
-            src_nodata=src.nodata,
+            src_nodata=src.nodata or _nodata(src.nodata),
             dst_crs=bounds.crs,
             dst_width=dst_width,
             dst_height=dst_height,
