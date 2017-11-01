@@ -484,7 +484,7 @@ def render(bounds,
                                                 target_crs)
     stats.append(("composite", t.elapsed))
 
-    if pixels is None:
+    if pixels.data is None:
         raise NoDataAvailable()
 
     data_format = "raw"
