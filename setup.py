@@ -24,7 +24,7 @@ setup(
         'scipy',
     ],
     dependency_links=[
-        'https://github.com/mojodna/rasterio/archive/warped-vrt-boundless-reads.tar.gz#egg=rasterio[s3]',
+        'https://github.com/mapbox/rasterio/archive/51968aee58101d6fb264dfd4e13008a6ee3f3adb.tar.gz#egg=rasterio[s3]',
     ],
     extras_require={
         'color_ramp': 'matplotlib',
