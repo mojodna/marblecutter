@@ -11,7 +11,7 @@ from .. import _nodata, get_resolution_in_meters
 CONTENT_TYPE = "image/tiff"
 
 
-def GeoTIFF():
+def GeoTIFF(area_or_point="Area"):
     def _format(pixels, data_format):
         data, (data_bounds, data_crs) = pixels
         if data_format is not "raw":
@@ -55,8 +55,7 @@ def GeoTIFF():
 
         with MemoryFile() as memfile:
             with memfile.open(**meta) as dataset:
-                # TODO not true for aerial imagery
-                dataset.update_tags(AREA_OR_POINT="Point")
+                dataset.update_tags(AREA_OR_POINT=area_or_point)
                 dataset.write(data.filled())
 
             return (CONTENT_TYPE, memfile.read())
