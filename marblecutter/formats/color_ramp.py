@@ -2,11 +2,11 @@
 # coding=utf-8
 from __future__ import absolute_import, print_function
 
-from StringIO import StringIO
+from io import BytesIO
 
 import matplotlib
 
-# pick a matplotlib backend to pre-empt loading addition modules
+# pick a matplotlib backend to pre-empt loading additional modules
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
@@ -31,17 +31,17 @@ GREY_HILLS = LinearSegmentedColormap("grey_hills", GREY_HILLS_RAMP)
 
 
 def ColorRamp(output_format="png", colormap=GREY_HILLS):
-    def _format((data, (data_bounds, data_crs)), data_format):
+    def _format(pixels, data_format):
         if data_format is not "raw":
             raise Exception("raw data is required")
 
-        if data.dtype != np.uint8:
+        if pixels.data.dtype != np.uint8:
             raise Exception("data must be uint8")
 
-        out = StringIO()
+        out = BytesIO()
         plt.imsave(
             out,
-            data[0],
+            pixels.data[0],
             cmap=colormap,
             vmin=0,
             vmax=255,

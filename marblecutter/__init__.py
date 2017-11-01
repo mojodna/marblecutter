@@ -20,6 +20,7 @@ from scipy import ndimage
 
 from . import mosaic
 from .stats import Timer
+from .utils import Bounds, PixelCollection
 
 WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
@@ -53,7 +54,8 @@ def _nodata(dtype):
         return np.finfo(dtype).min
 
 
-def crop((data, (bounds, data_crs)), data_format, offsets):
+def crop(pixel_collection, data_format, offsets):
+    data, (bounds, data_crs) = pixel_collection
     left, bottom, right, top = offsets
 
     if _isimage(data_format):
@@ -75,21 +77,25 @@ def crop((data, (bounds, data_crs)), data_format, offsets):
     cropped_window = windows.Window(left, top, width, height)
     cropped_bounds = windows.bounds(cropped_window, t)
 
-    return (data, (cropped_bounds, data_crs))
+    return PixelCollection(data, Bounds(cropped_bounds, data_crs))
 
 
 def get_extent(crs):
     return EXTENTS[str(crs)]
 
 
-def get_resolution((bounds, crs), (height, width)):
-    t = transform.from_bounds(*bounds, width=width, height=height)
+def get_resolution(bounds, dims):
+    height, width = dims
+    t = transform.from_bounds(*bounds.bounds, width=width, height=height)
 
     return abs(t.a), abs(t.e)
 
 
-def get_resolution_in_meters((bounds, crs), (height, width)):
-    if crs.is_geographic:
+def get_resolution_in_meters(bounds, dims):
+    if bounds.crs.is_geographic:
+        bounds, _ = bounds
+        height, width = dims
+
         left = (bounds[0], (bounds[1] + bounds[3]) / 2)
         right = (bounds[2], (bounds[1] + bounds[3]) / 2)
         top = ((bounds[0] + bounds[2]) / 2, bounds[3])
@@ -98,7 +104,7 @@ def get_resolution_in_meters((bounds, crs), (height, width)):
         return (haversine(left, right) * 1000 / width,
                 haversine(top, bottom) * 1000 / height)
 
-    return get_resolution((bounds, crs), (height, width))
+    return get_resolution(bounds, dims)
 
 
 def get_source(path):
@@ -114,21 +120,21 @@ def get_zoom(resolution, op=round):
                 2)))
 
 
-def read_window(src, (bounds, bounds_crs), (height, width)):
-    target_shape = (height, width)
+def read_window(src, bounds, target_shape):
     # TODO use this for DEMs (not all single-band sources) to avoid stairstepping artifacts
-    if src.count == 1 and bounds_crs == WEB_MERCATOR_CRS:
+    if src.count == 1 and bounds.crs == WEB_MERCATOR_CRS:
         # special case for web Mercator; use a target image size that most
         # closely matches the source resolution (and is a power of 2)
-        zoom = min(22,
-                   get_zoom(
-                       max(
-                           get_resolution_in_meters((src.bounds, src.crs), (
-                               src.height, src.width))),
-                       op=math.ceil))
+        zoom = min(
+            22,
+            get_zoom(
+                max(
+                    get_resolution_in_meters(
+                        Bounds(src.bounds, src.crs), (src.height, src.width))),
+                op=math.ceil))
 
         dst_width = dst_height = (2**zoom) * 256
-        extent = get_extent(bounds_crs)
+        extent = get_extent(bounds.crs)
         resolution = ((extent[2] - extent[0]) / dst_width,
                       (extent[3] - extent[1]) / dst_height)
 
@@ -153,7 +159,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             try:
                 (dst_transform, dst_width,
                  dst_height) = warp.calculate_default_transform(
-                     src.crs, bounds_crs, src.width // scale_factor,
+                     src.crs, bounds.crs, src.width // scale_factor,
                      src.height // scale_factor, *src.bounds)
 
                 scale = Affine.scale(scale_factor, scale_factor)
@@ -181,40 +187,42 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
     with WarpedVRT(
             src,
             src_nodata=src.nodata,
-            dst_crs=bounds_crs,
+            dst_crs=bounds.crs,
             dst_width=dst_width,
             dst_height=dst_height,
             dst_transform=dst_transform,
             resampling=Resampling.lanczos) as vrt:
-        window = vrt.window(*bounds)
+        window = vrt.window(*bounds.bounds)
         dst_window = window.crop(vrt.height, vrt.width)
 
         if round(dst_window.width) == 0 or round(dst_window.height) == 0:
             return None
 
-        resolution = get_resolution((bounds, bounds_crs), target_shape)
-        src_resolution = get_resolution((vrt.bounds, vrt.crs), vrt.shape)
+        resolution = get_resolution(bounds, target_shape)
+        src_resolution = get_resolution(Bounds(vrt.bounds, vrt.crs), vrt.shape)
         scale_factor = (round(window.width / target_shape[1], 6), round(
             window.height / target_shape[0], 6))
 
         extends_up = False
         extends_left = False
 
-        if bounds[0] < vrt.bounds[0]:
+        height, width = target_shape
+
+        if bounds.bounds[0] < vrt.bounds[0]:
             width = int(
                 math.ceil(target_shape[1] * (dst_window.width / window.width)))
             extends_left = True
 
-        if bounds[1] < vrt.bounds[1]:
+        if bounds.bounds[1] < vrt.bounds[1]:
             height = int(
                 math.ceil(target_shape[0] * (dst_window.height / window.height
                                              )))
 
-        if bounds[2] > vrt.bounds[2]:
+        if bounds.bounds[2] > vrt.bounds[2]:
             width = int(
                 math.ceil(target_shape[1] * (dst_window.width / window.width)))
 
-        if bounds[3] > vrt.bounds[3]:
+        if bounds.bounds[3] > vrt.bounds[3]:
             height = int(
                 math.ceil(target_shape[0] * (dst_window.height / window.height
                                              )))
@@ -238,7 +246,7 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
             if scale_factor[0] < 1 or scale_factor[1] < 1:
                 scaled_transform = vrt.transform * Affine.scale(*scale_factor)
                 target_window = windows.from_bounds(
-                    *bounds, transform=scaled_transform)
+                    *bounds.bounds, transform=scaled_transform)
             else:
                 scale_factor = (resolution[0] / src_resolution[0],
                                 resolution[1] / src_resolution[1])
@@ -366,12 +374,12 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                     mask_src,
                     src_crs=src.crs,
                     src_transform=src.transform,
-                    dst_crs=bounds_crs,
+                    dst_crs=bounds.crs,
                     dst_width=dst_width,
                     dst_height=dst_height,
                     dst_transform=dst_transform) as mask_vrt:
                 warnings.simplefilter("default")
-                window = mask_vrt.window(*bounds)
+                window = mask_vrt.window(*bounds.bounds)
                 dst_window = window.crop(mask_vrt.height, mask_vrt.width)
 
                 if round(dst_window.width) == 0 or round(
@@ -381,23 +389,23 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
                 extends_up = False
                 extends_left = False
 
-                if bounds[0] < vrt.bounds[0]:
+                if bounds.bounds[0] < vrt.bounds[0]:
                     width = int(
                         math.ceil(target_shape[1] * (
                             dst_window.width / window.width)))
                     extends_left = True
 
-                if bounds[1] < vrt.bounds[1]:
+                if bounds.bounds[1] < vrt.bounds[1]:
                     height = int(
                         math.ceil(target_shape[0] * (
                             dst_window.height / window.height)))
 
-                if bounds[2] > vrt.bounds[2]:
+                if bounds.bounds[2] > vrt.bounds[2]:
                     width = int(
                         math.ceil(target_shape[1] * (
                             dst_window.width / window.width)))
 
-                if bounds[3] > vrt.bounds[3]:
+                if bounds.bounds[3] > vrt.bounds[3]:
                     height = int(
                         math.ceil(target_shape[0] * (
                             dst_window.height / window.height)))
@@ -449,10 +457,10 @@ def read_window(src, (bounds, bounds_crs), (height, width)):
         # no mask
         pass
 
-    return (data, (bounds, bounds_crs))
+    return PixelCollection(data, bounds)
 
 
-def render((bounds, bounds_crs),
+def render(bounds,
            sources_store,
            shape,
            target_crs,
@@ -460,42 +468,38 @@ def render((bounds, bounds_crs),
            transformation=None):
     """Render data intersecting bounds into shape using an optional
     transformation."""
-    resolution_m = get_resolution_in_meters((bounds, bounds_crs), shape)
+    resolution_m = get_resolution_in_meters(bounds, shape)
     stats = []
 
     if transformation:
-        (bounds, bounds_crs), shape, offsets = transformation.expand(
-            (bounds, bounds_crs), shape)
+        bounds, shape, offsets = transformation.expand(bounds, shape)
 
     with Timer() as t:
-        sources = sources_store.get_sources((bounds, bounds_crs), resolution_m)
+        sources = sources_store.get_sources(bounds, resolution_m)
     stats.append(("get sources", t.elapsed))
 
     with Timer() as t:
-        (sources_used, data, (data_bounds, data_crs)) = mosaic.composite(
-            sources, (bounds, bounds_crs), shape, target_crs)
+        sources_used, pixels = mosaic.composite(sources, bounds, shape,
+                                                target_crs)
     stats.append(("composite", t.elapsed))
 
-    if data is None:
+    if pixels is None:
         raise NoDataAvailable()
 
     data_format = "raw"
 
     if transformation:
         with Timer() as t:
-            (data, data_format) = transformation.transform((data, (data_bounds,
-                                                                   data_crs)))
+            pixels, data_format = transformation.transform(pixels)
         stats.append(("transform", t.elapsed))
 
         with Timer() as t:
-            (data, (data_bounds, data_crs)) = transformation.postprocess(
-                (data, (data_bounds, data_crs)), data_format, offsets)
+            pixels = transformation.postprocess(pixels, data_format, offsets)
 
         stats.append(("postprocess", t.elapsed))
 
     with Timer() as t:
-        (content_type, formatted) = format((data, (data_bounds, data_crs)),
-                                           data_format)
+        (content_type, formatted) = format(pixels, data_format)
     stats.append(("format", t.elapsed))
 
     headers = {

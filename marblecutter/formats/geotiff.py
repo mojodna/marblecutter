@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import numpy as np
+
 from rasterio import transform
 from rasterio.io import MemoryFile
 
@@ -11,14 +12,15 @@ CONTENT_TYPE = "image/tiff"
 
 
 def GeoTIFF():
-    def _format((data, (data_bounds, data_crs)), data_format):
+    def _format(pixels, data_format):
+        data, (data_bounds, data_crs) = pixels
         if data_format is not "raw":
             raise Exception("raw data is required")
 
         (count, height, width) = data.shape
 
         if count == 1:
-            resolution = get_resolution_in_meters((data_bounds, data_crs),
+            resolution = get_resolution_in_meters(pixels.bounds,
                                                   (height, width))
 
             # downsample to int16 if ground resolution is more than 10 meters

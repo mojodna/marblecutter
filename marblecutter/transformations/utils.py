@@ -6,7 +6,7 @@ import numpy as np
 from rasterio import warp
 from rasterio.crs import CRS
 
-from .. import crop, get_extent, get_resolution
+from .. import Bounds, PixelCollection, crop, get_extent, get_resolution
 
 WGS84_CRS = CRS.from_epsg(4326)
 
@@ -17,55 +17,55 @@ class TransformationBase:
     def __init__(self, collar=0):
         self.collar = collar
 
-    def expand(self, (bounds, bounds_crs), shape):
+    def expand(self, bounds, shape):
         buffer = self.buffer
         collar = self.collar
         effective_buffer = buffer + collar
 
-        resolution = get_resolution((bounds, bounds_crs), shape)
+        resolution = get_resolution(bounds, shape)
 
         # apply buffer
         bounds_orig = bounds
         shape = [dim + (2 * effective_buffer) for dim in shape]
-        bounds = [
+        bounds = Bounds([
             p - (buffer * resolution[i % 2])
             if i < 2 else p + (effective_buffer * resolution[i % 2])
-            for i, p in enumerate(bounds)
-        ]
+            for i, p in enumerate(bounds.bounds)
+        ], bounds.crs)
 
         #
         left = right = bottom = top = buffer
 
         # adjust bounds + shape if bounds extends outside the extent
-        extent = get_extent(bounds_crs)
+        extent = get_extent(bounds.crs)
 
         # TODO this is all or nothing right now
         # also: float precision
-        if bounds[0] < extent[0]:
+        if bounds.bounds[0] < extent[0]:
             shape[1] -= effective_buffer
-            bounds[0] = bounds_orig[0]
+            bounds.bounds[0] = bounds_orig.bounds[0]
             left = 0
 
-        if bounds[2] > extent[2]:
+        if bounds.bounds[2] > extent[2]:
             shape[1] -= effective_buffer
-            bounds[2] = bounds_orig[2]
+            bounds.bounds[2] = bounds_orig.bounds[2]
             right = 0
 
-        if bounds[1] < extent[1]:
+        if bounds.bounds[1] < extent[1]:
             shape[0] -= effective_buffer
-            bounds[1] = bounds_orig[1]
+            bounds.bounds[1] = bounds_orig.bounds[1]
             bottom = 0
 
-        if bounds[3] > extent[3]:
+        if bounds.bounds[3] > extent[3]:
             shape[0] -= effective_buffer
-            bounds[3] = bounds_orig[3]
+            bounds.bounds[3] = bounds_orig.bounds[3]
             top = 0
 
-        return (bounds, bounds_crs), shape, (left, bottom, right, top)
+        return bounds, shape, (left, bottom, right, top)
 
-    def postprocess(self, (data, (bounds, data_crs)), data_format, offsets):
-        (data, (cropped_bounds, data_crs)) = crop((data, (bounds, data_crs)),
-                                                  data_format, offsets)
+    def postprocess(self, pixels, data_format, offsets):
+        data, (bounds, data_crs) = pixels
+        (data, (cropped_bounds, data_crs)) = crop(pixels, data_format, offsets)
 
         if self.collar > 0:
             extent = get_extent(data_crs)
@@ -95,13 +95,14 @@ class TransformationBase:
                     "Unsupported format for collar postprocessing: {}".format(
                         data_format))
 
-        return (data, (cropped_bounds, data_crs))
+        return PixelCollection(data, Bounds(cropped_bounds, data_crs))
 
-    def transform(self, (data, (bounds, crs))):
-        return (data, "raw")
+    def transform(self, pixels):
+        return pixels, "raw"
 
 
-def apply_latitude_adjustments(data, (bounds, crs)):
+def apply_latitude_adjustments(pixels):
+    data, (bounds, crs) = pixels
     (_, height, width) = data.shape
 
     ys = np.interp(np.arange(height), [0, height - 1], [bounds[3], bounds[1]])
@@ -113,4 +114,5 @@ def apply_latitude_adjustments(data, (bounds, crs)):
     factors = 1 / np.cos(np.radians(latitudes))
 
     # convert to 2d array, rotate 270º, scale data
-    return data * np.rot90(np.atleast_2d(factors), 3)
+    return PixelCollection(data * np.rot90(np.atleast_2d(factors), 3),
+                           pixels.bounds)

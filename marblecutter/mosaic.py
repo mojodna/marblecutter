@@ -8,6 +8,8 @@ import numpy as np
 
 from rasterio import warp
 
+from .utils import Bounds, PixelCollection
+
 LOG = logging.getLogger(__name__)
 
 
@@ -18,15 +20,16 @@ def mask_outliers(data, m=2.):
     return np.where(s < m, False, True)
 
 
-def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
+def composite(sources, bounds, dims, target_crs):
     """Composite data from sources into a single raster covering bounds, but in
     the target CRS."""
     from . import _nodata, get_source, read_window
 
-    ((left, right), (bottom, top)) = warp.transform(bounds_crs, target_crs,
-                                                    bounds[::2], bounds[1::2])
+    height, width = dims
+    ((left, right), (bottom, top)) = warp.transform(
+        bounds.crs, target_crs, bounds.bounds[::2], bounds.bounds[1::2])
     canvas = None
-    canvas_bounds = (left, bottom, right, top)
+    canvas_bounds = Bounds((left, bottom, right, top), target_crs)
 
     sources_used = list()
 
@@ -51,8 +54,7 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
             # TODO ask for a buffer here, get back an updated bounding box
             # reflecting it
             # TODO NamedTuple for bounds (bounds + CRS)
-            window_data = read_window(src, (canvas_bounds, target_crs),
-                                      (height, width))
+            window_data = read_window(src, canvas_bounds, dims)
 
         if not window_data:
             continue
@@ -66,7 +68,7 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
 
         # paste (and reproject) the resulting data onto a canvas
         # TODO NamedTuple for data (data + bounds)
-        canvas = paste(window_data, (canvas, (canvas_bounds, target_crs)))
+        canvas = paste(window_data, PixelCollection(canvas, canvas_bounds))
 
         # TODO get the sub-array that contains nodata pixels and only fetch
         # sources that could potentially fill those (see
@@ -76,12 +78,13 @@ def composite(sources, (bounds, bounds_crs), (height, width), target_crs):
             # stop if all pixels are valid
             break
 
-    return (sources_used, canvas, (canvas_bounds, target_crs))
+    return sources_used, PixelCollection(canvas, canvas_bounds)
 
 
-def paste((window_data, (window_bounds, window_crs)), (canvas, (canvas_bounds,
-                                                                canvas_crs))):
+def paste(window_pixels, canvas_pixels):
     """ "Reproject" src data into the correct position within a larger image"""
+    window_data, (window_bounds, window_crs) = window_pixels
+    canvas, (canvas_bounds, canvas_crs) = canvas_pixels
     if window_crs != canvas_crs:
         raise Exception(
             "CRSes must match: {} != {}".format(window_crs, canvas_crs))

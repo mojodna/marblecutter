@@ -40,5 +40,5 @@ class Catalog(object):
     def provider_url(self):
         return None
 
-    def get_sources(self, (bounds, bounds_crs), resolution):
+    def get_sources(self, bounds, resolution):
         raise NotImplemented

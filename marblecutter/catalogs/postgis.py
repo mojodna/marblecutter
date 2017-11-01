@@ -3,24 +3,29 @@ from __future__ import absolute_import
 
 import logging
 import os
-import urlparse
-
-from rasterio import warp
 
 from marblecutter import get_zoom
 from psycopg2.pool import ThreadedConnectionPool
+from rasterio import warp
 
 from . import WGS84_CRS, Catalog
+
+try:
+    import urllib.parse as urlparse
+except ImportError:
+    import urlparse
+
 
 Infinity = float("inf")
 
 
 class PostGISCatalog(Catalog):
-    def __init__(self, table="footprints", database_url=os.getenv("DATABASE_URL"), geometry_column="wkb_geometry"):
+    def __init__(self,
+                 table="footprints",
+                 database_url=os.getenv("DATABASE_URL"),
+                 geometry_column="wkb_geometry"):
         if database_url is None:
-            raise Exception(
-                "Database URL must be provided, either as an arg or as DATABASE_URL."
-            )
+            raise Exception("Database URL must be provided.")
         urlparse.uses_netloc.append('postgis')
         urlparse.uses_netloc.append('postgres')
         url = urlparse.urlparse(database_url)
@@ -38,7 +43,8 @@ class PostGISCatalog(Catalog):
         self.table = table
         self.geometry_column = geometry_column
 
-    def get_sources(self, (bounds, bounds_crs), resolution):
+    def get_sources(self, bounds, resolution):
+        bounds, bounds_crs = bounds
         zoom = get_zoom(max(resolution))
 
         self._log.info("Resolution: %s; equivalent zoom: %d", resolution, zoom)
@@ -57,7 +63,8 @@ class PostGISCatalog(Catalog):
                     priority,
                     -- group sources by approximate resolution
                     round(resolution) rounded_resolution,
-                    -- measure the distance from centroids to prioritize overlap
+                    -- measure the distance from centroids to
+                    -- prioritize overlap
                     ST_Centroid({geometry_column}) <-> ST_Centroid(
                         ST_SetSRID(
                             'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
@@ -70,7 +77,8 @@ class PostGISCatalog(Catalog):
                 ORDER BY url
             ) AS _
             ORDER BY priority ASC, rounded_resolution ASC, distance ASC
-        """.format(table=self.table, geometry_column=self.geometry_column)
+        """.format(
+            table=self.table, geometry_column=self.geometry_column)
 
         # height and width of the CRS
         ((left, right), (bottom, top)) = warp.transform(

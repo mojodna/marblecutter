@@ -4,11 +4,13 @@ from __future__ import absolute_import, division, print_function
 
 import numpy as np
 
+from .. import PixelCollection
 from .utils import TransformationBase
 
 
 class Image(TransformationBase):
-    def transform(self, (data, (bounds, crs))):
+    def transform(self, pixels):
+        data, _ = pixels
         (count, height, width) = data.shape
 
         if 3 > count > 4:
@@ -34,4 +36,4 @@ class Image(TransformationBase):
             # a = np.logical_and(sums > threshold, sums <
             #                    (255 * 3) - threshold).astype(np.uint8) * 255
 
-        return (np.dstack((rgb, a)), 'RGBA')
+        return PixelCollection(np.dstack((rgb, a)), pixels.bounds), 'RGBA'

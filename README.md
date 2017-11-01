@@ -77,3 +77,13 @@ Update `project.json` with `tiler_lambda_function`'s Role ARN, e.g. `arn:aws:iam
 Run `apex deploy`. (Add `-l debug` to see what's running.) This will build the Docker image defined
 in `deps/` to produce a `task.zip` containing binary dependencies needed when deploying to the
 Lambda runtime.
+
+## Concepts
+
+### `PixelCollection`
+
+A collection of pixels (as `data`) associated with `Bounds`.
+
+### `Bounds`
+
+A bounding box (`bounds`) with an associated CRS (`crs`).
