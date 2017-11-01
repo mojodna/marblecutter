@@ -251,7 +251,7 @@ def read_window(src, bounds, target_shape):
             if vrt.nodata is not None:
                 data = _mask(data, vrt.nodata)
             else:
-                data = np.ma.masked_array(data, mask=False)
+                data = np.ma.masked_array(data, mask=np.ma.nomask)
 
             mask = data.mask
 
@@ -303,7 +303,7 @@ def read_window(src, bounds, target_shape):
             if vrt.nodata is not None:
                 data = _mask(data, vrt.nodata)
             else:
-                data = np.ma.masked_array(data, mask=False)
+                data = np.ma.masked_array(data, mask=np.ma.nomask)
 
         data = data.astype(np.float32)
 
