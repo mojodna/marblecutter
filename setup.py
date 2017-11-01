@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-version = '0.3.0'
+version = '0.3.1'
 
 setup(
     name='marblecutter',
