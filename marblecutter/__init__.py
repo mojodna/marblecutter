@@ -193,41 +193,14 @@ def read_window(src, bounds, target_shape):
             dst_height=dst_height,
             dst_transform=dst_transform,
             resampling=Resampling.lanczos) as vrt:
-        window = vrt.window(*bounds.bounds)
-        dst_window = window.crop(vrt.height, vrt.width)
-
-        if round(dst_window.width) == 0 or round(dst_window.height) == 0:
-            return None
+        dst_window = vrt.window(*bounds.bounds)
 
         resolution = get_resolution(bounds, target_shape)
         src_resolution = get_resolution(Bounds(vrt.bounds, vrt.crs), vrt.shape)
-        scale_factor = (round(window.width / target_shape[1], 6), round(
-            window.height / target_shape[0], 6))
-
-        extends_up = False
-        extends_left = False
+        scale_factor = (round(dst_window.width / target_shape[1], 6), round(
+            dst_window.height / target_shape[0], 6))
 
         height, width = target_shape
-
-        if bounds.bounds[0] < vrt.bounds[0]:
-            width = int(
-                math.ceil(target_shape[1] * (dst_window.width / window.width)))
-            extends_left = True
-
-        if bounds.bounds[1] < vrt.bounds[1]:
-            height = int(
-                math.ceil(target_shape[0] * (dst_window.height / window.height
-                                             )))
-
-        if bounds.bounds[2] > vrt.bounds[2]:
-            width = int(
-                math.ceil(target_shape[1] * (dst_window.width / window.width)))
-
-        if bounds.bounds[3] > vrt.bounds[3]:
-            height = int(
-                math.ceil(target_shape[0] * (dst_window.height / window.height
-                                             )))
-            extends_up = True
 
         if vrt.count == 1 and (
                 scale_factor[0] < 1 or scale_factor[1] < 1
@@ -272,7 +245,7 @@ def read_window(src, bounds, target_shape):
                 0, r[0] - buffer_pixels[1]), r[1] + buffer_pixels[1]), (max(
                     0, c[0] - buffer_pixels[0]), c[1] + buffer_pixels[0]))
 
-            data = vrt.read(window=window)
+            data = vrt.read(boundless=True, window=window)
 
             # mask with NODATA values
             if vrt.nodata is not None:
@@ -322,48 +295,15 @@ def read_window(src, bounds, target_shape):
             data = np.ma.masked_array(data, mask=mask)
         else:
             data = vrt.read(
-                out_shape=(vrt.count, height, width), window=dst_window)
+                boundless=True,
+                out_shape=(vrt.count, height, width),
+                window=dst_window)
 
             # mask with NODATA values
             if vrt.nodata is not None:
                 data = _mask(data, vrt.nodata)
             else:
                 data = np.ma.masked_array(data, mask=False)
-
-        # expand to match the target shape
-        # up / down offset
-        if extends_up:
-            data = np.ma.concatenate((np.ma.masked_array(
-                np.zeros(
-                    (vrt.count, target_shape[0] - data.shape[1],
-                     target_shape[1] - (target_shape[1] - data.shape[2])),
-                    dtype=data.dtype),
-                mask=True), data), 1)
-        else:
-            data = np.ma.concatenate((data, np.ma.masked_array(
-                np.zeros(
-                    (vrt.count, target_shape[0] - data.shape[1],
-                     target_shape[1] - (target_shape[1] - data.shape[2])),
-                    dtype=data.dtype),
-                mask=True)), 1)
-
-        # left / right offset
-        if extends_left:
-            data = np.ma.concatenate((np.ma.masked_array(
-                np.zeros(
-                    (vrt.count,
-                     target_shape[0] - (target_shape[0] - data.shape[1]),
-                     target_shape[1] - data.shape[2]),
-                    dtype=data.dtype),
-                mask=True), data), 2)
-        else:
-            data = np.ma.concatenate((data, np.ma.masked_array(
-                np.zeros(
-                    (vrt.count,
-                     target_shape[0] - (target_shape[0] - data.shape[1]),
-                     target_shape[1] - data.shape[2]),
-                    dtype=data.dtype),
-                mask=True)), 2)
 
         data = data.astype(np.float32)
 
@@ -380,78 +320,12 @@ def read_window(src, bounds, target_shape):
                     dst_height=dst_height,
                     dst_transform=dst_transform) as mask_vrt:
                 warnings.simplefilter("default")
-                window = mask_vrt.window(*bounds.bounds)
-                dst_window = window.crop(mask_vrt.height, mask_vrt.width)
-
-                if round(dst_window.width) == 0 or round(
-                        dst_window.height) == 0:
-                    raise Exception("No mask")
-
-                extends_up = False
-                extends_left = False
-
-                if bounds.bounds[0] < vrt.bounds[0]:
-                    width = int(
-                        math.ceil(target_shape[1] * (
-                            dst_window.width / window.width)))
-                    extends_left = True
-
-                if bounds.bounds[1] < vrt.bounds[1]:
-                    height = int(
-                        math.ceil(target_shape[0] * (
-                            dst_window.height / window.height)))
-
-                if bounds.bounds[2] > vrt.bounds[2]:
-                    width = int(
-                        math.ceil(target_shape[1] * (
-                            dst_window.width / window.width)))
-
-                if bounds.bounds[3] > vrt.bounds[3]:
-                    height = int(
-                        math.ceil(target_shape[0] * (
-                            dst_window.height / window.height)))
-                    extends_up = True
+                dst_window = mask_vrt.window(*bounds.bounds)
 
                 mask = mask_vrt.read(
+                    boundless=True,
                     out_shape=(mask_vrt.count, height, width),
                     window=dst_window)
-
-                # expand to match the target shape
-                # up / down offset
-                if extends_up:
-                    mask = np.ma.concatenate((np.ma.masked_array(
-                        np.zeros(
-                            (mask_vrt.count, target_shape[0] - mask.shape[1],
-                             target_shape[1] -
-                             (target_shape[1] - mask.shape[2])),
-                            dtype=mask.dtype),
-                        mask=True), mask), 1)
-                else:
-                    mask = np.ma.concatenate((mask, np.ma.masked_array(
-                        np.zeros(
-                            (mask_vrt.count, target_shape[0] - mask.shape[1],
-                             target_shape[1] -
-                             (target_shape[1] - mask.shape[2])),
-                            dtype=mask.dtype),
-                        mask=True)), 1)
-
-                # left / right offset
-                if extends_left:
-                    mask = np.ma.concatenate((np.ma.masked_array(
-                        np.zeros(
-                            (mask_vrt.count, target_shape[0] -
-                             (target_shape[0] - mask.shape[1]),
-                             target_shape[1] - mask.shape[2]),
-                            dtype=mask.dtype),
-                        mask=True), mask), 2)
-                else:
-                    mask = np.ma.concatenate((mask, np.ma.masked_array(
-                        np.zeros(
-                            (mask_vrt.count, target_shape[0] -
-                             (target_shape[0] - mask.shape[1]),
-                             target_shape[1] - mask.shape[2]),
-                            dtype=mask.dtype),
-                        mask=True)), 2)
 
                 data.mask = data.mask | ~mask
     except Exception:

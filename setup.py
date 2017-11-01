@@ -20,8 +20,11 @@ setup(
         'mercantile',
         'numpy',
         'Pillow',
-        'rasterio[s3]>=1.0a11',
+        # 'rasterio[s3]>=1.0a11',
         'scipy',
+    ],
+    dependency_links=[
+        'https://github.com/mojodna/rasterio/archive/warped-vrt-boundless-reads.tar.gz#egg=rasterio[s3]',
     ],
     extras_require={
         'color_ramp': 'matplotlib',
