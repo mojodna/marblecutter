@@ -121,7 +121,8 @@ def get_zoom(resolution, op=round):
 
 
 def read_window(src, bounds, target_shape):
-    # TODO use this for DEMs (not all single-band sources) to avoid stairstepping artifacts
+    # TODO use this for DEMs (not all single-band sources) to avoid
+    # stairstepping artifacts
     if src.count == 1 and bounds.crs == WEB_MERCATOR_CRS:
         # special case for web Mercator; use a target image size that most
         # closely matches the source resolution (and is a power of 2)
@@ -288,7 +289,7 @@ def read_window(src, bounds, target_shape):
                 order = 1
 
             LOG.info(
-                "Applying spline interpolation with order %d (scale factor: %s)",
+                "Applying spline interpolation (order %d @ scale factor %s)",
                 order, scale_factor)
 
             zoom = (1, round(1 / scale_factor[1]), round(1 / scale_factor[0]))
