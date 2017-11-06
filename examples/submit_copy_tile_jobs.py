@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     for tile in mercantile.tiles(w, s, e, n, [args.zoom]):
         command_list = [
-            'python', 'aws/aws_s3_tile_cp.py',
+            'python', 'examples/aws_s3_tile_cp.py',
             str(tile.x), str(tile.y), str(tile.z),
             str(args.max_zoom), args.from_bucket, args.to_bucket,
         ]
