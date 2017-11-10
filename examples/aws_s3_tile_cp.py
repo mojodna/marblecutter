@@ -1,5 +1,6 @@
 # coding=utf-8
 import argparse
+import botocore
 import boto3
 import hashlib
 import logging
@@ -76,13 +77,41 @@ def copy_tile(tile, remove_hash, from_s3, to_s3):
         from_key = s3_key(from_prefix, type, tile, ext, remove_hash)
         to_key = s3_key(to_prefix, type, tile, ext, False)
 
-        s3.copy_object(
-            Bucket=to_bucket,
-            Key=to_key,
-            CopySource={
-                'Bucket': from_bucket,
-                'Key': from_key,
-            })
+        tries = 0
+        wait = 1.0
+        while True:
+            try:
+                tries += 1
+                s3.copy_object(
+                    Bucket=to_bucket,
+                    Key=to_key,
+                    CopySource={
+                        'Bucket': from_bucket,
+                        'Key': from_key,
+                    }
+                )
+
+                logger.info(
+                    "Copied s3://%s/%s to s3://%s/%s at try %s",
+                    from_bucket, from_key,
+                    to_bucket, to_key,
+                    tries,
+                )
+
+                break
+            except botocore.exceptions.ClientError as e:
+                if e.response.get('Error', {}).get('Code') == 'SlowDown':
+                    logger.info(
+                        "SlowDown received, try %s, while copying "
+                        "s3://%s/%s to s3://%s/%s, waiting %0.1f sec",
+                        from_bucket, from_key,
+                        to_bucket, to_key,
+                        wait, tries
+                    )
+                    time.sleep(wait)
+                    wait = min(30.0, wait * 2.0)
+                else:
+                    raise
 
 
 def tile_exc_wrapper(tile, remove_hash, from_s3, to_s3):
