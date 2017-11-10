@@ -91,7 +91,7 @@ def copy_tile(tile, remove_hash, from_s3, to_s3):
                     }
                 )
 
-                logger.info(
+                logger.debug(
                     "Copied s3://%s/%s to s3://%s/%s at try %s",
                     from_bucket, from_key,
                     to_bucket, to_key,
