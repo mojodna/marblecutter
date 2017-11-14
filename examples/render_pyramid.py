@@ -48,9 +48,7 @@ NORMAL_TRANSFORMATION = Normal()
 TERRARIUM_TRANSFORMATION = Terrarium()
 
 RENDER_COMBINATIONS = [
-    ("normal", NORMAL_TRANSFORMATION, PNG_FORMAT, ".png"),
-    ("terrarium", TERRARIUM_TRANSFORMATION, PNG_FORMAT, ".png"),
-    ("geotiff", None, GEOTIFF_FORMAT, ".tif"),
+    ("geotiff", None, GEOTIFF_FORMAT, ".tif", 2),
 ]
 
 
@@ -193,7 +191,7 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
     session = boto3.session.Session()
     s3 = session.resource('s3')
 
-    for (type, transformation, format, ext) in RENDER_COMBINATIONS:
+    for (type, transformation, format, ext, scale) in RENDER_COMBINATIONS:
         key = s3_key(s3_key_prefix, type, tile, ext)
         obj = s3.Object(s3_bucket, key)
         if not OVERWRITE and s3_obj_exists(obj):
@@ -205,7 +203,10 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
 
         with Timer() as t:
             (headers, data) = tiling.render_tile(
-                tile, sources, format=format, transformation=transformation)
+                tile, sources,
+                format=format,
+                transformation=transformation,
+                scale=scale)
 
         logger.debug(
             '(%02d/%06d/%06d) Took %0.3fs to render %s tile (%s bytes), Source: %s, Timers: %s',
