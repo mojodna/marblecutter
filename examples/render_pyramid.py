@@ -19,6 +19,7 @@ import botocore
 import mercantile
 import psycopg2
 import psycopg2.extras
+import threading
 from marblecutter import tiling
 from marblecutter.formats import PNG, GeoTIFF
 from marblecutter.sources import MemoryAdapter
@@ -38,8 +39,18 @@ logger = logging.getLogger('batchtiler')
 if os.environ.get('VERBOSE'):
     logger.setLevel(logging.DEBUG)
 
+
+THREAD_LOCAL = threading.local()
+
+
+def initialize_thread():
+    # Each thread needs its own boto3 Session object - it's not threadsafe
+    THREAD_LOCAL.session = boto3.session.Session()
+    THREAD_LOCAL.s3 = THREAD_LOCAL.session.resource('s3')
+
+
 POOL_SIZE = 12
-POOL = Pool(POOL_SIZE)
+POOL = Pool(POOL_SIZE, initializer=initialize_thread)
 OVERWRITE = os.environ.get('OVERWRITE_EXISTING_OBJECTS') == 'true'
 
 GEOTIFF_FORMAT = GeoTIFF()
@@ -187,13 +198,10 @@ def s3_obj_exists(obj):
 
 def render_tile_and_put_to_s3(tile, s3_details, sources):
     s3_bucket, s3_key_prefix = s3_details
-    # Each thread needs its own boto3 Session object – it's not threadsafe
-    session = boto3.session.Session()
-    s3 = session.resource('s3')
 
     for (type, transformation, format, ext, scale) in RENDER_COMBINATIONS:
         key = s3_key(s3_key_prefix, type, tile, ext)
-        obj = s3.Object(s3_bucket, key)
+        obj = THREAD_LOCAL.s3.Object(s3_bucket, key)
         if not OVERWRITE and s3_obj_exists(obj):
             logger.debug(
                 '(%02d/%06d/%06d) Skipping existing %s tile',
