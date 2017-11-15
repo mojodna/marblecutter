@@ -63,37 +63,6 @@ RENDER_COMBINATIONS = [
 ]
 
 
-# From https://www.saltycrane.com/blog/2009/11/trying-out-retry-decorator-python/
-def retry(ExceptionToCheck,
-          tries=4,
-          delay=3,
-          backoff=2,
-          max_delay=60,
-          logger=None):
-    def deco_retry(f):
-        @wraps(f)
-        def f_retry(*args, **kwargs):
-            mtries, mdelay = tries, delay
-            while mtries > 1:
-                try:
-                    return f(*args, **kwargs)
-                except ExceptionToCheck, e:
-                    msg = "%s, Retrying in %d seconds..." % (str(e), mdelay)
-                    if logger:
-                        logger.exception(msg)
-                    else:
-                        print(msg)
-                    time.sleep(mdelay)
-                    mtries -= 1
-                    mdelay *= backoff
-                    mdelay = min(mdelay, max_delay)
-            return f(*args, **kwargs)
-
-        return f_retry  # true decorator
-
-    return deco_retry
-
-
 def s3_key(key_prefix, tile_type, tile, key_suffix):
     key = '{}/{}/{}/{}{}'.format(
         tile_type,
@@ -115,7 +84,6 @@ def s3_key(key_prefix, tile_type, tile, key_suffix):
     return key
 
 
-@retry(botocore.exceptions.ClientError, tries=30, logger=logger)
 def write_to_s3(obj,
                 tile,
                 tile_type,
@@ -123,13 +91,33 @@ def write_to_s3(obj,
                 key_suffix,
                 headers):
 
-    obj.put(
-        Body=data,
-        ContentType=headers['Content-Type'],
-        Metadata={k: headers[k]
-                  for k in headers if k != 'Content-Type'})
+    tries = 0
+    wait = 1.0
+    while True:
+        try:
+            obj.put(
+                Body=data,
+                ContentType=headers['Content-Type'],
+                Metadata={k: headers[k]
+                          for k in headers if k != 'Content-Type'})
 
-    return obj
+            logger.debug(
+                "Saved tile %s to s3://%s/%s at try %s",
+                tile, obj.bucket_name, obj.key, tries,
+            )
+
+            return obj
+        except botocore.exceptions.ClientError as e:
+            if e.response.get('Error', {}).get('Code') == 'SlowDown':
+                logger.info(
+                    "SlowDown received, try %s, while saving "
+                    "%s to s3://%s/%s, waiting %0.1f sec",
+                    tries, tile, obj.bucket_name, obj.key, wait,
+                )
+                time.sleep(wait)
+                wait = min(30.0, wait * 2.0)
+            else:
+                raise
 
 
 def build_source_index(tile, min_zoom, max_zoom):
