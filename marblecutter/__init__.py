@@ -336,7 +336,7 @@ def read_window(src, bounds, target_shape):
 
 
 def render(bounds,
-           sources_store,
+           catalog,
            shape,
            target_crs,
            format,
@@ -350,7 +350,7 @@ def render(bounds,
         bounds, shape, offsets = transformation.expand(bounds, shape)
 
     with Timer() as t:
-        sources = sources_store.get_sources(bounds, resolution_m)
+        sources = catalog.get_sources(bounds, resolution_m)
     stats.append(("get sources", t.elapsed))
 
     with Timer() as t:
