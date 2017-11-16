@@ -23,6 +23,7 @@ def mask_outliers(data, m=2.):
 def composite(sources, bounds, dims, target_crs):
     """Composite data from sources into a single raster covering bounds, but in
     the target CRS."""
+    # avoid circular dependencies
     from . import _nodata, get_source, read_window
 
     height, width = dims
