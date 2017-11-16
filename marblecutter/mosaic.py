@@ -53,7 +53,6 @@ def composite(sources, bounds, dims, target_crs):
             # read a window from the source data
             # TODO ask for a buffer here, get back an updated bounding box
             # reflecting it
-            # TODO NamedTuple for bounds (bounds + CRS)
             window_data = read_window(src, canvas_bounds, dims)
 
         if not window_data:
@@ -67,7 +66,6 @@ def composite(sources, bounds, dims, target_crs):
                                          mask_outliers(data[0], 100.))
 
         # paste (and reproject) the resulting data onto a canvas
-        # TODO NamedTuple for data (data + bounds)
         canvas = paste(window_data, PixelCollection(canvas, canvas_bounds))
 
         # TODO get the sub-array that contains nodata pixels and only fetch
