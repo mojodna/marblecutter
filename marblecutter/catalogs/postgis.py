@@ -37,7 +37,7 @@ class PostGISCatalog(Catalog):
             user=url.username,
             password=url.password,
             host=url.hostname,
-            port=url.port, )
+            port=url.port)
 
         self._log = logging.getLogger(__name__)
         self.table = table
