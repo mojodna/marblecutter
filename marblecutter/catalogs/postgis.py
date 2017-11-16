@@ -54,12 +54,14 @@ class PostGISCatalog(Catalog):
             SELECT
                 url,
                 source,
-                resolution
+                resolution,
+                band
             FROM (
                 SELECT
                     DISTINCT ON (url) url,
                     source,
                     resolution,
+                    band,
                     priority,
                     -- group sources by approximate resolution
                     round(resolution) rounded_resolution,

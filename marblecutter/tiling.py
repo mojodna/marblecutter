@@ -16,7 +16,8 @@ def render_tile(tile,
                 sources,
                 transformation=None,
                 format=None,
-                scale=1):
+                scale=1,
+                data_band_count=3):
     """Render a tile into Web Mercator."""
     bounds = mercantile.xy_bounds(tile)
 
@@ -26,4 +27,5 @@ def render_tile(tile,
         list(map(int, Affine.scale(scale) * TILE_SHAPE)),
         WEB_MERCATOR_CRS,
         format=format,
+        data_band_count=data_band_count,
         transformation=transformation)

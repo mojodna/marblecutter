@@ -20,7 +20,7 @@ def mask_outliers(data, m=2.):
     return np.where(s < m, False, True)
 
 
-def composite(sources, bounds, dims, target_crs):
+def composite(sources, bounds, dims, target_crs, band_count):
     """Composite data from sources into a single raster covering bounds, but in
     the target CRS."""
     # avoid circular dependencies
@@ -29,24 +29,18 @@ def composite(sources, bounds, dims, target_crs):
     height, width = dims
     ((left, right), (bottom, top)) = warp.transform(
         bounds.crs, target_crs, bounds.bounds[::2], bounds.bounds[1::2])
-    canvas = None
+    canvas = np.ma.zeros(
+        (band_count, height, width),
+        dtype=np.float32,
+        fill_value=_nodata(np.float32))
+    canvas.mask = True
     canvas_bounds = Bounds((left, bottom, right, top), target_crs)
 
     sources_used = list()
 
     # iterate over available sources, sorted by decreasing resolution
-    for (url, source_name, resolution) in sources:
+    for (url, source_name, resolution, band) in sources:
         with get_source(url) as src:
-            if canvas is None:
-                # infer the number of bands to use from the first available
-                # source
-                canvas = np.ma.zeros(
-                    (src.count, height, width),
-                    dtype=np.float32,
-                    fill_value=_nodata(np.float32))
-                canvas.mask = True
-                canvas.fill_value = _nodata(np.float32)
-
             sources_used.append((source_name, url))
 
             LOG.info("Compositing %s (%s)...", url, source_name)
@@ -60,14 +54,16 @@ def composite(sources, bounds, dims, target_crs):
             continue
 
         data, _ = window_data
-        if data.shape[0] == 1 and data.mask.any():
+        if band_count == 1 and data.mask.any():
             # mask outliers (intended for DEM boundaries)
             LOG.info("masking outliers")
             data.mask[0] = np.logical_or(data.mask[0],
                                          mask_outliers(data[0], 100.))
 
         # paste (and reproject) the resulting data onto a canvas
-        canvas = paste(window_data, PixelCollection(canvas, canvas_bounds))
+        # TODO should band be added to PixelCollection?
+        canvas = paste(
+            window_data, PixelCollection(canvas, canvas_bounds), band)
 
         # TODO get the sub-array that contains nodata pixels and only fetch
         # sources that could potentially fill those (see
@@ -80,7 +76,7 @@ def composite(sources, bounds, dims, target_crs):
     return sources_used, PixelCollection(canvas, canvas_bounds)
 
 
-def paste(window_pixels, canvas_pixels):
+def paste(window_pixels, canvas_pixels, band=None):
     """ "Reproject" src data into the correct position within a larger image"""
     window_data, (window_bounds, window_crs) = window_pixels
     canvas, (canvas_bounds, canvas_crs) = canvas_pixels
@@ -92,11 +88,18 @@ def paste(window_pixels, canvas_pixels):
         raise Exception(
             "Bounds must match: {} != {}".format(window_bounds, canvas_bounds))
 
-    if window_data.shape != canvas.shape:
+    if band is None and window_data.shape != canvas.shape:
         raise Exception("Data shapes must match: {} != {}".format(
             window_data.shape, canvas.shape))
 
-    merged = np.ma.where(canvas.mask & ~window_data.mask, window_data, canvas)
-    merged.fill_value = canvas.fill_value
+    if band is None:
+        merged = np.ma.where(
+            canvas.mask & ~window_data.mask, window_data, canvas)
+        merged.fill_value = canvas.fill_value
+    else:
+        merged_band = np.ma.where(
+            canvas.mask[band] & ~window_data.mask, window_data, canvas[band])
+        canvas[band] = merged_band
+        merged = canvas
 
     return merged
