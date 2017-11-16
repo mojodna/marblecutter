@@ -4,7 +4,6 @@ from __future__ import absolute_import
 import logging
 
 from flask import Flask, jsonify
-
 from flask_cors import CORS
 
 from . import NoDataAvailable
