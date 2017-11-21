@@ -198,8 +198,8 @@ if __name__ == "__main__":
 
     logger.info('Copying tiles from root tile %s to zoom %s at '
                 's3://%s/%s to s3://%s/%s',
-                root, args.max_zoom, args.from_bucket, args.from_prefix,
-                args.to_bucket, args.to_prefix)
+                root, args.max_zoom, args.from_bucket, args.from_prefix or '',
+                args.to_bucket, args.to_prefix or '')
 
     logger.info('Running %s processes', POOL_SIZE)
 
