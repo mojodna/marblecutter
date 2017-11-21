@@ -36,11 +36,16 @@ def initialize_thread():
     THREAD_LOCAL.s3_client = THREAD_LOCAL.boto_session.client('s3')
 
 
-POOL_SIZE = int(os.environ.get('POOL_SIZE', '12'))
+# Don't copy tiles that exist and are newer than this cutoff datetime
+# in yyyy-mm-ddThh:mm:ss format (in UTC)
 CUTOFF_DATE = pytz.UTC.localize(datetime.datetime.strptime(
     os.environ.get('CUTOFF_DATE'),
     '%Y-%m-%dT%H:%M:%S'
 )) if os.environ.get('CUTOFF_DATE') else None
+# Only copy these tile types
+ONLY_COPY = os.environ.get('ONLY_COPY').split(',') if os.environ.get('ONLY_COPY') else None
+# The number of threads in the pool communicating with AWS
+POOL_SIZE = int(os.environ.get('POOL_SIZE', '12'))
 POOL = Pool(POOL_SIZE, initializer=initialize_thread)
 
 
@@ -100,6 +105,15 @@ def copy_tile(tile, remove_hash, from_s3, to_s3):
     for (type, ext) in RENDER_COMBINATIONS:
         from_key = s3_key(from_prefix, type, tile, ext, remove_hash)
         to_key = s3_key(to_prefix, type, tile, ext, False)
+
+        if ONLY_COPY and type not in ONLY_COPY:
+            logger.info(
+                'Skipping copy to s3://%s/%s because '
+                'type %s not in %s',
+                to_bucket, to_key,
+                type, ONLY_COPY,
+            )
+            continue
 
         tries = 0
         wait = 1.0
