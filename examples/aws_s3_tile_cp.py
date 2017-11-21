@@ -7,6 +7,7 @@ import hashlib
 import logging
 import mercantile
 import os
+import pytz
 import time
 import threading
 from mercantile import Tile
@@ -36,10 +37,10 @@ def initialize_thread():
 
 
 POOL_SIZE = int(os.environ.get('POOL_SIZE', '12'))
-CUTOFF_DATE = datetime.datetime.strptime(
+CUTOFF_DATE = pytz.UTC.localize(datetime.datetime.strptime(
     os.environ.get('CUTOFF_DATE'),
     '%Y-%m-%dT%H:%M:%S'
-) if os.environ.get('CUTOFF_DATE') else None
+)) if os.environ.get('CUTOFF_DATE') else None
 POOL = Pool(POOL_SIZE, initializer=initialize_thread)
 
 
