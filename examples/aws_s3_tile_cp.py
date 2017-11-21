@@ -107,7 +107,7 @@ def copy_tile(tile, remove_hash, from_s3, to_s3):
         to_key = s3_key(to_prefix, type, tile, ext, False)
 
         if ONLY_COPY and type not in ONLY_COPY:
-            logger.info(
+            logger.debug(
                 'Skipping copy to s3://%s/%s because '
                 'type %s not in %s',
                 to_bucket, to_key,
@@ -126,7 +126,7 @@ def copy_tile(tile, remove_hash, from_s3, to_s3):
                     # and if its newer than the specified cutoff date
                     obj_head_resp = head_object(s3, to_bucket, to_key)
                     if obj_head_resp and obj_head_resp['LastModified'] >= CUTOFF_DATE:
-                        logger.info(
+                        logger.debug(
                             'Skipping copy to s3://%s/%s because '
                             'last modified %s >= %s',
                             to_bucket, to_key,
