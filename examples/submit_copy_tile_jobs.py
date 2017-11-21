@@ -12,6 +12,7 @@ if __name__ == "__main__":
     parser.add_argument('--from_prefix')
     parser.add_argument('--to_prefix')
     parser.add_argument('--remove_hash', dest='remove_hash', action='store_true', default=False)
+    parser.add_argument('--copy_only')
     parser.add_argument('--bbox',
                         default='-180.0,-90.0,180.0,90.0',
                         help='Bounding box of tiles to submit jobs. '
@@ -43,9 +44,19 @@ if __name__ == "__main__":
         if args.remove_hash:
             command_list.append('--remove_hash')
 
+        env_vars = []
+        if args.copy_only:
+            env_vars.append({
+                'name': 'COPY_ONLY',
+                'value': args.copy_only,
+            })
+
         container_overrides = {
             'command': command_list,
         }
+
+        if env_vars:
+            container_overrides['environment'] = env_vars
 
         result = client.submit_job(
             jobName='copy-{}-{}-{}'.format(tile.z, tile.x, tile.y),
