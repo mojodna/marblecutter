@@ -167,6 +167,14 @@ def copy_tile(tile, remove_hash, from_s3, to_s3):
                     )
                     time.sleep(wait)
                     wait = min(30.0, wait * 2.0)
+                elif e.response.get('Error', {}).get('Code') == 'NoSuchKey':
+                    logger.warn(
+                        "NoSuchKey received while copying "
+                        "s3://%s/%s to s3://%s/%s (skipping copy)",
+                        from_bucket, from_key,
+                        to_bucket, to_key,
+                    )
+                    break
                 else:
                     raise
 
