@@ -47,7 +47,7 @@ if __name__ == "__main__":
         env_vars = []
         if args.copy_only:
             env_vars.append({
-                'name': 'COPY_ONLY',
+                'name': 'ONLY_COPY',
                 'value': args.copy_only,
             })
 
