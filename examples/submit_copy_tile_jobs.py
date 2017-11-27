@@ -13,6 +13,7 @@ if __name__ == "__main__":
     parser.add_argument('--to_prefix')
     parser.add_argument('--remove_hash', dest='remove_hash', action='store_true', default=False)
     parser.add_argument('--copy_only')
+    parser.add_argument('--cutoff_date')
     parser.add_argument('--bbox',
                         default='-180.0,-90.0,180.0,90.0',
                         help='Bounding box of tiles to submit jobs. '
@@ -49,6 +50,12 @@ if __name__ == "__main__":
             env_vars.append({
                 'name': 'ONLY_COPY',
                 'value': args.copy_only,
+            })
+
+        if args.cutoff_date:
+            env_vars.append({
+                'name': 'CUTOFF_DATE',
+                'value': args.cutoff_date,
             })
 
         container_overrides = {
