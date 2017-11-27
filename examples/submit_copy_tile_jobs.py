@@ -62,7 +62,7 @@ if __name__ == "__main__":
         if args.verbose:
             env_vars.append({
                 'name': 'VERBOSE',
-                'value': args.verbose,
+                'value': 'true',
             })
 
         container_overrides = {
