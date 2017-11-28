@@ -31,6 +31,10 @@ EXTENTS = {
                             20037508.342789244, 20037508.342789244),
 }
 
+# initialize GDAL environment variables that can't be set w/ Lambda
+os.environ["CPL_VSIL_CURL_ALLOWED_EXTENSIONS"] = os.getenv(
+    "CPL_VSIL_CURL_ALLOWED_EXTENSIONS", ".vrt,.tif,.ovr,.msk")
+
 
 class NoDataAvailable(Exception):
     pass
@@ -109,7 +113,7 @@ def get_resolution_in_meters(bounds, dims):
 
 def get_source(path):
     """Cached source opening."""
-    with rasterio.Env(CPL_VSIL_CURL_ALLOWED_EXTENSIONS=".vrt,.tif,.ovr,.msk"):
+    with rasterio.Env():
         return rasterio.open(path)
 
 
