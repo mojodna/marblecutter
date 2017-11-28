@@ -39,15 +39,16 @@ def composite(sources, bounds, dims, target_crs, band_count):
     sources_used = list()
 
     # iterate over available sources, sorted by decreasing resolution
-    for (url, source_name, resolution, band) in sources:
-        with get_source(url) as src:
-            sources_used.append((source_name, url))
+    for source in sources:
+        with get_source(source.url) as src:
+            sources_used.append((source.name, source.url))
 
-            LOG.info("Compositing %s (%s)...", url, source_name)
+            LOG.info("Compositing %s (%s)...", source.url, source.name)
 
             # read a window from the source data
             # TODO ask for a buffer here, get back an updated bounding box
             # reflecting it
+            # TODO pass recipes (e.g. interpolate=bilinear)
             window_data = read_window(src, canvas_bounds, dims)
 
         if not window_data:
@@ -62,8 +63,8 @@ def composite(sources, bounds, dims, target_crs, band_count):
 
         # paste (and reproject) the resulting data onto a canvas
         # TODO should band be added to PixelCollection?
-        canvas = paste(
-            window_data, PixelCollection(canvas, canvas_bounds), band)
+        canvas = paste(window_data,
+                       PixelCollection(canvas, canvas_bounds), source.band)
 
         # TODO get the sub-array that contains nodata pixels and only fetch
         # sources that could potentially fill those (see
@@ -93,12 +94,12 @@ def paste(window_pixels, canvas_pixels, band=None):
             window_data.shape, canvas.shape))
 
     if band is None:
-        merged = np.ma.where(
-            canvas.mask & ~window_data.mask, window_data, canvas)
+        merged = np.ma.where(canvas.mask & ~window_data.mask, window_data,
+                             canvas)
         merged.fill_value = canvas.fill_value
     else:
-        merged_band = np.ma.where(
-            canvas.mask[band] & ~window_data.mask, window_data, canvas[band])
+        merged_band = np.ma.where(canvas.mask[band] & ~window_data.mask,
+                                  window_data, canvas[band])
         canvas[band] = merged_band
         merged = canvas
 

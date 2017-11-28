@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import absolute_import
 
+from collections import namedtuple
 import logging
 import os
 
@@ -17,6 +18,8 @@ except ImportError:
 
 
 Infinity = float("inf")
+Source = namedtuple(
+    'Source', ['url', 'name', 'resolution', 'band', 'meta', 'recipes'])
 
 
 class PostGISCatalog(Catalog):
@@ -55,13 +58,17 @@ class PostGISCatalog(Catalog):
                 url,
                 source,
                 resolution,
-                band
+                band,
+                meta,
+                recipes
             FROM (
                 SELECT
                     DISTINCT ON (url) url,
                     source,
                     resolution,
                     band,
+                    meta,
+                    recipes,
                     priority,
                     -- group sources by approximate resolution
                     round(resolution) rounded_resolution,
@@ -97,6 +104,7 @@ class PostGISCatalog(Catalog):
                     "zoom": zoom,
                 })
 
-                return cur.fetchall()
+                for record in cur:
+                    yield Source(*record)
         finally:
             self._pool.putconn(conn)
