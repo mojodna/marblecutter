@@ -8,6 +8,7 @@ import logging
 import mercantile
 import os
 import pytz
+import requests.exceptions
 import time
 import threading
 from mercantile import Tile
@@ -155,6 +156,17 @@ def copy_tile(tile, remove_hash, from_s3, to_s3):
                 )
 
                 break
+            except requests.exceptions.ConnectionError as e:
+                logger.info(
+                    "%s received, try %s, while copying "
+                    "s3://%s/%s to s3://%s/%s, waiting %0.1f sec",
+                    e, tries,
+                    from_bucket, from_key,
+                    to_bucket, to_key,
+                    wait,
+                )
+                time.sleep(wait)
+                wait = min(30.0, wait * 2.0)
             except botocore.exceptions.ClientError as e:
                 error_code = str(e.response.get('Error', {}).get('Code'))
                 if error_code in ('SlowDown', '503'):
