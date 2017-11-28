@@ -156,18 +156,19 @@ def copy_tile(tile, remove_hash, from_s3, to_s3):
 
                 break
             except botocore.exceptions.ClientError as e:
-                if e.response.get('Error', {}).get('Code') == 'SlowDown':
+                error_code = str(e.response.get('Error', {}).get('Code'))
+                if error_code in ('SlowDown', '503'):
                     logger.info(
-                        "SlowDown received, try %s, while copying "
+                        "%s received, try %s, while copying "
                         "s3://%s/%s to s3://%s/%s, waiting %0.1f sec",
-                        tries,
+                        error_code, tries,
                         from_bucket, from_key,
                         to_bucket, to_key,
                         wait,
                     )
                     time.sleep(wait)
                     wait = min(30.0, wait * 2.0)
-                elif e.response.get('Error', {}).get('Code') == 'NoSuchKey':
+                elif error_code == 'NoSuchKey':
                     logger.warn(
                         "NoSuchKey received while copying "
                         "s3://%s/%s to s3://%s/%s (skipping copy)",
