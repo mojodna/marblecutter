@@ -6,11 +6,19 @@ import logging
 
 import numpy as np
 
+from cachetools.func import lru_cache
 from rasterio import warp
+from rio_tiler import utils
+from rio_toa import reflectance
 
 from .utils import Bounds, PixelCollection
 
 LOG = logging.getLogger(__name__)
+
+
+@lru_cache()
+def get_landsat_metadata(sceneid):
+    return utils.landsat_get_mtl(sceneid)["L1_METADATA_FILE"]
 
 
 def mask_outliers(data, m=2.):
@@ -64,6 +72,33 @@ def composite(sources, bounds, dims, target_crs, band_count):
                 LOG.info("masking outliers")
                 data.mask[0] = np.logical_or(data.mask[0],
                                              mask_outliers(data[0], 100.))
+
+            if "landsat8" in (source.recipes or {}):
+                LOG.info("Applying landsat 8 recipe")
+                sceneid = source.url.split("/")[-2]
+                band = source.meta.get("band")
+                meta = get_landsat_metadata(sceneid)
+
+                sun_elev = meta["IMAGE_ATTRIBUTES"]["SUN_ELEVATION"]
+                multi_reflect = meta["RADIOMETRIC_RESCALING"].get(
+                    "REFLECTANCE_MULT_BAND_{}".format(band))
+                add_reflect = meta["RADIOMETRIC_RESCALING"].get(
+                    "REFLECTANCE_ADD_BAND_{}".format(band))
+
+                data = 10000 * reflectance.reflectance(
+                    data, multi_reflect, add_reflect, sun_elev, src_nodata=0)
+
+                min_val = source.meta.get("min", 0)
+                max_val = source.meta.get("max",
+                                          np.iinfo(src.meta["dtype"]).max)
+
+                data = np.ma.where(data > 0,
+                                   utils.linear_rescale(
+                                       data,
+                                       in_range=[min_val, max_val],
+                                       out_range=[0, 1]), 0)
+
+                window_data = PixelCollection(data, window_data.bounds)
 
             if "imagery" in (source.recipes or {}):
                 LOG.info("Applying imagery recipe")
