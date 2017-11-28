@@ -21,8 +21,8 @@ setup(
         'numpy',
         'Pillow',
         # 'rasterio[s3]>=1.0a11',
-        'rio-tiler ~= 0.0.3'
-        'rio-toa'
+        'rio-tiler ~= 0.0.3',
+        'rio-toa',
         'scipy',
     ],
     dependency_links=[
