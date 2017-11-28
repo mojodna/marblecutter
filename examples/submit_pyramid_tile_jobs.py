@@ -10,6 +10,7 @@ if __name__ == "__main__":
     parser.add_argument('zoom', type=int)
     parser.add_argument('max_zoom', type=int)
     parser.add_argument('--key_prefix')
+    parser.add_argument('--only_render')
     parser.add_argument('--vrt_resampling',
                         help='Resampling method used when creating '
                              'overviews from WarpedVRT. See '
@@ -60,6 +61,11 @@ if __name__ == "__main__":
         if args.vrt_resampling:
             container_overrides['environment'].append(
                 {'name': 'RESAMPLING_METHOD', 'value': args.vrt_resampling}
+            )
+
+        if args.only_render:
+            container_overrides['environment'].append(
+                {'name': 'ONLY_RENDER', 'value': args.only_render}
             )
 
         result = client.submit_job(
