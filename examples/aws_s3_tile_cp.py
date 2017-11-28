@@ -156,7 +156,7 @@ def copy_tile(tile, remove_hash, from_s3, to_s3):
                 )
 
                 break
-            except requests.exceptions.ConnectionError as e:
+            except botocore.vendored.requests.exceptions.ConnectionError as e:
                 logger.info(
                     "%s received, try %s, while copying "
                     "s3://%s/%s to s3://%s/%s, waiting %0.1f sec",
