@@ -51,15 +51,27 @@ def composite(sources, bounds, dims, target_crs, band_count):
             # TODO pass recipes (e.g. interpolate=bilinear)
             window_data = read_window(src, canvas_bounds, dims)
 
-        if not window_data:
-            continue
+            if not window_data:
+                continue
 
-        data, _ = window_data
-        if band_count == 1 and data.mask.any():
-            # mask outliers (intended for DEM boundaries)
-            LOG.info("masking outliers")
-            data.mask[0] = np.logical_or(data.mask[0],
-                                         mask_outliers(data[0], 100.))
+            data, _ = window_data
+
+            # TODO extract recipe implementations
+
+            # TODO move into hints / recipes ("remove_outliers")
+            if band_count == 1 and data.mask.any():
+                # mask outliers (intended for DEM boundaries)
+                LOG.info("masking outliers")
+                data.mask[0] = np.logical_or(data.mask[0],
+                                             mask_outliers(data[0], 100.))
+
+            if "imagery" in (source.recipes or {}):
+                LOG.info("Applying imagery recipe")
+                # normalize to 0..1 based on the range of the source type (only
+                # for int*s)
+                if not np.issubdtype(src.meta["dtype"], float):
+                    data /= np.iinfo(src.meta["dtype"]).max
+                    window_data = PixelCollection(data, window_data.bounds)
 
         # paste (and reproject) the resulting data onto a canvas
         # TODO should band be added to PixelCollection?

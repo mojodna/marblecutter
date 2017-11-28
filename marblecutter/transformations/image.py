@@ -20,6 +20,8 @@ class Image(TransformationBase):
             raise Exception(
                 "Variable opacity (alpha channel) not yet implemented")
 
+        data *= np.iinfo(np.uint8).max
+
         rgb = np.ma.transpose(data.astype(np.uint8), [1, 2, 0])
         if data.mask.any():
             a = np.logical_and.reduce(~data.mask).astype(np.uint8) * 255
