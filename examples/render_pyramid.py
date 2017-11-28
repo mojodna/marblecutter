@@ -59,6 +59,8 @@ NORMAL_TRANSFORMATION = Normal()
 TERRARIUM_TRANSFORMATION = Terrarium()
 
 RENDER_COMBINATIONS = [
+    ("normal", NORMAL_TRANSFORMATION, PNG_FORMAT, ".png", 1),
+    ("terrarium", TERRARIUM_TRANSFORMATION, PNG_FORMAT, ".png", 1),
     ("geotiff", None, GEOTIFF_FORMAT, ".tif", 2),
 ]
 
