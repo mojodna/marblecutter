@@ -52,6 +52,9 @@ def initialize_thread():
 POOL_SIZE = 12
 POOL = Pool(POOL_SIZE, initializer=initialize_thread)
 OVERWRITE = os.environ.get('OVERWRITE_EXISTING_OBJECTS') == 'true'
+# Only render these tile types
+ONLY_RENDER = os.environ.get('ONLY_RENDER').split(',') \
+              if os.environ.get('ONLY_RENDER') else None
 
 GEOTIFF_FORMAT = GeoTIFF()
 PNG_FORMAT = PNG()
@@ -190,6 +193,15 @@ def render_tile_and_put_to_s3(tile, s3_details, sources):
     s3_bucket, s3_key_prefix = s3_details
 
     for (type, transformation, format, ext, scale) in RENDER_COMBINATIONS:
+        if ONLY_RENDER and type not in ONLY_RENDER:
+            logger.debug(
+                '(%02d/%06d/%06d) Skipping render because '
+                'type %s not in %s',
+                tile.z, tile.x, tile.y,
+                type, ONLY_RENDER,
+            )
+            continue
+
         key = s3_key(s3_key_prefix, type, tile, ext)
         obj = THREAD_LOCAL.s3.Object(s3_bucket, key)
         if not OVERWRITE and s3_obj_exists(obj):
