@@ -8,7 +8,6 @@ import logging
 import mercantile
 import os
 import pytz
-import requests
 import time
 import threading
 from mercantile import Tile
