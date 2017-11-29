@@ -88,9 +88,15 @@ def composite(sources, bounds, dims, target_crs, band_count):
                 data = 10000 * reflectance.reflectance(
                     data, multi_reflect, add_reflect, sun_elev, src_nodata=0)
 
-                min_val = source.meta.get("min", 0)
-                max_val = source.meta.get("max",
-                                          np.iinfo(src.meta["dtype"]).max)
+                # calculate local min/max as fallbacks
+                local_min = 0
+                local_max = 65535
+                if len(data.compressed()) > 0:
+                    local_min, local_max = np.percentile(
+                        data.compressed(), (2, 98))
+
+                min_val = source.meta.get("min", local_min)
+                max_val = source.meta.get("max", local_max)
 
                 data = np.ma.where(data > 0,
                                    utils.linear_rescale(
