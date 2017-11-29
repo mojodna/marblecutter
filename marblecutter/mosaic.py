@@ -106,7 +106,8 @@ def composite(sources, bounds, dims, target_crs, band_count):
                                        out_range=[0, 1]), 0)
 
                 # TODO only do this if there wasn't a clean mask (.msk)
-                data.mask = ndimage.binary_dilation(data.mask, iterations=2)
+                if data.mask.any():
+                    data.mask = ndimage.binary_dilation(data.mask, iterations=2)
 
                 window_data = PixelCollection(data, window_data.bounds)
 
