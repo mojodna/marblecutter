@@ -16,6 +16,7 @@ setup(
         'marblecutter': ['static/images/*', 'templates/*'],
     },
     install_requires=[
+        'futures',
         'haversine',
         'mercantile',
         'numpy',
