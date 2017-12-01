@@ -207,7 +207,8 @@ def read_window(src, bounds, target_shape):
 
         height, width = target_shape
 
-        if vrt.count == 1 and (
+        # TODO this is only for DEMs
+        if False and vrt.count == 1 and (
                 scale_factor[0] < 1 or scale_factor[1] < 1
                 or src_resolution[0] > resolution[0]
                 or src_resolution[1] > resolution[1]
