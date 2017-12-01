@@ -64,7 +64,7 @@ def composite(sources, bounds, dims, target_crs, band_count):
 
     sources = actual_sources
 
-    # iterate over available sources, sorted by decreasing resolution
+    # iterate over available sources, sorted by decreasing "quality"
     for source in sources:
         with get_source(source.url) as src:
             sources_used.append((source.name, source.url))
