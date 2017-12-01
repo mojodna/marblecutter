@@ -69,7 +69,8 @@ def composite(sources, bounds, dims, target_crs, band_count):
         with get_source(source.url) as src:
             sources_used.append((source.name, source.url))
 
-            LOG.info("Compositing %s (%s)...", source.url, source.name)
+            LOG.info("Compositing %s (%s) as band %s", source.url, source.name,
+                     source.band)
 
             # read a window from the source data
             # TODO ask for a buffer here, get back an updated bounding box
