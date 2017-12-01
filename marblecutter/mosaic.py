@@ -12,7 +12,7 @@ from rio_tiler import utils
 from rio_toa import reflectance
 import scipy.ndimage.morphology as ndimage
 
-from .utils import Bounds, PixelCollection
+from .utils import Bounds, PixelCollection, Source
 
 LOG = logging.getLogger(__name__)
 

@@ -1,7 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
 
-from collections import namedtuple
 import logging
 import os
 
@@ -10,6 +9,7 @@ from psycopg2.pool import ThreadedConnectionPool
 from rasterio import warp
 
 from . import WGS84_CRS, Catalog
+from ..utils import Source
 
 try:
     import urllib.parse as urlparse
@@ -18,8 +18,6 @@ except ImportError:
 
 
 Infinity = float("inf")
-Source = namedtuple(
-    'Source', ['url', 'name', 'resolution', 'band', 'meta', 'recipes'])
 
 
 class PostGISCatalog(Catalog):
