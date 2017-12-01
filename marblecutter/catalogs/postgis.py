@@ -52,38 +52,76 @@ class PostGISCatalog(Catalog):
 
         # TODO get sources in native CRS of the target
         query = """
-            SELECT
-                url,
-                source,
-                resolution,
-                band,
-                meta,
-                recipes
-            FROM (
+            WITH RECURSIVE bbox AS (
+              SELECT ST_SetSRID(
+                    'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
+                    4326) geom
+            ),
+            sources AS (
+              SELECT * FROM (
                 SELECT
-                    DISTINCT ON (url) url,
-                    source,
-                    resolution,
-                    band,
-                    meta,
-                    recipes,
-                    priority,
-                    -- group sources by approximate resolution
-                    round(resolution) rounded_resolution,
-                    -- measure the distance from centroids to
-                    -- prioritize overlap
-                    ST_Centroid({geometry_column}) <-> ST_Centroid(
-                        ST_SetSRID(
-                            'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
-                            4326)) distance
+                  1 iterations,
+                  ARRAY[url] urls,
+                  ARRAY[source] sources,
+                  ARRAY[resolution] resolutions,
+                  ARRAY[band] bands,
+                  ARRAY[meta] metas,
+                  ARRAY[recipes] recipes,
+                  ST_Multi(imagery.geom) geom,
+                  ST_Difference(bbox.geom, imagery.geom) uncovered
                 FROM {table}
-                WHERE {geometry_column} && ST_SetSRID(
-                    'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d, 4326)
-                    AND %(zoom)s BETWEEN min_zoom AND max_zoom
-                    AND enabled = true
-                ORDER BY url
-            ) AS _
-            ORDER BY priority ASC, rounded_resolution ASC, distance ASC
+                JOIN bbox ON imagery.geom && bbox.geom
+                WHERE %(zoom)s BETWEEN min_zoom and max_zoom
+                  AND imagery.enabled = true
+                ORDER BY
+                  imagery.priority ASC,
+                  round(imagery.resolution) ASC,
+                  ST_Centroid(imagery.geom) <-> ST_Centroid(bbox.geom),
+                  imagery.url DESC
+                LIMIT 1
+              ) AS _
+              UNION ALL
+              SELECT * FROM (
+                SELECT
+                  sources.iterations + 1,
+                  sources.urls || url urls,
+                  sources.sources || source sources,
+                  sources.resolutions || resolution resolutions,
+                  sources.bands || band bands,
+                  sources.metas || meta metas,
+                  sources.recipes || imagery.recipes,
+                  ST_Union(sources.geom, imagery.geom) geom,
+                  ST_Difference(sources.uncovered, imagery.geom) uncovered
+                FROM {table}
+                -- use proper intersection
+                JOIN sources ON imagery.geom && sources.uncovered
+                WHERE NOT (imagery.url = ANY(sources.urls))
+                  AND %(zoom)s BETWEEN min_zoom AND max_zoom
+                  AND imagery.enabled = true
+                ORDER BY
+                  imagery.priority ASC,
+                  round(imagery.resolution) ASC,
+                  -- prefer sources that reduce uncovered area the most
+                  ST_Area(ST_Difference(sources.uncovered, imagery.geom)) ASC,
+                  -- if multiple scenes exist, assume they include timestamps
+                  imagery.url DESC
+                LIMIT 1
+              ) AS _
+            ),
+            candidates AS (
+                SELECT *
+                FROM sources
+                ORDER BY iterations DESC
+                LIMIT 1
+            )
+            SELECT
+              unnest(urls) url,
+              unnest(sources) source,
+              unnest(resolutions) resolution,
+              unnest(bands) band,
+              unnest(metas) meta,
+              unnest(recipes) recipes
+            FROM candidates
         """.format(
             table=self.table, geometry_column=self.geometry_column)
 
