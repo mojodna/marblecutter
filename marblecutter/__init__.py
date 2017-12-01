@@ -359,8 +359,8 @@ def render(bounds,
     stats.append(("get sources", t.elapsed))
 
     with Timer() as t:
-        sources_used, pixels = mosaic.composite(
-            sources, bounds, shape, target_crs, data_band_count)
+        sources_used, pixels = mosaic.composite(sources, bounds, shape,
+                                                target_crs, data_band_count)
     stats.append(("composite", t.elapsed))
 
     if pixels.data is None:

@@ -6,11 +6,11 @@ import logging
 
 import numpy as np
 
+import scipy.ndimage.morphology as ndimage
 from cachetools.func import lru_cache
 from rasterio import warp
 from rio_tiler import utils
 from rio_toa import reflectance
-import scipy.ndimage.morphology as ndimage
 
 from .utils import Bounds, PixelCollection, Source
 
@@ -107,7 +107,8 @@ def composite(sources, bounds, dims, target_crs, band_count):
 
                 # TODO only do this if there wasn't a clean mask (.msk)
                 if data.mask.any():
-                    data.mask = ndimage.binary_dilation(data.mask, iterations=2)
+                    data.mask = ndimage.binary_dilation(
+                        data.mask, iterations=2)
 
                 window_data = PixelCollection(data, window_data.bounds)
 
