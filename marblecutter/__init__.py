@@ -60,7 +60,7 @@ def _nodata(dtype):
 
 
 def crop(pixel_collection, data_format, offsets):
-    data, (bounds, data_crs) = pixel_collection
+    data, (bounds, data_crs), _ = pixel_collection
     left, bottom, right, top = offsets
 
     if _isimage(data_format):

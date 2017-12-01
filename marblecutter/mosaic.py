@@ -3,6 +3,8 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
+from concurrent import futures
+import multiprocessing
 
 import numpy as np
 
@@ -64,11 +66,8 @@ def composite(sources, bounds, dims, target_crs, band_count):
 
     sources = actual_sources
 
-    # iterate over available sources, sorted by decreasing "quality"
-    for source in sources:
+    def _read_window(source):
         with get_source(source.url) as src:
-            sources_used.append((source.name, source.url))
-
             LOG.info("Compositing %s (%s) as band %s", source.url, source.name,
                      source.band)
 
@@ -79,9 +78,9 @@ def composite(sources, bounds, dims, target_crs, band_count):
             window_data = read_window(src, canvas_bounds, dims)
 
             if not window_data:
-                continue
+                return
 
-            data, _ = window_data
+            data = window_data.data
 
             # TODO extract recipe implementations
 
@@ -123,7 +122,8 @@ def composite(sources, bounds, dims, target_crs, band_count):
                                        in_range=[min_val, max_val],
                                        out_range=[0, 1]), 0)
 
-                window_data = PixelCollection(data, window_data.bounds)
+                window_data = PixelCollection(data, window_data.bounds,
+                                              source.band)
 
             if "imagery" in (source.recipes or {}):
                 LOG.info("Applying imagery recipe")
@@ -133,10 +133,20 @@ def composite(sources, bounds, dims, target_crs, band_count):
                     data /= np.iinfo(src.meta["dtype"]).max
                     window_data = PixelCollection(data, window_data.bounds)
 
+            return window_data
+
+    # iterate over available sources, sorted by decreasing "quality"
+    with futures.ThreadPoolExecutor(
+            max_workers=multiprocessing.cpu_count() * 5) as executor:
+        ws = executor.map(_read_window, sources)
+
+    for window_data in ws:
         # paste (and reproject) the resulting data onto a canvas
-        # TODO should band be added to PixelCollection?
-        canvas = paste(window_data,
-                       PixelCollection(canvas, canvas_bounds), source.band)
+
+        if window_data.data is None:
+            continue
+
+        canvas = paste(window_data, PixelCollection(canvas, canvas_bounds))
 
         # TODO get the sub-array that contains nodata pixels and only fetch
         # sources that could potentially fill those (see
@@ -149,10 +159,10 @@ def composite(sources, bounds, dims, target_crs, band_count):
     return sources_used, PixelCollection(canvas, canvas_bounds)
 
 
-def paste(window_pixels, canvas_pixels, band=None):
+def paste(window_pixels, canvas_pixels):
     """ "Reproject" src data into the correct position within a larger image"""
-    window_data, (window_bounds, window_crs) = window_pixels
-    canvas, (canvas_bounds, canvas_crs) = canvas_pixels
+    window_data, (window_bounds, window_crs), band = window_pixels
+    canvas, (canvas_bounds, canvas_crs), _ = canvas_pixels
     if window_crs != canvas_crs:
         raise Exception(
             "CRSes must match: {} != {}".format(window_crs, canvas_crs))

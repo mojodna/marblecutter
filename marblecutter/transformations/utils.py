@@ -64,7 +64,7 @@ class TransformationBase:
         return bounds, shape, (left, bottom, right, top)
 
     def postprocess(self, pixels, data_format, offsets):
-        data, (bounds, data_crs) = pixels
+        data, (bounds, data_crs), _ = pixels
         (data, (cropped_bounds, data_crs)) = crop(pixels, data_format, offsets)
 
         if self.collar > 0:

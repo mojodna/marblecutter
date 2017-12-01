@@ -10,7 +10,7 @@ from .utils import TransformationBase
 
 class Image(TransformationBase):
     def transform(self, pixels):
-        data, _ = pixels
+        data = pixels.data
         (count, height, width) = data.shape
 
         if 3 > count > 4:
