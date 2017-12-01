@@ -46,6 +46,24 @@ def composite(sources, bounds, dims, target_crs, band_count):
 
     sources_used = list()
 
+    # TODO preprocess by recipe
+    actual_sources = []
+    for source in sources:
+        if "landsat8" in source.recipes:
+            # TODO convert band column into an array; null == all,
+            # 0 = 0, [0,1,2] = separate files
+            # TODO or band_mapping
+            for band, source_band in enumerate((4, 3, 2)):
+                s = Source(
+                    source.url.replace("{band}",
+                                       str(source_band)), source.name,
+                    source.resolution, band, source.meta, source.recipes)
+                actual_sources.append(s)
+        else:
+            actual_sources.append(source)
+
+    sources = actual_sources
+
     # iterate over available sources, sorted by decreasing resolution
     for source in sources:
         with get_source(source.url) as src:
@@ -75,8 +93,8 @@ def composite(sources, bounds, dims, target_crs, band_count):
 
             if "landsat8" in (source.recipes or {}):
                 LOG.info("Applying landsat 8 recipe")
-                sceneid = source.url.split("/")[-2]
-                band = source.meta.get("band")
+                sceneid, filename = source.url.split("/")[-2:]
+                band = filename.split("_B")[-1][0]
                 meta = get_landsat_metadata(sceneid)
 
                 sun_elev = meta["IMAGE_ATTRIBUTES"]["SUN_ELEVATION"]
