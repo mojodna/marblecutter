@@ -6,6 +6,7 @@ import math
 import os
 import warnings
 
+from scipy.ndimage import morphology
 from haversine import haversine
 import numpy as np
 import rasterio
@@ -333,8 +334,10 @@ def read_window(src, bounds, target_shape):
 
                 data.mask = data.mask | ~mask
     except Exception:
-        # no mask
-        pass
+        # no mask; assume the included one was dirty and expand it
+        if data.mask.any():
+            data.mask = morphology.binary_dilation(
+                data.mask, iterations=2)
 
     return PixelCollection(data, bounds)
 
