@@ -90,7 +90,7 @@ class PostGISCatalog(Catalog):
                   sources.bands || imagery.bands,
                   sources.metas || meta metas,
                   sources.recipes || imagery.recipes,
-                  ST_Union(sources.geom, imagery.geom) geom,
+                  ST_Collect(sources.geom, imagery.geom) geom,
                   ST_Difference(sources.uncovered, imagery.geom) uncovered
                 FROM {table} imagery -- TODO use a better alias
                 -- use proper intersection
