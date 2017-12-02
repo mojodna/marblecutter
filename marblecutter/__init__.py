@@ -190,7 +190,12 @@ def read_window(src, bounds, target_shape, recipes=None):
     # better solution, particularly as it avoids artifacts introduced when the
     # NODATA values are resampled using something other than nearest neighbor.
 
-    resampling = Resampling[recipes.get("resample", "lanczos")]
+    if "dem" in recipes:
+        # point data
+        resampling = Resampling[recipes.get("resample", "lanczos")]
+    else:
+        # continuous data
+        resampling = Resampling[recipes.get("resample", "bilinear")]
 
     with WarpedVRT(
             src,
