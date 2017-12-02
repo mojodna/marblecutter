@@ -61,7 +61,7 @@ def composite(sources, bounds, dims, target_crs, band_count):
     sources_used = []
 
     for source, window_data in ws:
-        # paste (and reproject) the resulting data onto a canvas
+        # paste the resulting data onto a canvas
 
         if window_data.data is None:
             continue
