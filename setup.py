@@ -21,14 +21,14 @@ setup(
         'mercantile',
         'numpy',
         'Pillow',
-        # 'rasterio[s3]>=1.0a11',
+        'rasterio[s3]>=1.0a12',
         'rio-tiler ~= 0.0.3',
         'rio-toa',
         'scipy',
     ],
-    dependency_links=[
-        'https://github.com/mapbox/rasterio/archive/51968aee58101d6fb264dfd4e13008a6ee3f3adb.tar.gz#egg=rasterio[s3]',
-    ],
+    # dependency_links=[
+    #     'https://github.com/mapbox/rasterio/archive/master.tar.gz#egg=rasterio[s3]',
+    # ],
     extras_require={
         'color_ramp': 'matplotlib',
         'postgis': 'psycopg2',
