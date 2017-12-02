@@ -67,17 +67,17 @@ class PostGISCatalog(Catalog):
                   ARRAY[bands] bands,
                   ARRAY[meta] metas,
                   ARRAY[recipes] recipes,
-                  ST_Multi(imagery.geom) geom,
-                  ST_Difference(bbox.geom, imagery.geom) uncovered
-                FROM {table} imagery -- TODO use a better alias
-                JOIN bbox ON imagery.geom && bbox.geom
+                  ST_Multi(footprints.geom) geom,
+                  ST_Difference(bbox.geom, footprints.geom) uncovered
+                FROM {table} footprints
+                JOIN bbox ON footprints.geom && bbox.geom
                 WHERE %(zoom)s BETWEEN min_zoom and max_zoom
-                  AND imagery.enabled = true
+                  AND footprints.enabled = true
                 ORDER BY
-                  imagery.priority ASC,
-                  round(imagery.resolution) ASC,
-                  ST_Centroid(imagery.geom) <-> ST_Centroid(bbox.geom),
-                  imagery.url DESC
+                  footprints.priority ASC,
+                  round(footprints.resolution) ASC,
+                  ST_Centroid(footprints.geom) <-> ST_Centroid(bbox.geom),
+                  footprints.url DESC
                 LIMIT 1
               ) AS _
               UNION ALL
@@ -87,24 +87,25 @@ class PostGISCatalog(Catalog):
                   sources.urls || url urls,
                   sources.sources || source sources,
                   sources.resolutions || resolution resolutions,
-                  sources.bands || imagery.bands,
+                  sources.bands || footprints.bands,
                   sources.metas || meta metas,
-                  sources.recipes || imagery.recipes,
-                  ST_Collect(sources.geom, imagery.geom) geom,
-                  ST_Difference(sources.uncovered, imagery.geom) uncovered
-                FROM {table} imagery -- TODO use a better alias
                 -- use proper intersection
                 JOIN sources ON imagery.geom && sources.uncovered
-                WHERE NOT (imagery.url = ANY(sources.urls))
+                  sources.recipes || footprints.recipes,
+                  ST_Collect(sources.geom, footprints.geom) geom,
+                  ST_Difference(sources.uncovered, footprints.geom) uncovered
+                FROM {table} footprints
+                WHERE NOT (footprints.url = ANY(sources.urls))
                   AND %(zoom)s BETWEEN min_zoom AND max_zoom
-                  AND imagery.enabled = true
+                  AND footprints.enabled = true
                 ORDER BY
-                  imagery.priority ASC,
-                  round(imagery.resolution) ASC,
+                  footprints.priority ASC,
+                  round(footprints.resolution) ASC,
                   -- prefer sources that reduce uncovered area the most
-                  ST_Area(ST_Difference(sources.uncovered, imagery.geom)) ASC,
+                  ST_Area(
+                    ST_Difference(sources.uncovered, footprints.geom)) ASC,
                   -- if multiple scenes exist, assume they include timestamps
-                  imagery.url DESC
+                  footprints.url DESC
                 LIMIT 1
               ) AS _
             ),
