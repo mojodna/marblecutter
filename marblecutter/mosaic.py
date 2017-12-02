@@ -40,8 +40,6 @@ def composite(sources, bounds, dims, target_crs, band_count):
     canvas.mask = True
     canvas_bounds = Bounds((left, bottom, right, top), target_crs)
 
-    sources_used = list()
-
     # TODO preprocess by recipe
     actual_sources = []
     for source in sources:
@@ -147,7 +145,8 @@ def composite(sources, bounds, dims, target_crs, band_count):
             # stop if all pixels are valid
             break
 
-    return sources_used, PixelCollection(canvas, canvas_bounds)
+    return map(lambda s: (s.name, s.url), sources), PixelCollection(
+        canvas, canvas_bounds)
 
 
 def paste(window_pixels, canvas_pixels):
