@@ -8,7 +8,6 @@ import multiprocessing
 
 import numpy as np
 
-from cachetools.func import lru_cache
 from rasterio import warp
 from rio_tiler import utils
 from rio_toa import reflectance
@@ -16,11 +15,6 @@ from rio_toa import reflectance
 from .utils import Bounds, PixelCollection, Source
 
 LOG = logging.getLogger(__name__)
-
-
-@lru_cache()
-def get_landsat_metadata(sceneid):
-    return utils.landsat_get_mtl(sceneid)["L1_METADATA_FILE"]
 
 
 def mask_outliers(data, m=2.):
@@ -93,15 +87,16 @@ def composite(sources, bounds, dims, target_crs, band_count):
 
             if "landsat8" in (source.recipes or {}):
                 LOG.info("Applying landsat 8 recipe")
-                sceneid, filename = source.url.split("/")[-2:]
-                band = filename.split("_B")[-1][0]
-                meta = get_landsat_metadata(sceneid)
+                source_band = source.url.split("/")[-1].split("_B")[1][0]
 
-                sun_elev = meta["IMAGE_ATTRIBUTES"]["SUN_ELEVATION"]
-                multi_reflect = meta["RADIOMETRIC_RESCALING"].get(
-                    "REFLECTANCE_MULT_BAND_{}".format(band))
-                add_reflect = meta["RADIOMETRIC_RESCALING"].get(
-                    "REFLECTANCE_ADD_BAND_{}".format(band))
+                sun_elev = source.meta["L1_METADATA_FILE"]["IMAGE_ATTRIBUTES"][
+                    "SUN_ELEVATION"]
+                multi_reflect = source.meta[
+                    "L1_METADATA_FILE"]["RADIOMETRIC_RESCALING"].get(
+                        "REFLECTANCE_MULT_BAND_{}".format(source_band))
+                add_reflect = source.meta[
+                    "L1_METADATA_FILE"]["RADIOMETRIC_RESCALING"].get(
+                        "REFLECTANCE_ADD_BAND_{}".format(source_band))
 
                 data = 10000 * reflectance.reflectance(
                     data, multi_reflect, add_reflect, sun_elev, src_nodata=0)
