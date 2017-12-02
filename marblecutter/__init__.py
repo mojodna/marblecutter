@@ -125,10 +125,11 @@ def get_zoom(resolution, op=round):
                 2)))
 
 
-def read_window(src, bounds, target_shape):
-    # TODO use this for DEMs (not all single-band sources) to avoid
-    # stairstepping artifacts
-    if src.count == 1 and bounds.crs == WEB_MERCATOR_CRS:
+def read_window(src, bounds, target_shape, recipes=None):
+    if recipes is None:
+        recipes = {}
+
+    if "dem" in recipes and bounds.crs == WEB_MERCATOR_CRS:
         # special case for web Mercator; use a target image size that most
         # closely matches the source resolution (and is a power of 2)
         zoom = min(
@@ -207,8 +208,7 @@ def read_window(src, bounds, target_shape):
 
         height, width = target_shape
 
-        # TODO this is only for DEMs
-        if False and vrt.count == 1 and (
+        if "dem" in recipes and vrt.count == 1 and (
                 scale_factor[0] < 1 or scale_factor[1] < 1
                 or src_resolution[0] > resolution[0]
                 or src_resolution[1] > resolution[1]

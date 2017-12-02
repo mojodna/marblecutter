@@ -71,7 +71,7 @@ def composite(sources, bounds, dims, target_crs, band_count):
             # TODO ask for a buffer here, get back an updated bounding box
             # reflecting it
             # TODO pass recipes (e.g. interpolate=bilinear)
-            window_data = read_window(src, canvas_bounds, dims)
+            window_data = read_window(src, canvas_bounds, dims, source.recipes)
 
             if not window_data:
                 return
@@ -80,8 +80,7 @@ def composite(sources, bounds, dims, target_crs, band_count):
 
             # TODO extract recipe implementations
 
-            # TODO move into hints / recipes ("remove_outliers")
-            if band_count == 1 and data.mask.any():
+            if "mask_outliers" in source.recipes:
                 # mask outliers (intended for DEM boundaries)
                 LOG.info("masking outliers")
                 data.mask[0] = np.logical_or(data.mask[0],
