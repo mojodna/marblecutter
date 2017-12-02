@@ -64,7 +64,7 @@ class PostGISCatalog(Catalog):
                   ARRAY[url] urls,
                   ARRAY[source] sources,
                   ARRAY[resolution] resolutions,
-                  ARRAY[band] bands,
+                  ARRAY[bands] bands,
                   ARRAY[meta] metas,
                   ARRAY[recipes] recipes,
                   ST_Multi(imagery.geom) geom,
@@ -87,7 +87,7 @@ class PostGISCatalog(Catalog):
                   sources.urls || url urls,
                   sources.sources || source sources,
                   sources.resolutions || resolution resolutions,
-                  sources.bands || band bands,
+                  sources.bands || imagery.bands,
                   sources.metas || meta metas,
                   sources.recipes || imagery.recipes,
                   ST_Union(sources.geom, imagery.geom) geom,
@@ -118,7 +118,7 @@ class PostGISCatalog(Catalog):
               unnest(urls) url,
               unnest(sources) source,
               unnest(resolutions) resolution,
-              unnest(bands) band,
+              unnest(bands) bands,
               unnest(metas) meta,
               unnest(recipes) recipes
             FROM candidates
