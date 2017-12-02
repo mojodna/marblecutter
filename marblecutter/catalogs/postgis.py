@@ -24,7 +24,7 @@ class PostGISCatalog(Catalog):
     def __init__(self,
                  table="footprints",
                  database_url=os.getenv("DATABASE_URL"),
-                 geometry_column="wkb_geometry"):
+                 geometry_column="geom"):
         if database_url is None:
             raise Exception("Database URL must be provided.")
         urlparse.uses_netloc.append('postgis')
