@@ -137,26 +137,29 @@ def composite(sources, bounds, dims, target_crs, band_count):
                     data /= np.iinfo(src.meta["dtype"]).max
                     window_data = PixelCollection(data, window_data.bounds)
 
-            return window_data
+            return source, window_data
 
     # iterate over available sources, sorted by decreasing "quality"
     with futures.ThreadPoolExecutor(
             max_workers=multiprocessing.cpu_count() * 5) as executor:
         ws = executor.map(_read_window, sources)
 
-    for window_data in ws:
+    sources_used = []
+
+    for source, window_data in ws:
         # paste (and reproject) the resulting data onto a canvas
 
         if window_data.data is None:
             continue
 
         canvas = paste(window_data, PixelCollection(canvas, canvas_bounds))
+        sources_used.append(source)
 
         if not canvas.mask.any():
             # stop if all pixels are valid
             break
 
-    return map(lambda s: (s.name, s.url), sources), PixelCollection(
+    return map(lambda s: (s.name, s.url), sources_used), PixelCollection(
         canvas, canvas_bounds)
 
 
