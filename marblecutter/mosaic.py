@@ -42,7 +42,6 @@ def composite(sources, bounds, dims, target_crs, band_count):
             # read a window from the source data
             # TODO ask for a buffer here, get back an updated bounding box
             # reflecting it
-            # TODO pass recipes (e.g. interpolate=bilinear)
             window_data = read_window(src, canvas_bounds, dims, source.recipes)
 
             if not window_data:

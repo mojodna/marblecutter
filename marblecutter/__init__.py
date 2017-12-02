@@ -190,7 +190,8 @@ def read_window(src, bounds, target_shape, recipes=None):
     # better solution, particularly as it avoids artifacts introduced when the
     # NODATA values are resampled using something other than nearest neighbor.
 
-    # TODO resampling alg should be a catalog property
+    resampling = Resampling[recipes.get("resample", "lanczos")]
+
     with WarpedVRT(
             src,
             src_nodata=src.nodata or _nodata(src.meta['dtype']),
@@ -198,7 +199,7 @@ def read_window(src, bounds, target_shape, recipes=None):
             dst_width=dst_width,
             dst_height=dst_height,
             dst_transform=dst_transform,
-            resampling=Resampling.lanczos) as vrt:
+            resampling=resampling) as vrt:
         dst_window = vrt.window(*bounds.bounds)
 
         resolution = get_resolution(bounds, target_shape)
