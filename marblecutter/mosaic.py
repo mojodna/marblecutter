@@ -3,8 +3,8 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
-from concurrent import futures
 import multiprocessing
+from concurrent import futures
 
 import numpy as np
 
