@@ -64,9 +64,9 @@ class PostGISCatalog(Catalog):
                   ARRAY[url] urls,
                   ARRAY[source] sources,
                   ARRAY[resolution] resolutions,
-                  ARRAY[bands] bands,
-                  ARRAY[meta] metas,
-                  ARRAY[recipes] recipes,
+                  ARRAY[coalesce(bands, '{{}}'::jsonb)] bands,
+                  ARRAY[coalesce(meta, '{{}}'::jsonb)] metas,
+                  ARRAY[coalesce(recipes, '{{}}'::jsonb)] recipes,
                   ST_Multi(footprints.geom) geom,
                   ST_Difference(bbox.geom, footprints.geom) uncovered
                 FROM {table} footprints
@@ -87,9 +87,11 @@ class PostGISCatalog(Catalog):
                   sources.urls || url urls,
                   sources.sources || source sources,
                   sources.resolutions || resolution resolutions,
-                  sources.bands || footprints.bands,
-                  sources.metas || meta metas,
-                  sources.recipes || footprints.recipes,
+                  sources.bands || coalesce(
+                    footprints.bands, '{{}}'::jsonb) bands,
+                  sources.metas || coalesce(meta, '{{}}'::jsonb) metas,
+                  sources.recipes || coalesce(
+                    footprints.recipes, '{{}}'::jsonb) recipes,
                   ST_Collect(sources.geom, footprints.geom) geom,
                   ST_Difference(sources.uncovered, footprints.geom) uncovered
                 FROM {table} footprints

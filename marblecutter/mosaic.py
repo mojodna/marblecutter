@@ -48,7 +48,7 @@ def composite(sources, bounds, dims, target_crs, band_count):
         "b": 2,
     }
     for source in sources:
-        if "landsat8" in (source.recipes or {}):
+        if "landsat8" in source.recipes:
             for target_band, source_band in source.band_info.iteritems():
                 band = band_mapping.get(target_band)
                 if band is not None:
@@ -87,7 +87,7 @@ def composite(sources, bounds, dims, target_crs, band_count):
                 data.mask[0] = np.logical_or(data.mask[0],
                                              mask_outliers(data[0], 100.))
 
-            if "landsat8" in (source.recipes or {}):
+            if "landsat8" in source.recipes:
                 LOG.info("Applying landsat 8 recipe")
                 source_band = source.url.split("/")[-1].split("_B")[1][0]
 
@@ -130,7 +130,7 @@ def composite(sources, bounds, dims, target_crs, band_count):
                 window_data = PixelCollection(data, window_data.bounds,
                                               source.band)
 
-            if "imagery" in (source.recipes or {}):
+            if "imagery" in source.recipes:
                 LOG.info("Applying imagery recipe")
                 # normalize to 0..1 based on the range of the source type (only
                 # for int*s)
