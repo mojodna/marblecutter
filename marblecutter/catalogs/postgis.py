@@ -69,7 +69,7 @@ class PostGISCatalog(Catalog):
                   ARRAY[recipes] recipes,
                   ST_Multi(imagery.geom) geom,
                   ST_Difference(bbox.geom, imagery.geom) uncovered
-                FROM {table}
+                FROM {table} imagery -- TODO use a better alias
                 JOIN bbox ON imagery.geom && bbox.geom
                 WHERE %(zoom)s BETWEEN min_zoom and max_zoom
                   AND imagery.enabled = true
@@ -92,7 +92,7 @@ class PostGISCatalog(Catalog):
                   sources.recipes || imagery.recipes,
                   ST_Union(sources.geom, imagery.geom) geom,
                   ST_Difference(sources.uncovered, imagery.geom) uncovered
-                FROM {table}
+                FROM {table} imagery -- TODO use a better alias
                 -- use proper intersection
                 JOIN sources ON imagery.geom && sources.uncovered
                 WHERE NOT (imagery.url = ANY(sources.urls))
