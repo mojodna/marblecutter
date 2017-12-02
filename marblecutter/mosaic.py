@@ -104,14 +104,22 @@ def composite(sources, bounds, dims, target_crs, band_count):
                     data, multi_reflect, add_reflect, sun_elev, src_nodata=0)
 
                 # calculate local min/max as fallbacks
-                local_min = 0
-                local_max = 65535
-                if len(data.compressed()) > 0:
+                default_min = 0
+                default_max = 65535
+
+                min_val = source.meta.get("values",
+                                          {}).get(source_band, {}).get(
+                                              "min", default_min)
+                max_val = source.meta.get("values",
+                                          {}).get(source_band, {}).get(
+                                              "max", default_max)
+
+                if (min_val == default_min and max_val == default_max
+                        and len(data.compressed()) > 0):
                     local_min, local_max = np.percentile(
                         data.compressed(), (2, 98))
-
-                min_val = source.meta.get("min", local_min)
-                max_val = source.meta.get("max", local_max)
+                    min_val = max(min_val, local_min)
+                    max_val = min(max_val, local_max)
 
                 data = np.ma.where(data > 0,
                                    utils.linear_rescale(
