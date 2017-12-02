@@ -72,7 +72,7 @@ def crop(pixel_collection, data_format, offsets):
         cropped_window = windows.Window(left, top, width, height)
         cropped_bounds = windows.bounds(cropped_window, t)
 
-        return (data, (cropped_bounds, data_crs))
+        return PixelCollection(data, Bounds(cropped_bounds, data_crs))
 
     _, height, width = data.shape
     t = transform.from_bounds(*bounds, width=width, height=height)

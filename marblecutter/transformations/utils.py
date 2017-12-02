@@ -65,7 +65,7 @@ class TransformationBase:
 
     def postprocess(self, pixels, data_format, offsets):
         data, (bounds, data_crs), _ = pixels
-        (data, (cropped_bounds, data_crs)) = crop(pixels, data_format, offsets)
+        data, (cropped_bounds, data_crs), _ = crop(pixels, data_format, offsets)
 
         if self.collar > 0:
             extent = get_extent(data_crs)
@@ -102,7 +102,7 @@ class TransformationBase:
 
 
 def apply_latitude_adjustments(pixels):
-    data, (bounds, crs) = pixels
+    data, (bounds, crs), _ = pixels
     (_, height, width) = data.shape
 
     ys = np.interp(np.arange(height), [0, height - 1], [bounds[3], bounds[1]])
