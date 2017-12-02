@@ -42,17 +42,21 @@ def composite(sources, bounds, dims, target_crs, band_count):
 
     # TODO preprocess by recipe
     actual_sources = []
+    band_mapping = {
+        "r": 0,
+        "g": 1,
+        "b": 2,
+    }
     for source in sources:
-        if "landsat8" in source.recipes:
-            # TODO convert band column into an array; null == all,
-            # 0 = 0, [0,1,2] = separate files
-            # TODO or band_mapping
-            for band, source_band in enumerate((4, 3, 2)):
-                s = Source(
-                    source.url.replace("{band}",
-                                       str(source_band)), source.name,
-                    source.resolution, band, source.meta, source.recipes)
-                actual_sources.append(s)
+        if "landsat8" in (source.recipes or {}):
+            for target_band, source_band in source.band_info.iteritems():
+                band = band_mapping.get(target_band)
+                if band is not None:
+                    s = Source(
+                        source.url.replace("{band}", str(source_band)),
+                        source.name, source.resolution, source.band_info,
+                        source.meta, source.recipes, band)
+                    actual_sources.append(s)
         else:
             actual_sources.append(source)
 
