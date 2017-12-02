@@ -89,12 +89,14 @@ class PostGISCatalog(Catalog):
                   sources.resolutions || resolution resolutions,
                   sources.bands || footprints.bands,
                   sources.metas || meta metas,
-                -- use proper intersection
-                JOIN sources ON imagery.geom && sources.uncovered
                   sources.recipes || footprints.recipes,
                   ST_Collect(sources.geom, footprints.geom) geom,
                   ST_Difference(sources.uncovered, footprints.geom) uncovered
                 FROM {table} footprints
+                -- use proper intersection to prevent voids from irregular
+                -- footprints
+                JOIN sources ON ST_Intersects(
+                    footprints.geom, sources.uncovered)
                 WHERE NOT (footprints.url = ANY(sources.urls))
                   AND %(zoom)s BETWEEN min_zoom AND max_zoom
                   AND footprints.enabled = true
