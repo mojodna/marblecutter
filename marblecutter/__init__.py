@@ -215,7 +215,7 @@ def read_window(src, bounds, target_shape, recipes=None):
 
         data = vrt.read(
             boundless=True,
-            out_shape=(vrt.count,) + target_shape,
+            out_shape=(vrt.count, ) + target_shape,
             window=dst_window)
 
         # mask with NODATA values
@@ -243,7 +243,7 @@ def read_window(src, bounds, target_shape, recipes=None):
 
                 mask = mask_vrt.read(
                     boundless=True,
-                    out_shape=(mask_vrt.count,) + target_shape,
+                    out_shape=(mask_vrt.count, ) + target_shape,
                     window=dst_window)
 
                 data.mask = data.mask | ~mask
