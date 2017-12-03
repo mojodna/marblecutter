@@ -130,8 +130,9 @@ def read_window(src, bounds, target_shape, recipes=None):
         recipes = {}
 
     if "dem" in recipes and bounds.crs == WEB_MERCATOR_CRS:
-        # special case for web Mercator; use a target image size that most
-        # closely matches the source resolution (and is a power of 2)
+        # special case for web Mercator to prevent crosshatch artifacts; use a
+        # target image size that most closely matches the source resolution
+        # (and is a power of 2)
         zoom = min(
             22,
             get_zoom(
@@ -148,13 +149,6 @@ def read_window(src, bounds, target_shape, recipes=None):
         dst_transform = Affine(resolution[0], 0.0, extent[0], 0.0,
                                -resolution[1], extent[3])
     else:
-        # use a target image size that most closely matches the target
-        # resolution
-        # calculate natural width, height, and transform (so the mask can be
-        # warped)
-        # TODO providing resolution reduces the target dimensions but loses the
-        # ability to read overviews
-
         # if raster is overly-large, approximate the transform based on
         # a scaled-down version and scale it back after
         attempts = 0
@@ -204,12 +198,7 @@ def read_window(src, bounds, target_shape, recipes=None):
     # better solution, particularly as it avoids artifacts introduced when the
     # NODATA values are resampled using something other than nearest neighbor.
 
-    if "dem" in recipes:
-        # point data
-        resampling = Resampling[recipes.get("resample", "lanczos")]
-    else:
-        # continuous data
-        resampling = Resampling[recipes.get("resample", "bilinear")]
+    resampling = Resampling[recipes.get("resample", "bilinear")]
 
     with WarpedVRT(
             src,
@@ -221,115 +210,16 @@ def read_window(src, bounds, target_shape, recipes=None):
             resampling=resampling) as vrt:
         dst_window = vrt.window(*bounds.bounds)
 
-        resolution = get_resolution(bounds, target_shape)
-        src_resolution = get_resolution(Bounds(vrt.bounds, vrt.crs), vrt.shape)
-        scale_factor = (round(dst_window.width / target_shape[1], 6), round(
-            dst_window.height / target_shape[0], 6))
+        data = vrt.read(
+            boundless=True,
+            out_shape=(vrt.count,) + target_shape,
+            window=dst_window)
 
-        height, width = target_shape
-
-        if "dem" in recipes and vrt.count == 1 and (
-                scale_factor[0] < 1 or scale_factor[1] < 1
-                or src_resolution[0] > resolution[0]
-                or src_resolution[1] > resolution[1]
-        ) and round(dst_window.width) > 1.0 and round(dst_window.height) > 1.0:
-            # scale_factor will always be (1.0, 1.0) unless using the web
-            # Mercator-specific calculations
-            # instead, compare source resolution (in m) to resolution (as
-            # scale_factor) and modify dst_window to correspond to a smaller,
-            # lower resolution window (as target_window)
-
-            # TODO sources like ETOPO1 may end up with funky y scale factors
-            # (for web Mercator, due to distortion)
-            # if these problems can be addressed, the web Mercator-specific
-            # calculations (above, for single-band sources) can be removed
-            if scale_factor[0] < 1 or scale_factor[1] < 1:
-                scaled_transform = vrt.transform * Affine.scale(*scale_factor)
-                target_window = windows.from_bounds(
-                    *bounds.bounds, transform=scaled_transform)
-            else:
-                scale_factor = (resolution[0] / src_resolution[0],
-                                resolution[1] / src_resolution[1])
-                target_window = Window(dst_window.col_off * scale_factor[0],
-                                       dst_window.row_off * scale_factor[1],
-                                       dst_window.width * scale_factor[0],
-                                       dst_window.height * scale_factor[1])
-
-            # buffer apparently needs to be 50% of the target size in order
-            # for spline knots to match between adjacent tiles
-            # however, to avoid creating overly-large uncropped areas, we
-            # limit the buffer size to 2048px on a side
-            # TODO the resulting window is still much too large (e.g.
-            # 18/151153/84343@2x)
-            buffer_pixels = (min(target_window.width / 2,
-                                 math.ceil(2048 * scale_factor[0])), min(
-                                     target_window.height / 2,
-                                     math.ceil(2048 * scale_factor[1])))
-
-            r, c = dst_window.toranges()
-            window = Window.from_slices((max(
-                0, r[0] - buffer_pixels[1]), r[1] + buffer_pixels[1]), (max(
-                    0, c[0] - buffer_pixels[0]), c[1] + buffer_pixels[0]))
-
-            data = vrt.read(boundless=True, window=window)
-
-            # mask with NODATA values
-            if vrt.nodata is not None:
-                data = _mask(data, vrt.nodata)
-            else:
-                data = np.ma.masked_array(data, mask=np.ma.nomask)
-
-            mask = data.mask
-
-            order = 3
-
-            if mask.any():
-                # need to preserve NODATA; drop spline interpolation order to 1
-                order = 1
-
-            LOG.info(
-                "Applying spline interpolation (order %d @ scale factor %s)",
-                order, scale_factor)
-
-            zoom = (1, round(1 / scale_factor[1]), round(1 / scale_factor[0]))
-
-            LOG.info("target dimensions: %s", (data.shape[1] * zoom[1],
-                                               data.shape[2] * zoom[2]))
-
-            # resample data, respecting NODATA values
-            data = ndimage.zoom(
-                # prevent resulting values from producing cliffs
-                data.astype(np.float32),
-                zoom,
-                order=order)
-
-            scaled_buffer = (int((data.shape[2] - width) / 2), int(
-                (data.shape[1] - height) / 2))
-
-            # crop data
-            data = data[:, scaled_buffer[1]:scaled_buffer[1] + height,
-                        scaled_buffer[0]:scaled_buffer[0] + width]
-
-            if len(mask.shape) > 0:
-                mask = ndimage.zoom(mask, zoom, mode='nearest')
-
-                # crop mask
-                mask = mask[:, scaled_buffer[1]:scaled_buffer[1] + height,
-                            scaled_buffer[0]:scaled_buffer[0] + width]
-
-            # copy the mask over
-            data = np.ma.masked_array(data, mask=mask)
+        # mask with NODATA values
+        if vrt.nodata is not None:
+            data = _mask(data, vrt.nodata)
         else:
-            data = vrt.read(
-                boundless=True,
-                out_shape=(vrt.count, height, width),
-                window=dst_window)
-
-            # mask with NODATA values
-            if vrt.nodata is not None:
-                data = _mask(data, vrt.nodata)
-            else:
-                data = np.ma.masked_array(data, mask=np.ma.nomask)
+            data = np.ma.masked_array(data, mask=np.ma.nomask)
 
         data = data.astype(np.float32)
 
@@ -350,15 +240,14 @@ def read_window(src, bounds, target_shape, recipes=None):
 
                 mask = mask_vrt.read(
                     boundless=True,
-                    out_shape=(mask_vrt.count, height, width),
+                    out_shape=(mask_vrt.count,) + target_shape,
                     window=dst_window)
 
                 data.mask = data.mask | ~mask
     except Exception:
         # no mask; assume the included one was dirty and expand it
         if data.mask.any():
-            data.mask = morphology.binary_dilation(
-                data.mask, iterations=2)
+            data.mask = morphology.binary_dilation(data.mask, iterations=2)
 
     return PixelCollection(data, bounds)
 

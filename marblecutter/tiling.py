@@ -24,7 +24,7 @@ def render_tile(tile,
     return render(
         Bounds(bounds, WEB_MERCATOR_CRS),
         sources,
-        list(map(int, Affine.scale(scale) * TILE_SHAPE)),
+        tuple(map(int, Affine.scale(scale) * TILE_SHAPE)),
         WEB_MERCATOR_CRS,
         format=format,
         data_band_count=data_band_count,

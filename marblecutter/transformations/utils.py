@@ -26,7 +26,7 @@ class TransformationBase:
 
         # apply buffer
         bounds_orig = bounds
-        shape = [dim + (2 * effective_buffer) for dim in shape]
+        shape = tuple([dim + (2 * effective_buffer) for dim in shape])
         bounds = Bounds([
             p - (buffer * resolution[i % 2])
             if i < 2 else p + (effective_buffer * resolution[i % 2])
