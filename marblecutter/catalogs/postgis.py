@@ -127,6 +127,7 @@ class PostGISCatalog(Catalog):
               unnest(metas) meta,
               unnest(recipes) recipes
             FROM candidates
+            LIMIT 10
         """.format(
             table=self.table, geometry_column=self.geometry_column)
 
