@@ -118,15 +118,18 @@ class PostGISCatalog(Catalog):
                 FROM sources
                 ORDER BY iterations DESC
                 LIMIT 1
+            ), candidate_rows AS (
+                SELECT
+                  unnest(urls) url,
+                  unnest(sources) source,
+                  unnest(resolutions) resolution,
+                  unnest(bands) bands,
+                  unnest(metas) meta,
+                  unnest(recipes) recipes
+                FROM candidates
             )
-            SELECT
-              unnest(urls) url,
-              unnest(sources) source,
-              unnest(resolutions) resolution,
-              unnest(bands) bands,
-              unnest(metas) meta,
-              unnest(recipes) recipes
-            FROM candidates
+            SELECT *
+            FROM candidate_rows
             LIMIT 10
         """.format(
             table=self.table, geometry_column=self.geometry_column)
