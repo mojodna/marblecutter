@@ -161,13 +161,27 @@ def read_window(src, bounds, target_shape, recipes=None):
         scale_factor = 1
         dst_transform = None
 
+        source_resolution = get_resolution_in_meters(
+            Bounds(src.bounds, src.crs), (src.height, src.width))
+        target_resolution = get_resolution(bounds, target_shape)
+        resolution = None
+
+        if (target_resolution[0] < source_resolution[0]
+                or target_resolution[1] < source_resolution[1]):
+            # provide resolution for improved resampling when overzooming
+            resolution = target_resolution
+
         while (dst_transform is None and src.width // scale_factor > 0
                and src.height // scale_factor > 0):
             try:
                 (dst_transform, dst_width,
                  dst_height) = warp.calculate_default_transform(
-                     src.crs, bounds.crs, src.width // scale_factor,
-                     src.height // scale_factor, *src.bounds)
+                     src.crs,
+                     bounds.crs,
+                     src.width // scale_factor,
+                     src.height // scale_factor,
+                     *src.bounds,
+                     resolution=resolution)
 
                 scale = Affine.scale(scale_factor, scale_factor)
 
