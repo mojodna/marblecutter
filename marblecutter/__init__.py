@@ -3,8 +3,10 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 import math
+import multiprocessing
 import os
 import warnings
+from concurrent import futures
 
 from scipy.ndimage import morphology
 from haversine import haversine
@@ -201,54 +203,74 @@ def read_window(src, bounds, target_shape, recipes=None):
 
     resampling = Resampling[recipes.get("resample", "bilinear")]
 
-    with WarpedVRT(
-            src,
-            src_nodata=src.nodata or _nodata(src.meta['dtype']),
-            dst_crs=bounds.crs,
-            dst_width=dst_width,
-            dst_height=dst_height,
-            dst_transform=dst_transform,
-            resampling=resampling) as vrt:
-        dst_window = vrt.window(*bounds.bounds)
+    def _read_data():
+        with WarpedVRT(
+                src,
+                src_nodata=src.nodata or _nodata(src.meta['dtype']),
+                dst_crs=bounds.crs,
+                dst_width=dst_width,
+                dst_height=dst_height,
+                dst_transform=dst_transform,
+                resampling=resampling) as vrt:
+            dst_window = vrt.window(*bounds.bounds)
 
-        data = vrt.read(
-            boundless=True,
-            out_shape=(vrt.count, ) + target_shape,
-            window=dst_window)
+            data = vrt.read(
+                boundless=True,
+                out_shape=(vrt.count, ) + target_shape,
+                window=dst_window)
 
-        # mask with NODATA values
-        if vrt.nodata is not None:
-            data = _mask(data, vrt.nodata)
-        else:
-            data = np.ma.masked_array(data, mask=np.ma.nomask)
+            # mask with NODATA values
+            if vrt.nodata is not None:
+                data = _mask(data, vrt.nodata)
+            else:
+                data = np.ma.masked_array(data, mask=np.ma.nomask)
 
-        data = data.astype(np.float32)
+            return data.astype(np.float32)
 
-    # open the mask separately so we can take advantage of its overviews
-    try:
-        warnings.simplefilter("ignore")
-        with rasterio.open("{}.msk".format(src.name), crs=src.crs) as mask_src:
-            with WarpedVRT(
-                    mask_src,
-                    src_crs=src.crs,
-                    src_transform=src.transform,
-                    dst_crs=bounds.crs,
-                    dst_width=dst_width,
-                    dst_height=dst_height,
-                    dst_transform=dst_transform) as mask_vrt:
-                warnings.simplefilter("default")
-                dst_window = mask_vrt.window(*bounds.bounds)
+    def _read_mask():
+        # open the mask separately so we can take advantage of its overviews
+        try:
+            warnings.simplefilter("ignore")
+            with rasterio.open(
+                    "{}.msk".format(src.name), crs=src.crs) as mask_src:
+                with WarpedVRT(
+                        mask_src,
+                        src_crs=src.crs,
+                        src_transform=src.transform,
+                        dst_crs=bounds.crs,
+                        dst_width=dst_width,
+                        dst_height=dst_height,
+                        dst_transform=dst_transform) as mask_vrt:
+                    warnings.simplefilter("default")
+                    dst_window = mask_vrt.window(*bounds.bounds)
 
-                mask = mask_vrt.read(
-                    boundless=True,
-                    out_shape=(mask_vrt.count, ) + target_shape,
-                    window=dst_window)
+                    mask = mask_vrt.read(
+                        boundless=True,
+                        out_shape=(mask_vrt.count, ) + target_shape,
+                        window=dst_window)
 
-                data.mask = data.mask | ~mask
-    except Exception:
-        # no mask; assume the included one was dirty and expand it
+                    # TODO allow iterations to be configured, zoom threshold to
+                    # apply
+                    # mask = ~morphology.binary_dilation(~mask, iterations=5)
+
+                    return mask
+        except Exception:
+            return None
+
+    with futures.ThreadPoolExecutor(
+            max_workers=multiprocessing.cpu_count() * 5) as executor:
+        data_task = executor.submit(_read_data)
+        mask_task = executor.submit(_read_mask)
+
+    data = data_task.result()
+    mask = mask_task.result()
+
+    if mask is None:
+        # assume that the included mask was dirty and expand it
         if data.mask.any():
             data.mask = morphology.binary_dilation(data.mask, iterations=2)
+    else:
+        data.mask = data.mask | ~mask
 
     return PixelCollection(data, bounds)
 
