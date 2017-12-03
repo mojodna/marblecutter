@@ -129,7 +129,13 @@ def read_window(src, bounds, target_shape, recipes=None):
     if recipes is None:
         recipes = {}
 
-    if "dem" in recipes and bounds.crs == WEB_MERCATOR_CRS:
+    source_resolution = get_resolution_in_meters(
+        Bounds(src.bounds, src.crs), (src.height, src.width))
+    target_resolution = get_resolution(bounds, target_shape)
+
+    if "dem" in recipes and bounds.crs == WEB_MERCATOR_CRS and (
+            target_resolution[0] > source_resolution[0]
+            and target_resolution[1] > source_resolution[1]):
         # special case for web Mercator to prevent crosshatch artifacts; use a
         # target image size that most closely matches the source resolution
         # (and is a power of 2)
@@ -155,9 +161,6 @@ def read_window(src, bounds, target_shape, recipes=None):
         scale_factor = 1
         dst_transform = None
 
-        source_resolution = get_resolution_in_meters(
-            Bounds(src.bounds, src.crs), (src.height, src.width))
-        target_resolution = get_resolution(bounds, target_shape)
         resolution = None
 
         if (target_resolution[0] < source_resolution[0]
