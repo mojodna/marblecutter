@@ -255,7 +255,7 @@ def read_window(src, bounds, target_shape, recipes=None):
 
                     return mask
         except Exception:
-            return None
+            return
 
     with futures.ThreadPoolExecutor(
             max_workers=multiprocessing.cpu_count() * 5) as executor:
