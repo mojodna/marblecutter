@@ -107,7 +107,7 @@ class PostGISCatalog(Catalog):
                   round(footprints.resolution) ASC,
                   -- prefer sources that reduce uncovered area the most
                   ST_Area(
-                    ST_Difference(sources.uncovered, footprints.geom)) DESC,
+                    ST_Difference(sources.uncovered, footprints.geom)) ASC,
                   -- if multiple scenes exist, assume they include timestamps
                   footprints.url DESC
                 LIMIT 1
