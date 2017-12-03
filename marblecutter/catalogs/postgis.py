@@ -76,7 +76,7 @@ class PostGISCatalog(Catalog):
                 ORDER BY
                   footprints.priority ASC,
                   round(footprints.resolution) ASC,
-                  ST_Centroid(footprints.geom) <-> ST_Centroid(bbox.geom),
+                  ST_Area(ST_Difference(bbox.geom, footprints.geom)) ASC,
                   footprints.url DESC
                 LIMIT 1
               ) AS _
