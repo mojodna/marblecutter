@@ -26,7 +26,7 @@ class TransformationBase:
 
         # apply buffer
         bounds_orig = bounds
-        shape = tuple([dim + (2 * effective_buffer) for dim in shape])
+        shape = [dim + (2 * effective_buffer) for dim in shape]
         bounds = Bounds([
             p - (buffer * resolution[i % 2])
             if i < 2 else p + (effective_buffer * resolution[i % 2])
@@ -61,7 +61,7 @@ class TransformationBase:
             bounds.bounds[3] = bounds_orig.bounds[3]
             top = 0
 
-        return bounds, shape, (left, bottom, right, top)
+        return bounds, tuple(shape), (left, bottom, right, top)
 
     def postprocess(self, pixels, data_format, offsets):
         data, (bounds, data_crs), _ = pixels
