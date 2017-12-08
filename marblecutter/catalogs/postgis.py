@@ -44,7 +44,7 @@ class PostGISCatalog(Catalog):
         self.table = table
         self.geometry_column = geometry_column
 
-    def get_sources(self, bounds, resolution):
+    def get_sources(self, bounds, resolution, include_geometries=False):
         bounds, bounds_crs = bounds
         zoom = get_zoom(max(resolution))
 
@@ -67,6 +67,7 @@ class PostGISCatalog(Catalog):
                   ARRAY[coalesce(bands, '{{}}'::jsonb)] bands,
                   ARRAY[coalesce(meta, '{{}}'::jsonb)] metas,
                   ARRAY[coalesce(recipes, '{{}}'::jsonb)] recipes,
+                  ARRAY[ST_Multi(footprints.geom)] geometries,
                   ST_Multi(footprints.geom) geom,
                   ST_Difference(bbox.geom, footprints.geom) uncovered
                 FROM {table} footprints
@@ -92,6 +93,7 @@ class PostGISCatalog(Catalog):
                   sources.metas || coalesce(meta, '{{}}'::jsonb) metas,
                   sources.recipes || coalesce(
                     footprints.recipes, '{{}}'::jsonb) recipes,
+                  sources.geometries || footprints.geom,
                   ST_Collect(sources.geom, footprints.geom) geom,
                   ST_Difference(sources.uncovered, footprints.geom) uncovered
                 FROM {table} footprints
@@ -125,13 +127,27 @@ class PostGISCatalog(Catalog):
                   unnest(resolutions) resolution,
                   unnest(bands) bands,
                   unnest(metas) meta,
-                  unnest(recipes) recipes
+                  unnest(recipes) recipes,
+                  unnest(geometries) geom
                 FROM candidates
             )
-            SELECT *
+            SELECT
+              url,
+              source,
+              resolution,
+              bands,
+              meta,
+              recipes,
+              null band,
+              CASE WHEN {include_geometries}
+                  THEN ST_AsGeoJSON(geom)
+                  ELSE NULL
+              END geom
             FROM candidate_rows
         """.format(
-            table=self.table, geometry_column=self.geometry_column)
+            table=self.table,
+            geometry_column=self.geometry_column,
+            include_geometries=bool(include_geometries))
 
         # height and width of the CRS
         ((left, right), (bottom, top)) = warp.transform(
