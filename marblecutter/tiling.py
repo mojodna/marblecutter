@@ -13,7 +13,7 @@ WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 
 
 def render_tile(tile,
-                sources,
+                catalog,
                 transformation=None,
                 format=None,
                 scale=1,
@@ -23,7 +23,7 @@ def render_tile(tile,
 
     return render(
         Bounds(bounds, WEB_MERCATOR_CRS),
-        sources,
+        catalog,
         tuple(map(int, Affine.scale(scale) * TILE_SHAPE)),
         WEB_MERCATOR_CRS,
         format=format,
