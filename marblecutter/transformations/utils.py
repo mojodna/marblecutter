@@ -39,7 +39,8 @@ class TransformationBase:
         # adjust bounds + shape if bounds extends outside the extent
         extent = get_extent(bounds.crs)
 
-        # TODO this is all or nothing right now
+        # TODO this is all or nothing right now rather than clipping to the
+        # extent
         # also: float precision
         if bounds.bounds[0] < extent[0]:
             shape[1] -= effective_buffer
@@ -65,7 +66,8 @@ class TransformationBase:
 
     def postprocess(self, pixels, data_format, offsets):
         data, (bounds, data_crs), _ = pixels
-        data, (cropped_bounds, data_crs), _ = crop(pixels, data_format, offsets)
+        data, (cropped_bounds, data_crs), _ = crop(pixels, data_format,
+                                                   offsets)
 
         if self.collar > 0:
             extent = get_extent(data_crs)
