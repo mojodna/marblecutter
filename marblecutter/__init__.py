@@ -212,7 +212,8 @@ def read_window(src, bounds, target_shape, recipes=None):
                 dst_height=dst_height,
                 dst_transform=dst_transform,
                 resampling=resampling) as vrt:
-            dst_window = vrt.window(*bounds.bounds)
+            dst_window = vrt.window(
+                *bounds.bounds).round_offsets().round_lengths()
 
             data = vrt.read(
                 boundless=True,
