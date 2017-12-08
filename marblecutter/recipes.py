@@ -84,7 +84,12 @@ def mask_outliers(data, m=2.):
 
 
 def preprocess(sources):
-    for source in sources:
+    for idx, source in enumerate(sources):
+        # TODO make this configurable
+        # limit the number of sources used
+        if idx == 15:
+            return
+
         if "landsat8" in source.recipes:
             for target_band, source_band in source.band_info.iteritems():
                 band = BAND_MAPPING.get(target_band)

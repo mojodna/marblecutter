@@ -130,7 +130,6 @@ class PostGISCatalog(Catalog):
             )
             SELECT *
             FROM candidate_rows
-            LIMIT 10
         """.format(
             table=self.table, geometry_column=self.geometry_column)
 
