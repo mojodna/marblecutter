@@ -91,7 +91,7 @@ def preprocess(sources):
             return
 
         if "landsat8" in source.recipes:
-            for target_band, source_band in source.band_info.iteritems():
+            for target_band, source_band in iter(source.band_info.items()):
                 band = BAND_MAPPING.get(target_band)
                 if band is not None:
                     yield Source(
