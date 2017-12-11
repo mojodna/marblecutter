@@ -97,6 +97,6 @@ def preprocess(sources):
                     yield Source(
                         source.url.replace("{band}", str(source_band)),
                         source.name, source.resolution, source.band_info,
-                        source.meta, source.recipes, band)
+                        source.meta, source.recipes, band, source.priority)
         else:
             yield source
