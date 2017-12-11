@@ -4,3 +4,4 @@ venv/
 marblecutter.egg-info/
 *.pyc
 *.tif
+dist/
