@@ -19,19 +19,21 @@ def features_for_tile(tile, catalog, scale=1):
     shape = tuple(map(int, Affine.scale(scale) * TILE_SHAPE))
     resolution = get_resolution_in_meters(bounds, shape)
 
-    for source in catalog.get_sources(
-            bounds, resolution, include_geometries=True):
+    for idx, source in enumerate(
+            catalog.get_sources(bounds, resolution, include_geometries=True)):
         yield {
             "type": "Feature",
             # TODO parse JSON in Source
             "geometry": json.loads(source.geom),
             "properties": {
+                "index": idx,
                 "url": source.url,
                 "name": source.name,
                 "resolution": source.resolution,
                 "band_info": source.band_info,
                 "meta": source.meta,
                 "recipes": source.recipes,
+                "priority": source.priority,
             }
         }
 
@@ -42,12 +44,14 @@ def sources_for_tile(tile, catalog, scale=1):
     shape = tuple(map(int, Affine.scale(scale) * TILE_SHAPE))
     resolution = get_resolution_in_meters(bounds, shape)
 
-    for source in catalog.get_sources(bounds, resolution):
+    for idx, source in enumerate(catalog.get_sources(bounds, resolution)):
         yield {
+            "index": idx,
             "url": source.url,
             "name": source.name,
             "resolution": source.resolution,
             "band_info": source.band_info,
             "meta": source.meta,
             "recipes": source.recipes,
+            "priority": source.priority,
         }

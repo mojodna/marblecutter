@@ -16,7 +16,6 @@ try:
 except ImportError:
     import urlparse
 
-
 Infinity = float("inf")
 
 
@@ -67,6 +66,7 @@ class PostGISCatalog(Catalog):
                   ARRAY[coalesce(bands, '{{}}'::jsonb)] bands,
                   ARRAY[coalesce(meta, '{{}}'::jsonb)] metas,
                   ARRAY[coalesce(recipes, '{{}}'::jsonb)] recipes,
+                  ARRAY[priority] priorities,
                   ARRAY[ST_Multi(footprints.geom)] geometries,
                   ST_Multi(footprints.geom) geom,
                   ST_Difference(bbox.geom, footprints.geom) uncovered
@@ -93,6 +93,7 @@ class PostGISCatalog(Catalog):
                   sources.metas || coalesce(meta, '{{}}'::jsonb) metas,
                   sources.recipes || coalesce(
                     footprints.recipes, '{{}}'::jsonb) recipes,
+                  sources.priorities || footprints.priority priorities,
                   sources.geometries || footprints.geom,
                   ST_Collect(sources.geom, footprints.geom) geom,
                   ST_Difference(sources.uncovered, footprints.geom) uncovered
@@ -128,6 +129,7 @@ class PostGISCatalog(Catalog):
                   unnest(bands) bands,
                   unnest(metas) meta,
                   unnest(recipes) recipes,
+                  unnest(priorities) priority,
                   unnest(geometries) geom
                 FROM candidates
             )
@@ -139,6 +141,7 @@ class PostGISCatalog(Catalog):
               meta,
               recipes,
               null band,
+              priority,
               CASE WHEN {include_geometries}
                   THEN ST_AsGeoJSON(geom)
                   ELSE NULL
