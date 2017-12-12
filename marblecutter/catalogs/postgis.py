@@ -56,6 +56,13 @@ class PostGISCatalog(Catalog):
                     'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
                     4326) geom
             ),
+            date_range AS (
+              SELECT
+                min(acquired_at) min,
+                max(acquired_at) max,
+                age(max(acquired_at), min(acquired_at)) "interval"
+              FROM {table}
+            ),
             sources AS (
               SELECT * FROM (
                 SELECT
@@ -66,18 +73,37 @@ class PostGISCatalog(Catalog):
                   ARRAY[coalesce(bands, '{{}}'::jsonb)] bands,
                   ARRAY[coalesce(meta, '{{}}'::jsonb)] metas,
                   ARRAY[coalesce(recipes, '{{}}'::jsonb)] recipes,
+                  ARRAY[acquired_at] acquisition_dates,
                   ARRAY[priority] priorities,
+                  ARRAY[ST_Area(
+                    ST_Difference(
+                        bbox.geom, ST_Difference(bbox.geom, footprints.geom))
+                    ) / ST_Area(bbox.geom)] coverages,
                   ARRAY[ST_Multi(footprints.geom)] geometries,
                   ST_Multi(footprints.geom) geom,
                   ST_Difference(bbox.geom, footprints.geom) uncovered
-                FROM {table} footprints
+                FROM date_range, {table} footprints
                 JOIN bbox ON footprints.geom && bbox.geom
                 WHERE %(zoom)s BETWEEN min_zoom and max_zoom
                   AND footprints.enabled = true
                 ORDER BY
-                  footprints.priority ASC,
-                  round(footprints.resolution) ASC,
-                  ST_Area(ST_Difference(bbox.geom, footprints.geom)) ASC,
+                  -- footprints.priority ASC,
+                  -- round(footprints.resolution) ASC,
+                  10 * coalesce(footprints.priority, 0.5) *
+                    .1 * (1 - (extract(
+                      EPOCH FROM (current_timestamp - COALESCE(acquired_at, '2000-01-01'))) /
+                        extract(
+                          EPOCH FROM (current_timestamp - date_range.min)))) *
+                    50 *
+                      -- de-prioritize over-zoomed sources
+                      CASE WHEN %(resolution)s / footprints.resolution >= 1
+                        THEN 1
+                        ELSE 1 / footprints.resolution
+                      END *
+                    ST_Area(
+                      ST_Difference(
+                          bbox.geom, ST_Difference(bbox.geom, footprints.geom))
+                      ) / ST_Area(bbox.geom) DESC,
                   footprints.url DESC
                 LIMIT 1
               ) AS _
@@ -93,24 +119,46 @@ class PostGISCatalog(Catalog):
                   sources.metas || coalesce(meta, '{{}}'::jsonb) metas,
                   sources.recipes || coalesce(
                     footprints.recipes, '{{}}'::jsonb) recipes,
+                  sources.acquisition_dates || footprints.acquired_at
+                    acquisition_dates,
                   sources.priorities || footprints.priority priorities,
+                  sources.coverages || ST_Area(
+                    ST_Difference(
+                        bbox.geom,
+                        ST_Difference(sources.uncovered, footprints.geom))
+                    ) / ST_Area(bbox.geom) coverages,
                   sources.geometries || footprints.geom,
                   ST_Collect(sources.geom, footprints.geom) geom,
                   ST_Difference(sources.uncovered, footprints.geom) uncovered
-                FROM {table} footprints
+                FROM date_range, {table} footprints
                 -- use proper intersection to prevent voids from irregular
                 -- footprints
                 JOIN sources ON ST_Intersects(
                     footprints.geom, sources.uncovered)
+                JOIN bbox ON footprints.geom && bbox.geom
                 WHERE NOT (footprints.url = ANY(sources.urls))
                   AND %(zoom)s BETWEEN min_zoom AND max_zoom
                   AND footprints.enabled = true
                 ORDER BY
-                  footprints.priority ASC,
-                  round(footprints.resolution) ASC,
+                  -- footprints.priority ASC,
+                  -- round(footprints.resolution) ASC,
                   -- prefer sources that reduce uncovered area the most
-                  ST_Area(
-                    ST_Difference(sources.uncovered, footprints.geom)) ASC,
+                  10 * coalesce(footprints.priority, 0.5) *
+                    .1 * (1 - (extract(
+                      EPOCH FROM (current_timestamp - COALESCE(acquired_at, '2000-01-01'))) /
+                        extract(
+                          EPOCH FROM (current_timestamp - date_range.min)))) *
+                    50 *
+                      -- de-prioritize over-zoomed sources
+                      CASE WHEN %(resolution)s / footprints.resolution >= 1
+                        THEN 1
+                        ELSE 1 / footprints.resolution
+                      END *
+                    ST_Area(
+                      ST_Difference(
+                        bbox.geom,
+                        ST_Difference(sources.uncovered, footprints.geom))
+                      ) / ST_Area(bbox.geom) DESC,
                   -- if multiple scenes exist, assume they include timestamps
                   footprints.url DESC
                 LIMIT 1
@@ -129,7 +177,9 @@ class PostGISCatalog(Catalog):
                   unnest(bands) bands,
                   unnest(metas) meta,
                   unnest(recipes) recipes,
+                  unnest(acquisition_dates) acquired_at,
                   unnest(priorities) priority,
+                  unnest(coverages) coverage,
                   unnest(geometries) geom
                 FROM candidates
             )
@@ -140,8 +190,10 @@ class PostGISCatalog(Catalog):
               bands,
               meta,
               recipes,
+              acquired_at,
               null band,
               priority,
+              coverage,
               CASE WHEN {include_geometries}
                   THEN ST_AsGeoJSON(geom)
                   ELSE NULL
@@ -165,6 +217,7 @@ class PostGISCatalog(Catalog):
                     "maxx": right if right != Infinity else 180,
                     "maxy": top if top != Infinity else 90,
                     "zoom": zoom,
+                    "resolution": min(resolution),
                 })
 
                 for record in cur:

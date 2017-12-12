@@ -34,6 +34,8 @@ def features_for_tile(tile, catalog, scale=1):
                 "meta": source.meta,
                 "recipes": source.recipes,
                 "priority": source.priority,
+                "coverage": source.coverage,
+                "acquired_at": source.acquired_at,
             }
         }
 
@@ -54,4 +56,6 @@ def sources_for_tile(tile, catalog, scale=1):
             "meta": source.meta,
             "recipes": source.recipes,
             "priority": source.priority,
+            "coverage": source.coverage,
+            "acquired_at": source.acquired_at,
         }
