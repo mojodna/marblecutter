@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import logging
+import json
 import os
 
 from marblecutter import get_zoom
@@ -196,7 +197,7 @@ class PostGISCatalog(Catalog):
               coverage,
               CASE WHEN {include_geometries}
                   THEN ST_AsGeoJSON(geom)
-                  ELSE NULL
+                  ELSE 'null'
               END geom
             FROM candidate_rows
         """.format(
@@ -221,6 +222,6 @@ class PostGISCatalog(Catalog):
                 })
 
                 for record in cur:
-                    yield Source(*record)
+                    yield Source(*record[:-1], json.loads(record[-1]))
         finally:
             self._pool.putconn(conn)

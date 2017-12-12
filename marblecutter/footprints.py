@@ -1,8 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import
 
-import json
-
 import mercantile
 from affine import Affine
 from rasterio.crs import CRS
@@ -23,8 +21,7 @@ def features_for_tile(tile, catalog, scale=1):
             catalog.get_sources(bounds, resolution, include_geometries=True)):
         yield {
             "type": "Feature",
-            # TODO parse JSON in Source
-            "geometry": json.loads(source.geom),
+            "geometry": source.geom,
             "properties": {
                 "index": idx,
                 "url": source.url,
