@@ -36,8 +36,8 @@ class RemoteCatalog(Catalog):
 
         self._log.info("Resolution: %s; equivalent zoom: %d", resolution, zoom)
 
-        ((left, right), (bottom, top)) = warp.transform(
-            bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
+        left, bottom, right, top = warp.transform_bounds(
+            bounds_crs, WGS84_CRS, *bounds)
 
         # account for rounding errors when converting between tiles and coords
         left += 0.000001
