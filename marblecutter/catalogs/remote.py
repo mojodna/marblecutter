@@ -45,12 +45,16 @@ class RemoteCatalog(Catalog):
         right -= 0.000001
         top -= 0.000001
 
-        tile = mercantile.bounding_tile(left, bottom, right, top)
+        if (self._bounds[0] <= left <= self._bounds[2]
+                or self._bounds[0] <= right <= self._bounds[2]) and (
+                    self._bounds[1] <= bottom <= self._bounds[3]
+                    or self._bounds[1] <= top <= self._bounds[3]) and (
+                        self._minzoom <= zoom <= self._maxzoom):
+            tile = mercantile.bounding_tile(left, bottom, right, top)
 
-        self._log.info("tile: %d/%d/%d", tile.z, tile.x, tile.y)
+            # TODO check for status code
+            r = requests.get(
+                self.endpoint.format(x=tile.x, y=tile.y, z=tile.z))
 
-        # TODO check for status code
-        r = requests.get(self.endpoint.format(x=tile.x, y=tile.y, z=tile.z))
-
-        for source in r.json():
-            yield Source(**source)
+            for source in r.json():
+                yield Source(**source)
