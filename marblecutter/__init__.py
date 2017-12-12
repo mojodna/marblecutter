@@ -292,8 +292,11 @@ def render(bounds,
         bounds, shape, offsets = transformation.expand(bounds, shape)
 
     with Timer() as t:
-        sources = catalog.get_sources(bounds, resolution_m)
+        sources = list(catalog.get_sources(bounds, resolution_m))
     stats.append(("get sources", t.elapsed))
+
+    if sources is None or len(sources) == 0:
+        raise NoDataAvailable()
 
     with Timer() as t:
         sources_used, pixels = mosaic.composite(sources, bounds, shape,
