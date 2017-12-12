@@ -22,6 +22,7 @@ setup(
         'numpy',
         'Pillow',
         'rasterio[s3]>=1.0a12',
+        'requests',
         'rio-tiler ~= 0.0.3',
         'rio-toa',
         'scipy',

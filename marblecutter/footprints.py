@@ -23,10 +23,10 @@ def features_for_tile(tile, catalog, scale=1):
             "type": "Feature",
             "geometry": source.geom,
             "properties": {
-                "index": idx,
                 "url": source.url,
                 "name": source.name,
                 "resolution": source.resolution,
+                "band": source.band,
                 "band_info": source.band_info,
                 "meta": source.meta,
                 "recipes": source.recipes,
@@ -45,10 +45,10 @@ def sources_for_tile(tile, catalog, scale=1):
 
     for idx, source in enumerate(catalog.get_sources(bounds, resolution)):
         yield {
-            "index": idx,
             "url": source.url,
             "name": source.name,
             "resolution": source.resolution,
+            "band": source.band,
             "band_info": source.band_info,
             "meta": source.meta,
             "recipes": source.recipes,
