@@ -76,23 +76,23 @@ class PostGISCatalog(Catalog):
                   ARRAY[coalesce(recipes, '{{}}'::jsonb)] recipes,
                   ARRAY[acquired_at] acquisition_dates,
                   ARRAY[priority] priorities,
-                  ARRAY[ST_Area(
-                    ST_Difference(
-                        bbox.geom, ST_Difference(bbox.geom, footprints.geom))
-                    ) / ST_Area(bbox.geom)] coverages,
+                  ARRAY[ST_Area(ST_Intersection(bbox.geom, footprints.geom)) /
+                    ST_Area(bbox.geom)] coverages,
                   ARRAY[ST_Multi(footprints.geom)] geometries,
                   ST_Multi(footprints.geom) geom,
-                  ST_Difference(bbox.geom, footprints.geom) uncovered
+                  ST_Difference(
+                    bbox.geom, ST_Buffer(
+                      footprints.geom::geography,
+                      footprints.resolution * -100)::geometry) uncovered
                 FROM date_range, {table} footprints
                 JOIN bbox ON footprints.geom && bbox.geom
                 WHERE %(zoom)s BETWEEN min_zoom and max_zoom
                   AND footprints.enabled = true
                 ORDER BY
-                  -- footprints.priority ASC,
-                  -- round(footprints.resolution) ASC,
                   10 * coalesce(footprints.priority, 0.5) *
                     .1 * (1 - (extract(
-                      EPOCH FROM (current_timestamp - COALESCE(acquired_at, '2000-01-01'))) /
+                      EPOCH FROM (current_timestamp - COALESCE(
+                        acquired_at, '2000-01-01'))) /
                         extract(
                           EPOCH FROM (current_timestamp - date_range.min)))) *
                     50 *
@@ -102,10 +102,8 @@ class PostGISCatalog(Catalog):
                         ELSE 1 / footprints.resolution
                       END *
                     ST_Area(
-                      ST_Difference(
-                          bbox.geom, ST_Difference(bbox.geom, footprints.geom))
-                      ) / ST_Area(bbox.geom) DESC,
-                  footprints.url DESC
+                        ST_Intersection(bbox.geom, footprints.geom)) /
+                      ST_Area(bbox.geom) DESC
                 LIMIT 1
               ) AS _
               UNION ALL
@@ -124,29 +122,27 @@ class PostGISCatalog(Catalog):
                     acquisition_dates,
                   sources.priorities || footprints.priority priorities,
                   sources.coverages || ST_Area(
-                    ST_Difference(
-                        bbox.geom,
-                        ST_Difference(sources.uncovered, footprints.geom))
-                    ) / ST_Area(bbox.geom) coverages,
+                    ST_Intersection(sources.uncovered, footprints.geom)) /
+                    ST_Area(bbox.geom) coverages,
                   sources.geometries || footprints.geom,
                   ST_Collect(sources.geom, footprints.geom) geom,
-                  ST_Difference(sources.uncovered, footprints.geom) uncovered
-                FROM date_range, {table} footprints
+                  ST_Difference(
+                    bbox.geom, ST_Buffer(
+                      footprints.geom::geography,
+                      footprints.resolution * -100)::geometry) uncovered
+                FROM bbox, date_range, {table} footprints
                 -- use proper intersection to prevent voids from irregular
                 -- footprints
                 JOIN sources ON ST_Intersects(
                     footprints.geom, sources.uncovered)
-                JOIN bbox ON footprints.geom && bbox.geom
                 WHERE NOT (footprints.url = ANY(sources.urls))
                   AND %(zoom)s BETWEEN min_zoom AND max_zoom
                   AND footprints.enabled = true
                 ORDER BY
-                  -- footprints.priority ASC,
-                  -- round(footprints.resolution) ASC,
-                  -- prefer sources that reduce uncovered area the most
                   10 * coalesce(footprints.priority, 0.5) *
                     .1 * (1 - (extract(
-                      EPOCH FROM (current_timestamp - COALESCE(acquired_at, '2000-01-01'))) /
+                      EPOCH FROM (current_timestamp - COALESCE(
+                        acquired_at, '2000-01-01'))) /
                         extract(
                           EPOCH FROM (current_timestamp - date_range.min)))) *
                     50 *
@@ -156,12 +152,8 @@ class PostGISCatalog(Catalog):
                         ELSE 1 / footprints.resolution
                       END *
                     ST_Area(
-                      ST_Difference(
-                        bbox.geom,
-                        ST_Difference(sources.uncovered, footprints.geom))
-                      ) / ST_Area(bbox.geom) DESC,
-                  -- if multiple scenes exist, assume they include timestamps
-                  footprints.url DESC
+                        ST_Intersection(sources.uncovered, footprints.geom)) /
+                        ST_Area(bbox.geom) DESC
                 LIMIT 1
               ) AS _
             ),
