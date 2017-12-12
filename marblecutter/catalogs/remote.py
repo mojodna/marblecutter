@@ -16,12 +16,19 @@ Infinity = float("inf")
 
 
 class RemoteCatalog(Catalog):
-    def __init__(self, endpoint):
-        if endpoint is None:
+    def __init__(self, tilejson_url, endpoint):
+        if tilejson_url is None:
             raise Exception("Endpoint must be provided.")
 
         self._log = logging.getLogger(__name__)
         self.endpoint = endpoint
+
+        meta = requests.get(tilejson_url).json()
+        self._bounds = meta["bounds"]
+        self._center = meta["center"]
+        self._maxzoom = meta["maxzoom"]
+        self._minzoom = meta["minzoom"]
+        self._name = meta["name"]
 
     def get_sources(self, bounds, resolution):
         bounds, bounds_crs = bounds
@@ -29,19 +36,21 @@ class RemoteCatalog(Catalog):
 
         self._log.info("Resolution: %s; equivalent zoom: %d", resolution, zoom)
 
-        # TODO this isn't round tripping properly
         ((left, right), (bottom, top)) = warp.transform(
             bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
 
-        self._log.info("%f %f %f %f", left, bottom, right, top)
-        self._log.info("%f %f", *mercantile.lnglat(*bounds[0:2]))
-        self._log.info("%f %f", *mercantile.lnglat(*bounds[2:]))
+        # account for rounding errors when converting between tiles and coords
+        left += 0.000001
+        bottom += 0.000001
+        right -= 0.000001
+        top -= 0.000001
 
-        for tile in mercantile.tiles(left, bottom, right, top, (zoom, )):
-            self._log.info("Fetching %d/%d/%d", tile.z, tile.x, tile.y)
+        tile = mercantile.bounding_tile(left, bottom, right, top)
 
-            r = requests.get("{}/{}/{}/{}.json".format(self.endpoint, tile.z,
-                                                       tile.x, tile.y))
+        self._log.info("tile: %d/%d/%d", tile.z, tile.x, tile.y)
 
-            for source in r.json():
-                yield Source(**source)
+        # TODO check for status code
+        r = requests.get(self.endpoint.format(x=tile.x, y=tile.y, z=tile.z))
+
+        for source in r.json():
+            yield Source(**source)
