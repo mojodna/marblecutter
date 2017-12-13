@@ -209,5 +209,7 @@ class PostGISCatalog(Catalog):
 
                 for record in cur:
                     yield Source(*record[:-1], geom=json.loads(record[-1]))
+        except Exception as e:
+            self._log.error(e)
         finally:
             self._pool.putconn(conn)
