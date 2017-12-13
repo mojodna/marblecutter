@@ -1,8 +1,8 @@
 # coding=utf-8
 from __future__ import absolute_import
 
-import logging
 import json
+import logging
 import os
 
 from marblecutter import get_zoom
@@ -214,6 +214,6 @@ class PostGISCatalog(Catalog):
                 })
 
                 for record in cur:
-                    yield Source(*record[:-1], json.loads(record[-1]))
+                    yield Source(*record[:-1], geom=json.loads(record[-1]))
         finally:
             self._pool.putconn(conn)
