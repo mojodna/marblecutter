@@ -30,6 +30,7 @@ LOG = logging.getLogger(__name__)
 EXTENTS = {
     str(WEB_MERCATOR_CRS): (-20037508.342789244, -20037508.342789255,
                             20037508.342789244, 20037508.342789244),
+    str(WGS84_CRS): (-180.0, -90.0, 180.0, 90.0),
 }
 
 # initialize GDAL environment variables that can't be set w/ Lambda
