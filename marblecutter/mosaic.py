@@ -16,14 +16,14 @@ from .utils import Bounds, PixelCollection
 LOG = logging.getLogger(__name__)
 
 
-def composite(sources, bounds, dims, target_crs, band_count):
+def composite(sources, bounds, shape, target_crs, band_count):
     """Composite data from sources into a single raster covering bounds, but in
     the target CRS."""
     # avoid circular dependencies
     from . import _nodata, get_source, read_window
 
-    height, width = dims
 
+    # TODO this belongs in render
     if bounds.crs == target_crs:
         canvas_bounds = bounds
     else:
@@ -32,7 +32,7 @@ def composite(sources, bounds, dims, target_crs, band_count):
             target_crs)
 
     canvas = np.ma.zeros(
-        (band_count, height, width),
+        (band_count, ) + shape,
         dtype=np.float32,
         fill_value=_nodata(np.float32))
     canvas.mask = True
@@ -48,7 +48,7 @@ def composite(sources, bounds, dims, target_crs, band_count):
             # TODO ask for a buffer here, get back an updated bounding box
             # reflecting it
             try:
-                window_data = read_window(src, canvas_bounds, dims,
+                window_data = read_window(src, canvas_bounds, shape,
                                           source.recipes)
             except Exception as e:
                 LOG.warn("Error reading %s: %s", source.url, e)
