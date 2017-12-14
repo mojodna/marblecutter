@@ -48,7 +48,8 @@ def composite(sources, bounds, dims, target_crs, band_count):
             # TODO ask for a buffer here, get back an updated bounding box
             # reflecting it
             try:
-                window_data = read_window(src, canvas_bounds, dims, source.recipes)
+                window_data = read_window(src, canvas_bounds, dims,
+                                          source.recipes)
             except Exception as e:
                 LOG.warn("Error reading %s: %s", source.url, e)
                 return
