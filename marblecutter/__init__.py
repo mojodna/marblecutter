@@ -203,10 +203,15 @@ def read_window(src, bounds, target_shape, recipes=None):
 
     resampling = Resampling[recipes.get("resample", "bilinear")]
 
+    nodata = src.nodata or _nodata(src.meta["dtype"])
+
+    if "nodata" in recipes:
+        nodata = recipes["nodata"]
+
     def _read_data():
         with WarpedVRT(
                 src,
-                src_nodata=src.nodata or _nodata(src.meta['dtype']),
+                src_nodata=nodata,
                 dst_crs=bounds.crs,
                 dst_width=dst_width,
                 dst_height=dst_height,
@@ -221,7 +226,7 @@ def read_window(src, bounds, target_shape, recipes=None):
                 window=dst_window)
 
             # mask with NODATA values
-            if vrt.nodata is not None:
+            if nodata is not None and vrt.nodata is not None:
                 data = _mask(data, vrt.nodata)
             else:
                 data = np.ma.masked_array(data, mask=np.ma.nomask)
