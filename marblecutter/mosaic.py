@@ -23,14 +23,19 @@ def composite(sources, bounds, dims, target_crs, band_count):
     from . import _nodata, get_source, read_window
 
     height, width = dims
-    ((left, right), (bottom, top)) = warp.transform(
-        bounds.crs, target_crs, bounds.bounds[::2], bounds.bounds[1::2])
+
+    if bounds.crs == target_crs:
+        canvas_bounds = bounds
+    else:
+        canvas_bounds = Bounds(
+            warp.transform_bounds(bounds.crs, target_crs, *bounds.bounds),
+            target_crs)
+
     canvas = np.ma.zeros(
         (band_count, height, width),
         dtype=np.float32,
         fill_value=_nodata(np.float32))
     canvas.mask = True
-    canvas_bounds = Bounds((left, bottom, right, top), target_crs)
 
     sources = recipes.preprocess(sources)
 

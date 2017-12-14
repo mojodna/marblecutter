@@ -22,6 +22,9 @@ class TransformationBase:
         collar = self.collar
         effective_buffer = buffer + collar
 
+        if effective_buffer == 0:
+            return bounds, shape, (0, 0, 0, 0)
+
         resolution = get_resolution(bounds, shape)
 
         # apply buffer
