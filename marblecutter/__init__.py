@@ -140,7 +140,7 @@ def read_window(src, bounds, target_shape, recipes=None):
         # target image size that most closely matches the source resolution
         # (and is a power of 2)
         zoom = min(
-            22,
+            22,  # going beyond this results in overflow within GDAL
             get_zoom(
                 max(
                     get_resolution_in_meters(
