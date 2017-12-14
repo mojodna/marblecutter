@@ -21,12 +21,6 @@ LOG = logging.getLogger(__name__)
 def apply(recipes, pixels, source=None, ds=None):
     data = pixels.data
 
-    if "mask_outliers" in recipes:
-        # mask outliers (intended for DEM boundaries)
-        LOG.info("masking outliers")
-        data.mask[0] = np.logical_or(data.mask[0], mask_outliers(
-            data[0], 100.))
-
     if "landsat8" in recipes:
         LOG.info("Applying landsat 8 recipe")
         source_band = source.url.split("/")[-1].split("_B")[1][0]
@@ -74,13 +68,6 @@ def apply(recipes, pixels, source=None, ds=None):
     # TODO source.band should be pixels.band, which requires read_window to be
     # band-aware
     return PixelCollection(data, pixels.bounds, source.band)
-
-
-def mask_outliers(data, m=2.):
-    d = np.abs(data - np.median(data.compressed()))
-    mdev = np.median(d.compressed())
-    s = d / mdev if mdev else 0.
-    return np.where(s < m, False, True)
 
 
 def preprocess(sources):
