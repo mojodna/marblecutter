@@ -59,9 +59,10 @@ class PostGISCatalog(Catalog):
             ),
             date_range AS (
               SELECT
-                min(acquired_at) min,
-                max(acquired_at) max,
-                age(max(acquired_at), min(acquired_at)) "interval"
+                COALESCE(min(acquired_at), '1970-01-01') min,
+                COALESCE(max(acquired_at), '1970-01-01') max,
+                age(COALESCE(max(acquired_at), '1970-01-01'),
+                    COALESCE(min(acquired_at), '1970-01-01')) "interval"
               FROM {table}
             ),
             sources AS (
