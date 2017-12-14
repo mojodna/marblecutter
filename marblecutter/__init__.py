@@ -217,8 +217,9 @@ def read_window(src, bounds, target_shape, recipes=None):
                 dst_height=dst_height,
                 dst_transform=dst_transform,
                 resampling=resampling) as vrt:
-            dst_window = vrt.window(
-                *bounds.bounds).round_offsets().round_lengths()
+            # NOTE rounding offsets (round_offsets()) eliminates 1px border at
+            # 180º east (but not 85º south) at zoom 2 (with Blue Marble)
+            dst_window = vrt.window(*bounds.bounds)
 
             data = vrt.read(
                 boundless=True,
