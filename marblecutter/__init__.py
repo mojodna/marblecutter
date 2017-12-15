@@ -136,6 +136,16 @@ def read_window(src, bounds, target_shape, recipes=None):
         Bounds(src.bounds, src.crs), (src.height, src.width))
     target_resolution = get_resolution(bounds, target_shape)
 
+    # GDAL chooses target extents such that reprojected pixels are square; this
+    # may produce pixel offsets near the edges of projected bounds
+    #   http://lists.osgeo.org/pipermail/gdal-dev/2016-August/045046.html
+    #
+    # A workaround for this is to produce a VRT with the explicit target extent
+    # in projected coordinates (assuming that the target CRS is known).
+    # Otherwise, we could tweak the origin (.c, .f) of the generated
+    # dst_transform, but that would require knowing projected bounds of all
+    # CRSes in use.
+
     if "dem" in recipes and bounds.crs == WEB_MERCATOR_CRS and (
             target_resolution[0] > source_resolution[0]
             and target_resolution[1] > source_resolution[1]):
