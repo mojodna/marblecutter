@@ -23,14 +23,16 @@ from . import mosaic
 from .stats import Timer
 from .utils import Bounds, PixelCollection
 
+EARTH_RADIUS = 6378137
 WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
 LOG = logging.getLogger(__name__)
 
 EXTENTS = {
-    str(WEB_MERCATOR_CRS): (-20037508.342789244, -20037508.342789255,
-                            20037508.342789244, 20037508.342789244),
-    str(WGS84_CRS): (-180.0, -90.0, 180.0, 90.0),
+    str(WEB_MERCATOR_CRS): (-math.pi * EARTH_RADIUS, -math.pi * EARTH_RADIUS,
+                            math.pi * EARTH_RADIUS, math.pi * EARTH_RADIUS),
+    str(WGS84_CRS): (math.degrees(-math.pi), math.degrees(-math.pi / 2),
+                     math.degrees(math.pi), math.degrees(math.pi / 2)),
 }
 
 # initialize GDAL environment variables that can't be set w/ Lambda
