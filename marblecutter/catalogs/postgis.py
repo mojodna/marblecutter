@@ -103,8 +103,11 @@ class PostGISCatalog(Catalog):
             geometry_column=self.geometry_column,
             include_geometries=bool(include_geometries))
 
-        left, bottom, right, top = warp.transform_bounds(
-            bounds.crs, WGS84_CRS, *bounds.bounds)
+        if bounds.crs == WGS84_CRS:
+            left, bottom, right, top = bounds.bounds
+        else:
+            left, bottom, right, top = warp.transform_bounds(
+                bounds.crs, WGS84_CRS, *bounds.bounds)
 
         connection = self._pool.getconn()
         try:
@@ -274,8 +277,11 @@ class PostGISCatalog(Catalog):
             geometry_column=self.geometry_column,
             include_geometries=bool(include_geometries))
 
-        left, bottom, right, top = warp.transform_bounds(
-            bounds.crs, WGS84_CRS, *bounds.bounds)
+        if bounds.crs == WGS84_CRS:
+            left, bottom, right, top = bounds.bounds
+        else:
+            left, bottom, right, top = warp.transform_bounds(
+                bounds.crs, WGS84_CRS, *bounds.bounds)
 
         connection = self._pool.getconn()
         try:
