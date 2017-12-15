@@ -6,6 +6,7 @@ PixelCollection = namedtuple("PixelCollection", ["data", "bounds", "band"])
 PixelCollection.__new__.__defaults__ = (None, )
 Source = namedtuple("Source", [
     "url", "name", "resolution", "band_info", "meta", "recipes", "acquired_at",
-    "band", "priority", "coverage", "geom"
+    "band", "priority", "coverage", "geom", "filename", "min_zoom", "max_zoom"
 ])
-Source.__new__.__defaults__ = ({}, {}, {}, None, None, None, None, None, )
+Source.__new__.__defaults__ = ({}, {}, {}, None, None, None, None, None, None,
+                               None, None)

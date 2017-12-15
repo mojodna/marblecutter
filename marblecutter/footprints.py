@@ -41,6 +41,9 @@ def features_for_tile(tile, catalog, scale=1, min_zoom=None, max_zoom=None):
                 "priority": source.priority,
                 "coverage": source.coverage,
                 "acquired_at": source.acquired_at,
+                "filename": source.filename,
+                "min_zoom": source.min_zoom,
+                "max_zoom": source.max_zoom,
             }
         }
 
@@ -65,4 +68,7 @@ def sources_for_tile(tile, catalog, scale=1, min_zoom=None, max_zoom=None):
             "priority": source.priority,
             "coverage": source.coverage,
             "acquired_at": source.acquired_at,
+            "filename": source.filename,
+            "min_zoom": source.min_zoom,
+            "max_zoom": source.max_zoom,
         }

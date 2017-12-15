@@ -57,8 +57,8 @@ class PostGISCatalog(Catalog):
         query = """
             WITH bbox AS (
               SELECT ST_SetSRID(
-                    'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
-                    4326) geom
+                'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
+                4326) geom
             ),
             sources AS (
               SELECT
@@ -70,7 +70,10 @@ class PostGISCatalog(Catalog):
                  coalesce(recipes, '{{}}'::jsonb) recipes,
                  acquired_at,
                  priority,
-                 ST_Multi(footprints.geom) geom
+                 ST_Multi(footprints.geom) geom,
+                 filename,
+                 min_zoom,
+                 max_zoom
                FROM {table} footprints
                JOIN bbox ON footprints.geom && bbox.geom
                WHERE numrange(min_zoom, max_zoom, '[]') && numrange(%(min_zoom)s, %(max_zoom)s, '[]')
@@ -90,7 +93,10 @@ class PostGISCatalog(Catalog):
               CASE WHEN {include_geometries}
                   THEN ST_AsGeoJSON(geom)
                   ELSE 'null'
-              END geom
+              END geom,
+              filename,
+              min_zoom,
+              max_zoom
             FROM sources
         """.format(
             table=self.table,
@@ -114,7 +120,12 @@ class PostGISCatalog(Catalog):
                 })
 
                 for record in cur:
-                    yield Source(*record[:-1], geom=json.loads(record[-1]))
+                    yield Source(
+                        *record[:-4],
+                        geom=json.loads(record[-4]),
+                        filename=record[-3],
+                        min_zoom=record[-2],
+                        max_zoom=record[-1])
         except Exception as e:
             self._log.error(e)
         finally:
