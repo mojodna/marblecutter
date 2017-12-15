@@ -44,13 +44,85 @@ class PostGISCatalog(Catalog):
         self.table = table
         self.geometry_column = geometry_column
 
-    def get_sources(self, bounds, resolution, include_geometries=False):
-        bounds, bounds_crs = bounds
-        zoom = get_zoom(max(resolution))
-
-        self._log.info("Resolution: %s; equivalent zoom: %d", resolution, zoom)
+    def _candidates(self,
+                    bounds,
+                    resolution,
+                    min_zoom,
+                    max_zoom,
+                    include_geometries=False):
+        self._log.info("Resolution: %s; zoom range: %d-%d", resolution,
+                       min_zoom, max_zoom)
 
         # TODO get sources in native CRS of the target
+        query = """
+            WITH bbox AS (
+              SELECT ST_SetSRID(
+                    'BOX(%(minx)s %(miny)s, %(maxx)s %(maxy)s)'::box2d,
+                    4326) geom
+            ),
+            sources AS (
+              SELECT
+                 url,
+                 source,
+                 resolution,
+                 coalesce(bands, '{{}}'::jsonb) bands,
+                 coalesce(meta, '{{}}'::jsonb) meta,
+                 coalesce(recipes, '{{}}'::jsonb) recipes,
+                 acquired_at,
+                 priority,
+                 ST_Multi(footprints.geom) geom
+               FROM {table} footprints
+               JOIN bbox ON footprints.geom && bbox.geom
+               WHERE (%(min_zoom)s BETWEEN min_zoom AND max_zoom
+                   OR %(max_zoom)s BETWEEN min_zoom AND max_zoom)
+                 AND footprints.enabled = true
+            )
+            SELECT
+              url,
+              source,
+              resolution,
+              bands,
+              meta,
+              recipes,
+              acquired_at,
+              null band,
+              priority,
+              null coverage,
+              CASE WHEN {include_geometries}
+                  THEN ST_AsGeoJSON(geom)
+                  ELSE 'null'
+              END geom
+            FROM sources
+        """.format(
+            table=self.table,
+            geometry_column=self.geometry_column,
+            include_geometries=bool(include_geometries))
+
+        left, bottom, right, top = warp.transform_bounds(
+            bounds.crs, WGS84_CRS, *bounds.bounds)
+
+        connection = self._pool.getconn()
+        try:
+            with connection as conn, conn.cursor() as cur:
+                cur.execute(query, {
+                    "minx": left if left != Infinity else -180,
+                    "miny": bottom if bottom != Infinity else -90,
+                    "maxx": right if right != Infinity else 180,
+                    "maxy": top if top != Infinity else 90,
+                    "min_zoom": min_zoom,
+                    "max_zoom": max_zoom,
+                    "resolution": min(resolution),
+                })
+
+                for record in cur:
+                    yield Source(*record[:-1], geom=json.loads(record[-1]))
+        except Exception as e:
+            self._log.error(e)
+        finally:
+            self._pool.putconn(connection)
+
+    def _fill_bounds(self, bounds, resolution, include_geometries=False):
+        zoom = get_zoom(max(resolution))
         query = """
             WITH RECURSIVE bbox AS (
               SELECT ST_SetSRID(
@@ -84,7 +156,7 @@ class PostGISCatalog(Catalog):
                   ST_Difference(bbox.geom, footprints.geom) uncovered
                 FROM date_range, {table} footprints
                 JOIN bbox ON footprints.geom && bbox.geom
-                WHERE %(zoom)s BETWEEN min_zoom and max_zoom
+                WHERE %(zoom)s BETWEEN min_zoom AND max_zoom
                   AND footprints.enabled = true
                 ORDER BY
                   10 * coalesce(footprints.priority, 0.5) *
@@ -192,13 +264,12 @@ class PostGISCatalog(Catalog):
             geometry_column=self.geometry_column,
             include_geometries=bool(include_geometries))
 
-        # height and width of the CRS
-        ((left, right), (bottom, top)) = warp.transform(
-            bounds_crs, WGS84_CRS, bounds[::2], bounds[1::2])
+        left, bottom, right, top = warp.transform_bounds(
+            bounds.crs, WGS84_CRS, *bounds.bounds)
 
-        conn = self._pool.getconn()
+        connection = self._pool.getconn()
         try:
-            with conn.cursor() as cur:
+            with connection as conn, conn.cursor() as cur:
                 cur.execute(query, {
                     "minx": left if left != Infinity else -180,
                     "miny": bottom if bottom != Infinity else -90,
@@ -213,4 +284,21 @@ class PostGISCatalog(Catalog):
         except Exception as e:
             self._log.error(e)
         finally:
-            self._pool.putconn(conn)
+            self._pool.putconn(connection)
+
+    def get_sources(self,
+                    bounds,
+                    resolution,
+                    min_zoom=None,
+                    max_zoom=None,
+                    include_geometries=False):
+        if min_zoom is None or max_zoom is None:
+            return self._fill_bounds(
+                bounds, resolution, include_geometries=include_geometries)
+
+        return self._candidates(
+            bounds,
+            resolution,
+            min_zoom,
+            max_zoom,
+            include_geometries=include_geometries)
