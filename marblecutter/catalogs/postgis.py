@@ -73,8 +73,7 @@ class PostGISCatalog(Catalog):
                  ST_Multi(footprints.geom) geom
                FROM {table} footprints
                JOIN bbox ON footprints.geom && bbox.geom
-               WHERE (%(min_zoom)s BETWEEN min_zoom AND max_zoom
-                   OR %(max_zoom)s BETWEEN min_zoom AND max_zoom)
+               WHERE numrange(min_zoom, max_zoom, '[]') && numrange(%(min_zoom)s, %(max_zoom)s, '[]')
                  AND footprints.enabled = true
             )
             SELECT
