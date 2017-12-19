@@ -60,14 +60,20 @@ def apply(recipes, pixels, source=None, ds=None):
 
     if "imagery" in recipes:
         LOG.info("Applying imagery recipe")
+
+        if data.shape[0] == 4:
+            # alpha band present; drop it
+            # TODO use this as a mask instead
+            data = data[0:3]
+
+        if data.shape[0] == 1:
+            # likely greyscale image; use the same band on all channels
+            data = np.ma.array([data[0], data[0], data[0]])
+
         # normalize to 0..1 based on the range of the source type (only
         # for int*s)
         if not np.issubdtype(ds.meta["dtype"], float):
             data /= np.iinfo(ds.meta["dtype"]).max
-
-        if data.shape[0] == 4:
-            LOG.info("Dropping alpha band")
-            data = data[0:3]
 
     # TODO source.band should be pixels.band, which requires read_window to be
     # band-aware
