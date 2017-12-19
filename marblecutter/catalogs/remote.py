@@ -52,8 +52,8 @@ class RemoteCatalog(Catalog):
                         self._minzoom <= zoom <= self._maxzoom):
             tile = mercantile.bounding_tile(left, bottom, right, top)
 
-            with rsp as requests.get(
-                    self.endpoint.format(x=tile.x, y=tile.y, z=tile.z)):
+            with requests.get(
+                    self.endpoint.format(x=tile.x, y=tile.y, z=tile.z)) as rsp:
                 if not rsp:
                     self._log.warn("%s failed: %s", rsp.url, rsp.text)
                     return
