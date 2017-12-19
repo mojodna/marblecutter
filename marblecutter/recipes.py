@@ -66,6 +66,34 @@ def apply(recipes, pixels, source=None, ds=None):
             # TODO use this as a mask instead
             data = data[0:3]
 
+        # rescale after reducing and before increasing dimensionality
+        if ds.meta["dtype"] != np.uint8 and not np.issubdtype(
+                ds.meta["dtype"], float):
+            # rescale non-8-bit sources (assuming that they're raw sensor data)
+
+            dtype_min = np.iinfo(ds.meta["dtype"]).min
+            dtype_max = np.iinfo(ds.meta["dtype"]).max
+
+            for band in xrange(0, data.shape[0]):
+                min_val = source.meta.get("values", {}).get(band, {}).get(
+                    "min", dtype_min)
+                max_val = source.meta.get("values", {}).get(band, {}).get(
+                    "max", dtype_max)
+
+                if (min_val == dtype_min and max_val == dtype_max
+                        and len(data.compressed()) > 0):
+                    local_min, local_max = np.percentile(
+                        data[band].compressed(), (2, 98))
+                    min_val = max(min_val, local_min)
+                    max_val = min(max_val, local_max)
+
+                data[band] = np.ma.where(data[band] > 0,
+                                         utils.linear_rescale(
+                                             data[band],
+                                             in_range=[min_val, max_val],
+                                             out_range=[dtype_min, dtype_max]),
+                                         0)
+
         if data.shape[0] == 1:
             # likely greyscale image; use the same band on all channels
             data = np.ma.array([data[0], data[0], data[0]])
