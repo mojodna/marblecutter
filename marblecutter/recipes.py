@@ -65,6 +65,10 @@ def apply(recipes, pixels, source=None, ds=None):
         if not np.issubdtype(ds.meta["dtype"], float):
             data /= np.iinfo(ds.meta["dtype"]).max
 
+        if data.shape[0] == 4:
+            LOG.info("Dropping alpha band")
+            data = data[0:3]
+
     # TODO source.band should be pixels.band, which requires read_window to be
     # band-aware
     return PixelCollection(data, pixels.bounds, source.band)
