@@ -67,7 +67,7 @@ def apply(recipes, pixels, source=None, ds=None):
             data = data[0:3]
 
         # rescale after reducing and before increasing dimensionality
-        if ds.meta["dtype"] != np.uint8 and not np.issubdtype(
+        if ds.meta["dtype"] != "uint8" and not np.issubdtype(
                 ds.meta["dtype"], float):
             # rescale non-8-bit sources (assuming that they're raw sensor data)
 
