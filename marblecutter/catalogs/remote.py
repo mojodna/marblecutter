@@ -3,9 +3,8 @@ from __future__ import absolute_import
 
 import logging
 
-import requests
-
 import mercantile
+import requests
 from marblecutter import get_zoom
 from rasterio import warp
 

@@ -245,7 +245,7 @@ def read_window(src, bounds, target_shape, recipes=None):
             else:
                 data = np.ma.masked_array(data, mask=np.ma.nomask)
 
-            return data.astype(np.float32)
+            return data
 
     def _read_mask():
         # open the mask separately so we can take advantage of its overviews

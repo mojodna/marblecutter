@@ -20,8 +20,7 @@ def composite(sources, bounds, shape, target_crs, band_count):
     """Composite data from sources into a single raster covering bounds, but in
     the target CRS."""
     # avoid circular dependencies
-    from . import _nodata, get_source, read_window
-
+    from . import _nodata, get_resolution_in_meters, get_source, read_window
 
     # TODO this belongs in render
     if bounds.crs == target_crs:
@@ -31,13 +30,8 @@ def composite(sources, bounds, shape, target_crs, band_count):
             warp.transform_bounds(bounds.crs, target_crs, *bounds.bounds),
             target_crs)
 
-    canvas = np.ma.zeros(
-        (band_count, ) + shape,
-        dtype=np.float32,
-        fill_value=_nodata(np.float32))
-    canvas.mask = True
-
-    sources = recipes.preprocess(sources)
+    resolution = get_resolution_in_meters(bounds, shape)
+    sources = recipes.preprocess(sources, resolution=resolution)
 
     def _read_window(source):
         with get_source(source.url) as src:
@@ -54,13 +48,8 @@ def composite(sources, bounds, shape, target_crs, band_count):
                 LOG.warn("Error reading %s: %s", source.url, e)
                 return
 
-            if not window_data:
-                return
-
-            window_data = recipes.apply(
-                source.recipes, window_data, source=source, ds=src)
-
-            return source, window_data
+            return source, PixelCollection(window_data.data,
+                                           window_data.bounds, source.band)
 
     # iterate over available sources, sorted by decreasing "quality"
     with futures.ThreadPoolExecutor(
@@ -69,21 +58,34 @@ def composite(sources, bounds, shape, target_crs, band_count):
 
     sources_used = []
 
+    ws = recipes.postprocess(ws)
+
+    canvas_data = np.ma.zeros(
+        (band_count, ) + shape,
+        dtype=np.float32,
+        fill_value=_nodata(np.float32))
+    canvas_data.mask = True
+
+    canvas = PixelCollection(canvas_data, canvas_bounds)
+
     for source, window_data in filter(None, ws):
-        # paste the resulting data onto a canvas
+        window_data = recipes.apply(source.recipes, window_data, source=source)
 
         if window_data.data is None:
             continue
 
-        canvas = paste(window_data, PixelCollection(canvas, canvas_bounds))
+        # paste the resulting data onto a canvas
+        canvas = paste(
+            PixelCollection(
+                window_data.data.astype(np.float32), window_data.bounds,
+                window_data.band), canvas)
         sources_used.append(source)
 
-        if not canvas.mask.any():
+        if not canvas.data.mask.any():
             # stop if all pixels are valid
             break
 
-    return map(lambda s: (s.name, s.url), sources_used), PixelCollection(
-        canvas, canvas_bounds)
+    return map(lambda s: (s.name, s.url), sources_used), canvas
 
 
 def paste(window_pixels, canvas_pixels):
@@ -109,7 +111,7 @@ def paste(window_pixels, canvas_pixels):
     else:
         merged_band = np.ma.where(canvas.mask[band] & ~window_data.mask,
                                   window_data, canvas[band])
-        canvas[band] = merged_band
+        canvas[band] = merged_band[0]
         merged = canvas
 
-    return merged
+    return PixelCollection(merged, canvas_pixels.bounds)

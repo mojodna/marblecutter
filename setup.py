@@ -23,6 +23,7 @@ setup(
         'Pillow',
         'rasterio[s3]>=1.0a12',
         'requests',
+        'rio-pansharpen ~= 0.2.0',
         'rio-tiler ~= 0.0.3',
         'rio-toa',
         'scipy',
