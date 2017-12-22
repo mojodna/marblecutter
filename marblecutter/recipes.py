@@ -170,6 +170,10 @@ def postprocess(windows):
 
         if "landsat8" in source.recipes:
             scene_id = source.url.split("/")[-2]
+            source = Source("/".join(source.url.split("/")[0:-1]), source.name,
+                            source.resolution, source.band_info, source.meta,
+                            source.recipes, source.acquired_at, None,
+                            source.priority, source.coverage)
 
             # pick out all bands for the same scene the first time it's seen
             if scene_id in landsat_windows:
