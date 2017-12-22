@@ -296,23 +296,31 @@ def read_window(src, bounds, target_shape, recipes=None):
 
 
 def render(bounds,
-           catalog,
            shape,
            target_crs,
            format,
            data_band_count,
+           catalog=None,
+           sources=None,
            transformation=None):
     """Render data intersecting bounds into shape using an optional
     transformation."""
     resolution_m = get_resolution_in_meters(bounds, shape)
     stats = []
 
+    if sources is None and catalog is None:
+        raise Exception("Either sources or a catalog must be provided.")
+
     if transformation:
         bounds, shape, offsets = transformation.expand(bounds, shape)
 
-    with Timer() as t:
-        sources = list(catalog.get_sources(bounds, resolution_m))
-    stats.append(("get sources", t.elapsed))
+    if sources is None and catalog is not None:
+        with Timer() as t:
+            sources = catalog.get_sources(bounds, resolution_m)
+        stats.append(("get sources", t.elapsed))
+
+    # TODO try to avoid this
+    sources = list(sources)
 
     if sources is None or len(sources) == 0:
         raise NoDataAvailable()
