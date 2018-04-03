@@ -46,7 +46,7 @@ def handle_invalid_tile_request(error):
 
 @app.errorhandler(NoDataAvailable)
 def handle_no_data_available(error):
-    return "", 404
+    return "", 204
 
 
 @app.errorhandler(IOError)
