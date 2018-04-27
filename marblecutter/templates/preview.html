@@ -60,7 +60,13 @@ $.getJSON("{{ tilejson_url }}", function(data) {
       (getParameterByName("retina") ||
        window.devicePixelRatio > 1 ||
        (window.matchMedia && window.matchMedia(mediaQuery).matches))) {
-    provider = provider.replace(/\.(?!.*\.)/, "@2x.");
+    var uri = new URL(window.location.protocol + provider);
+
+    // inject scale into the path component
+    var path = decodeURIComponent(uri.pathname).replace(/\.(?!.*\.)/, "@2x.");
+
+    // workaround for braces becoming automatically encoded when part of a URL object
+    provider = uri.protocol + "//" + uri.host + path + uri.search;
   }
 
   L.tileLayer(provider, options).addTo(map);
