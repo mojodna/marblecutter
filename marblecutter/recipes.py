@@ -74,6 +74,9 @@ def apply(recipes, pixels, source=None):
     if "imagery" in recipes:
         LOG.info("Applying imagery recipe")
 
+        if "rgb_bands" in recipes:
+            data = np.ma.array([data[i - 1] for i in recipes["rgb_bands"]])
+
         if data.shape[0] == 4:
             # alpha band present; drop it
             # TODO use this as a mask instead
