@@ -13,12 +13,7 @@ from rio_toa import reflectance
 
 from .utils import PixelCollection, Source
 
-BAND_MAPPING = {
-    "r": 0,
-    "g": 1,
-    "b": 2,
-    "pan": 4,
-}
+BAND_MAPPING = {"r": 0, "g": 1, "b": 2, "pan": 4}
 LOG = logging.getLogger(__name__)
 
 
@@ -34,37 +29,45 @@ def apply(recipes, pixels, source=None):
 
         for bdx, source_band in enumerate((4, 3, 2)):
             sun_elev = source.meta["L1_METADATA_FILE"]["IMAGE_ATTRIBUTES"][
-                "SUN_ELEVATION"]
-            multi_reflect = source.meta[
-                "L1_METADATA_FILE"]["RADIOMETRIC_RESCALING"].get(
-                    "REFLECTANCE_MULT_BAND_{}".format(source_band))
-            add_reflect = source.meta[
-                "L1_METADATA_FILE"]["RADIOMETRIC_RESCALING"].get(
-                    "REFLECTANCE_ADD_BAND_{}".format(source_band))
+                "SUN_ELEVATION"
+            ]
+            multi_reflect = source.meta["L1_METADATA_FILE"][
+                "RADIOMETRIC_RESCALING"
+            ].get(
+                "REFLECTANCE_MULT_BAND_{}".format(source_band)
+            )
+            add_reflect = source.meta["L1_METADATA_FILE"]["RADIOMETRIC_RESCALING"].get(
+                "REFLECTANCE_ADD_BAND_{}".format(source_band)
+            )
 
-            min_val = source.meta.get("values", {}).get(str(source_band),
-                                                        {}).get(
-                                                            "min", dtype_min)
-            max_val = source.meta.get("values", {}).get(str(source_band),
-                                                        {}).get(
-                                                            "max", dtype_max)
+            min_val = source.meta.get("values", {}).get(str(source_band), {}).get(
+                "min", dtype_min
+            )
+            max_val = source.meta.get("values", {}).get(str(source_band), {}).get(
+                "max", dtype_max
+            )
 
             band_data = 10000 * reflectance.reflectance(
-                data[bdx], multi_reflect, add_reflect, sun_elev, src_nodata=0)
+                data[bdx], multi_reflect, add_reflect, sun_elev, src_nodata=0
+            )
 
             # calculate local min/max as fallbacks
-            if (min_val == dtype_min and max_val == dtype_max
-                    and len(data.compressed()) > 0):
-                local_min, local_max = np.percentile(band_data.compressed(),
-                                                     (2, 98))
+            if (
+                min_val == dtype_min
+                and max_val == dtype_max
+                and len(data.compressed()) > 0
+            ):
+                local_min, local_max = np.percentile(band_data.compressed(), (2, 98))
                 min_val = max(min_val, local_min)
                 max_val = min(max_val, local_max)
 
-            out[bdx] = np.ma.where(band_data > 0,
-                                   utils.linear_rescale(
-                                       band_data,
-                                       in_range=[min_val, max_val],
-                                       out_range=[0, 1]), 0)
+            out[bdx] = np.ma.where(
+                band_data > 0,
+                utils.linear_rescale(
+                    band_data, in_range=[min_val, max_val], out_range=[0, 1]
+                ),
+                0,
+            )
 
         data = out
 
@@ -82,23 +85,32 @@ def apply(recipes, pixels, source=None):
 
             for band in xrange(0, data.shape[0]):
                 min_val = source.meta.get("values", {}).get(band, {}).get(
-                    "min", dtype_min)
+                    "min", dtype_min
+                )
                 max_val = source.meta.get("values", {}).get(band, {}).get(
-                    "max", dtype_max)
+                    "max", dtype_max
+                )
 
-                if (min_val == dtype_min and max_val == dtype_max
-                        and len(data.compressed()) > 0):
+                if (
+                    min_val == dtype_min
+                    and max_val == dtype_max
+                    and len(data.compressed()) > 0
+                ):
                     local_min, local_max = np.percentile(
-                        data[band].compressed(), (2, 98))
+                        data[band].compressed(), (2, 98)
+                    )
                     min_val = max(min_val, local_min)
                     max_val = min(max_val, local_max)
 
-                data[band] = np.ma.where(data[band] > 0,
-                                         utils.linear_rescale(
-                                             data[band],
-                                             in_range=[min_val, max_val],
-                                             out_range=[dtype_min, dtype_max]),
-                                         0)
+                data[band] = np.ma.where(
+                    data[band] > 0,
+                    utils.linear_rescale(
+                        data[band],
+                        in_range=[min_val, max_val],
+                        out_range=[dtype_min, dtype_max],
+                    ),
+                    0,
+                )
 
         if data.shape[0] == 1:
             # likely greyscale image; use the same band on all channels
@@ -123,10 +135,16 @@ def preprocess(sources, resolution=None):
             for target_band, source_band in iter(source.band_info.items()):
                 band = BAND_MAPPING.get(target_band)
                 s = Source(
-                    source.url.replace("{band}",
-                                       str(source_band)), source.name,
-                    source.resolution, source.band_info, source.meta,
-                    source.recipes, source.acquired_at, band, source.priority)
+                    source.url.replace("{band}", str(source_band)),
+                    source.name,
+                    source.resolution,
+                    source.band_info,
+                    source.meta,
+                    source.recipes,
+                    source.acquired_at,
+                    band,
+                    source.priority,
+                )
                 if target_band == "pan":
                     if min(resolution) < source.resolution * 2:
                         yield s
@@ -155,14 +173,22 @@ def postprocess(windows):
 
     landsat_windows = filter(lambda sw: "LC08_" in sw[0].url, windows)
     landsat_windows = dict(
-        [(k, list(v))
-         for k, v in itertools.groupby(landsat_windows,
-                                       lambda x: x[0].url.split("/")[-2])])
+        [
+            (k, list(v))
+            for k, v in itertools.groupby(
+                landsat_windows, lambda x: x[0].url.split("/")[-2]
+            )
+        ]
+    )
 
     pan_bands = dict(
         list(
-            map(lambda sw: (sw[0].url.split("/")[-2], sw[1]),
-                filter(lambda sw: sw[0].band == 4, filter(None, windows)))))
+            map(
+                lambda sw: (sw[0].url.split("/")[-2], sw[1]),
+                filter(lambda sw: sw[0].band == 4, filter(None, windows)),
+            )
+        )
+    )
 
     for source, pixels in windows:
         if pixels is None or pixels.data is None:
@@ -170,19 +196,29 @@ def postprocess(windows):
 
         if "landsat8" in source.recipes:
             scene_id = source.url.split("/")[-2]
-            source = Source("/".join(source.url.split("/")[0:-1]), source.name,
-                            source.resolution, source.band_info, source.meta,
-                            source.recipes, source.acquired_at, None,
-                            source.priority, source.coverage)
+            source = Source(
+                "/".join(source.url.split("/")[0:-1]),
+                source.name,
+                source.resolution,
+                source.band_info,
+                source.meta,
+                source.recipes,
+                source.acquired_at,
+                None,
+                source.priority,
+                source.coverage,
+            )
 
             # pick out all bands for the same scene the first time it's seen
             if scene_id in landsat_windows:
-                ws = filter(lambda sw: is_rgb(sw[0].band),
-                            landsat_windows.pop(scene_id))
+                ws = filter(
+                    lambda sw: is_rgb(sw[0].band), landsat_windows.pop(scene_id)
+                )
                 canvas_data = np.ma.zeros(
-                    (3, ) + pixels.data.shape[1:],
+                    (3,) + pixels.data.shape[1:],
                     dtype=pixels.data.dtype,
-                    fill_value=_nodata(np.int16))
+                    fill_value=_nodata(np.int16),
+                )
                 canvas_data.mask = True
 
                 canvas = PixelCollection(canvas_data, pixels.bounds)
@@ -191,8 +227,9 @@ def postprocess(windows):
                 if scene_id in pan_bands:
                     pan = pan_bands[scene_id]
 
-                    pansharpened, _ = Brovey(pixels.data, pan.data[0], 0.2,
-                                             pan.data.dtype)
+                    pansharpened, _ = Brovey(
+                        pixels.data, pan.data[0], 0.2, pan.data.dtype
+                    )
 
                     yield source, PixelCollection(pansharpened, pixels.bounds)
                 else:
