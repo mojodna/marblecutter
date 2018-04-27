@@ -16,7 +16,7 @@ CORS(app, send_wildcard=True)
 
 
 class InvalidTileRequest(Exception):
-    status_code = 404
+    status_code = 204
 
     def __init__(self, message, status_code=None, payload=None):
         Exception.__init__(self)
@@ -27,13 +27,13 @@ class InvalidTileRequest(Exception):
 
     def to_dict(self):  # noqa
         rv = dict(self.payload or ())
-        rv['message'] = self.message
+        rv["message"] = self.message
         return rv
 
 
 @app.route("/favicon.ico")
 def favicon():  # noqa
-    return '', 404
+    return "", 404
 
 
 @app.errorhandler(InvalidTileRequest)
@@ -46,7 +46,7 @@ def handle_invalid_tile_request(error):
 
 @app.errorhandler(NoDataAvailable)
 def handle_no_data_available(error):
-    return "", 204
+    return "", 404
 
 
 @app.errorhandler(IOError)
