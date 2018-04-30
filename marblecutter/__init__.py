@@ -29,15 +29,24 @@ WGS84_CRS = CRS.from_epsg(4326)
 LOG = logging.getLogger(__name__)
 
 EXTENTS = {
-    str(WEB_MERCATOR_CRS): (-math.pi * EARTH_RADIUS, -math.pi * EARTH_RADIUS,
-                            math.pi * EARTH_RADIUS, math.pi * EARTH_RADIUS),
-    str(WGS84_CRS): (math.degrees(-math.pi), math.degrees(-math.pi / 2),
-                     math.degrees(math.pi), math.degrees(math.pi / 2)),
+    str(WEB_MERCATOR_CRS): (
+        -math.pi * EARTH_RADIUS,
+        -math.pi * EARTH_RADIUS,
+        math.pi * EARTH_RADIUS,
+        math.pi * EARTH_RADIUS,
+    ),
+    str(WGS84_CRS): (
+        math.degrees(-math.pi),
+        math.degrees(-math.pi / 2),
+        math.degrees(math.pi),
+        math.degrees(math.pi / 2),
+    ),
 }
 
 # initialize GDAL environment variables that can't be set w/ Lambda
 os.environ["CPL_VSIL_CURL_ALLOWED_EXTENSIONS"] = os.getenv(
-    "CPL_VSIL_CURL_ALLOWED_EXTENSIONS", ".vrt,.tif,.ovr,.msk")
+    "CPL_VSIL_CURL_ALLOWED_EXTENSIONS", ".vrt,.tif,.ovr,.msk"
+)
 
 
 class NoDataAvailable(Exception):
@@ -109,8 +118,10 @@ def get_resolution_in_meters(bounds, dims):
         top = ((bounds[0] + bounds[2]) / 2, bounds[3])
         bottom = ((bounds[0] + bounds[2]) / 2, bounds[1])
 
-        return (haversine(left, right) * 1000 / width,
-                haversine(top, bottom) * 1000 / height)
+        return (
+            haversine(left, right) * 1000 / width,
+            haversine(top, bottom) * 1000 / height,
+        )
 
     return get_resolution(bounds, dims)
 
@@ -122,10 +133,7 @@ def get_source(path):
 
 
 def get_zoom(resolution, op=round):
-    return int(
-        op(
-            math.log((2 * math.pi * 6378137) / (resolution * 256)) / math.log(
-                2)))
+    return int(op(math.log((2 * math.pi * 6378137) / (resolution * 256)) / math.log(2)))
 
 
 def read_window(src, bounds, target_shape, recipes=None):
@@ -133,7 +141,8 @@ def read_window(src, bounds, target_shape, recipes=None):
         recipes = {}
 
     source_resolution = get_resolution_in_meters(
-        Bounds(src.bounds, src.crs), (src.height, src.width))
+        Bounds(src.bounds, src.crs), (src.height, src.width)
+    )
     target_resolution = get_resolution(bounds, target_shape)
 
     # GDAL chooses target extents such that reprojected pixels are square; this
@@ -146,9 +155,14 @@ def read_window(src, bounds, target_shape, recipes=None):
     # dst_transform, but that would require knowing projected bounds of all
     # CRSes in use.
 
-    if "dem" in recipes and bounds.crs == WEB_MERCATOR_CRS and (
+    if (
+        "dem" in recipes
+        and bounds.crs == WEB_MERCATOR_CRS
+        and (
             target_resolution[0] > source_resolution[0]
-            and target_resolution[1] > source_resolution[1]):
+            and target_resolution[1] > source_resolution[1]
+        )
+    ):
         # special case for web Mercator to prevent crosshatch artifacts; use a
         # target image size that most closely matches the source resolution
         # (and is a power of 2)
@@ -157,16 +171,22 @@ def read_window(src, bounds, target_shape, recipes=None):
             get_zoom(
                 max(
                     get_resolution_in_meters(
-                        Bounds(src.bounds, src.crs), (src.height, src.width))),
-                op=math.ceil))
+                        Bounds(src.bounds, src.crs), (src.height, src.width)
+                    )
+                ),
+                op=math.ceil,
+            ),
+        )
 
-        dst_width = dst_height = (2**zoom) * 256
+        dst_width = dst_height = (2 ** zoom) * 256
         extent = get_extent(bounds.crs)
-        resolution = ((extent[2] - extent[0]) / dst_width,
-                      (extent[3] - extent[1]) / dst_height)
+        resolution = (
+            (extent[2] - extent[0]) / dst_width, (extent[3] - extent[1]) / dst_height
+        )
 
-        dst_transform = Affine(resolution[0], 0.0, extent[0], 0.0,
-                               -resolution[1], extent[3])
+        dst_transform = Affine(
+            resolution[0], 0.0, extent[0], 0.0, -resolution[1], extent[3]
+        )
     else:
         # if raster is overly-large, approximate the transform based on
         # a scaled-down version and scale it back after
@@ -176,22 +196,29 @@ def read_window(src, bounds, target_shape, recipes=None):
 
         resolution = None
 
-        if (target_resolution[0] < source_resolution[0]
-                or target_resolution[1] < source_resolution[1]):
+        if (
+            target_resolution[0] < source_resolution[0]
+            or target_resolution[1] < source_resolution[1]
+        ):
             # provide resolution for improved resampling when overzooming
             resolution = target_resolution
 
-        while (dst_transform is None and src.width // scale_factor > 0
-               and src.height // scale_factor > 0):
+        while (
+            dst_transform is None
+            and src.width // scale_factor > 0
+            and src.height // scale_factor > 0
+        ):
             try:
-                (dst_transform, dst_width,
-                 dst_height) = warp.calculate_default_transform(
-                     src.crs,
-                     bounds.crs,
-                     src.width // scale_factor,
-                     src.height // scale_factor,
-                     *src.bounds,
-                     resolution=resolution)
+                (
+                    dst_transform, dst_width, dst_height
+                ) = warp.calculate_default_transform(
+                    src.crs,
+                    bounds.crs,
+                    src.width // scale_factor,
+                    src.height // scale_factor,
+                    *src.bounds,
+                    resolution=resolution
+                )
 
                 scale = Affine.scale(scale_factor, scale_factor)
 
@@ -223,21 +250,21 @@ def read_window(src, bounds, target_shape, recipes=None):
 
     def _read_data():
         with WarpedVRT(
-                src,
-                src_nodata=nodata,
-                dst_crs=bounds.crs,
-                dst_width=dst_width,
-                dst_height=dst_height,
-                dst_transform=dst_transform,
-                resampling=resampling) as vrt:
+            src,
+            src_nodata=nodata,
+            dst_crs=bounds.crs,
+            dst_width=dst_width,
+            dst_height=dst_height,
+            dst_transform=dst_transform,
+            resampling=resampling,
+        ) as vrt:
             # NOTE rounding offsets (round_offsets()) eliminates 1px border at
             # 180º east (but not 85º south) at zoom 2 (with Blue Marble)
             dst_window = vrt.window(*bounds.bounds)
 
             data = vrt.read(
-                boundless=True,
-                out_shape=(vrt.count, ) + target_shape,
-                window=dst_window)
+                boundless=True, out_shape=(vrt.count,) + target_shape, window=dst_window
+            )
 
             # mask with NODATA values
             if nodata is not None and vrt.nodata is not None:
@@ -251,23 +278,24 @@ def read_window(src, bounds, target_shape, recipes=None):
         # open the mask separately so we can take advantage of its overviews
         try:
             warnings.simplefilter("ignore")
-            with rasterio.open(
-                    "{}.msk".format(src.name), crs=src.crs) as mask_src:
+            with rasterio.open("{}.msk".format(src.name), crs=src.crs) as mask_src:
                 with WarpedVRT(
-                        mask_src,
-                        src_crs=src.crs,
-                        src_transform=src.transform,
-                        dst_crs=bounds.crs,
-                        dst_width=dst_width,
-                        dst_height=dst_height,
-                        dst_transform=dst_transform) as mask_vrt:
+                    mask_src,
+                    src_crs=src.crs,
+                    src_transform=src.transform,
+                    dst_crs=bounds.crs,
+                    dst_width=dst_width,
+                    dst_height=dst_height,
+                    dst_transform=dst_transform,
+                ) as mask_vrt:
                     warnings.simplefilter("default")
                     dst_window = mask_vrt.window(*bounds.bounds)
 
                     mask = mask_vrt.read(
                         boundless=True,
-                        out_shape=(mask_vrt.count, ) + target_shape,
-                        window=dst_window)
+                        out_shape=(mask_vrt.count,) + target_shape,
+                        window=dst_window,
+                    )
 
                     # TODO allow iterations to be configured, zoom threshold to
                     # apply
@@ -278,7 +306,8 @@ def read_window(src, bounds, target_shape, recipes=None):
             return
 
     with futures.ThreadPoolExecutor(
-            max_workers=multiprocessing.cpu_count() * 5) as executor:
+        max_workers=multiprocessing.cpu_count() * 5
+    ) as executor:
         data_task = executor.submit(_read_data)
         mask_task = executor.submit(_read_mask)
 
@@ -295,14 +324,16 @@ def read_window(src, bounds, target_shape, recipes=None):
     return PixelCollection(data, bounds)
 
 
-def render(bounds,
-           shape,
-           target_crs,
-           format,
-           data_band_count,
-           catalog=None,
-           sources=None,
-           transformation=None):
+def render(
+    bounds,
+    shape,
+    target_crs,
+    format,
+    data_band_count,
+    catalog=None,
+    sources=None,
+    transformation=None,
+):
     """Render data intersecting bounds into shape using an optional
     transformation."""
     resolution_m = get_resolution_in_meters(bounds, shape)
@@ -326,8 +357,9 @@ def render(bounds,
         raise NoDataAvailable()
 
     with Timer() as t:
-        sources_used, pixels = mosaic.composite(sources, bounds, shape,
-                                                target_crs, data_band_count)
+        sources_used, pixels = mosaic.composite(
+            sources, bounds, shape, target_crs, data_band_count
+        )
     stats.append(("composite", t.elapsed))
 
     if pixels.data is None:
@@ -350,16 +382,11 @@ def render(bounds,
     stats.append(("format", t.elapsed))
 
     headers = {
-        "Content-Type":
-        content_type,
-        "X-Imagery-Sources":
-        ", ".join(s[1].split('/', 3)[3] for s in sources_used),
+        "Content-Type": content_type,
+        "X-Imagery-Sources": ", ".join(s[1].split("/", 3)[3] for s in sources_used),
     }
 
-    if os.environ.get('MARBLECUTTER_DEBUG_TIMERS'):
-        headers.update({
-            "X-Timers":
-            ", ".join("{}: {:0.2f}".format(*s) for s in stats)
-        })
+    if os.environ.get("MARBLECUTTER_DEBUG_TIMERS"):
+        headers.update({"X-Timers": ", ".join("{}: {:0.2f}".format(*s) for s in stats)})
 
     return (headers, formatted)
