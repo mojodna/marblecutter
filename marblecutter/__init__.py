@@ -49,6 +49,10 @@ os.environ["CPL_VSIL_CURL_ALLOWED_EXTENSIONS"] = os.getenv(
 )
 
 
+class NoCatalogAvailable(Exception):
+    pass
+
+
 class NoDataAvailable(Exception):
     pass
 

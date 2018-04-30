@@ -6,7 +6,7 @@ import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
 
-from . import NoDataAvailable
+from . import NoCatalogAvailable, NoDataAvailable
 
 LOG = logging.getLogger(__name__)
 
@@ -46,6 +46,11 @@ def handle_invalid_tile_request(error):
 
 @app.errorhandler(NoDataAvailable)
 def handle_no_data_available(error):
+    return "", 204
+
+
+@app.errorhandler(NoCatalogAvailable)
+def handle_no_catalog_available(error):
     return "", 404
 
 
