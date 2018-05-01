@@ -19,7 +19,7 @@ def render_tile(
     tile, catalog, transformation=None, format=None, scale=1, data_band_count=3
 ):
     """Render a tile into Web Mercator."""
-    bounds = Bounds(mercantile.bounds(tile), WGS84_CRS)
+    bounds = Bounds(mercantile.xy_bounds(tile), WEB_MERCATOR_CRS)
     shape = tuple(map(int, Affine.scale(scale) * TILE_SHAPE))
 
     catalog.validate(tile)
@@ -39,7 +39,7 @@ def render_tile_from_sources(
     tile, sources, transformation=None, format=None, scale=1, data_band_count=3
 ):
     """Render a tile into Web Mercator."""
-    bounds = Bounds(mercantile.bounds(tile), WGS84_CRS)
+    bounds = Bounds(mercantile.xy_bounds(tile), WEB_MERCATOR_CRS)
     shape = tuple(map(int, Affine.scale(scale) * TILE_SHAPE))
 
     return render(
