@@ -365,7 +365,7 @@ def render(
     if sources is None and catalog is not None:
         with Timer() as t:
             sources = catalog.get_sources(bounds, resolution_m)
-        stats.append(("get sources", t.elapsed))
+        stats.append(("Get Sources", t.elapsed))
 
     # TODO try to avoid materializing the iterator
     sources = list(sources)
@@ -377,7 +377,7 @@ def render(
         sources_used, pixels = mosaic.composite(
             sources, bounds, shape, target_crs, data_band_count
         )
-    stats.append(("composite", t.elapsed))
+    stats.append(("Composite", t.elapsed))
 
     if pixels.data is None:
         raise NoDataAvailable()
@@ -387,23 +387,27 @@ def render(
     if transformation:
         with Timer() as t:
             pixels, data_format = transformation.transform(pixels)
-        stats.append(("transform", t.elapsed))
+        stats.append(("Transform", t.elapsed))
 
         with Timer() as t:
             pixels = transformation.postprocess(pixels, data_format, offsets)
 
-        stats.append(("postprocess", t.elapsed))
+        stats.append(("Post-process", t.elapsed))
 
     with Timer() as t:
         (content_type, formatted) = format(pixels, data_format)
-    stats.append(("format", t.elapsed))
+    stats.append(("Format", t.elapsed))
 
     headers = {
         "Content-Type": content_type,
-        "X-Imagery-Sources": ", ".join(s[1].split("/", 3)[3] for s in sources_used),
+        "Server-Timing": [
+            'op{};desc="{}";dur={:0.2f}'.format(i, name, time)
+            for (i, (name, time)) in enumerate(stats)
+        ]
+        + [
+            'src{};desc="{} — {}"'.format(i, name.replace('"', '\\"'), url)
+            for (i, (name, url)) in enumerate(sources_used)
+        ],
     }
-
-    if os.environ.get("MARBLECUTTER_DEBUG_TIMERS"):
-        headers.update({"X-Timers": ", ".join("{}: {:0.2f}".format(*s) for s in stats)})
 
     return (headers, formatted)
