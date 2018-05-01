@@ -367,7 +367,7 @@ def render(
             sources = catalog.get_sources(bounds, resolution_m)
         stats.append(("get sources", t.elapsed))
 
-    # TODO try to avoid this
+    # TODO try to avoid materializing the iterator
     sources = list(sources)
 
     if sources is None or len(sources) == 0:
