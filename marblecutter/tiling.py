@@ -15,12 +15,9 @@ WEB_MERCATOR_CRS = CRS.from_epsg(3857)
 WGS84_CRS = CRS.from_epsg(4326)
 
 
-def render_tile(tile,
-                catalog,
-                transformation=None,
-                format=None,
-                scale=1,
-                data_band_count=3):
+def render_tile(
+    tile, catalog, transformation=None, format=None, scale=1, data_band_count=3
+):
     """Render a tile into Web Mercator."""
     bounds = Bounds(mercantile.bounds(tile), WGS84_CRS)
     shape = tuple(map(int, Affine.scale(scale) * TILE_SHAPE))
@@ -32,15 +29,13 @@ def render_tile(tile,
         catalog=catalog,
         format=format,
         data_band_count=data_band_count,
-        transformation=transformation)
+        transformation=transformation,
+    )
 
 
-def render_tile_from_sources(tile,
-                             sources,
-                             transformation=None,
-                             format=None,
-                             scale=1,
-                             data_band_count=3):
+def render_tile_from_sources(
+    tile, sources, transformation=None, format=None, scale=1, data_band_count=3
+):
     """Render a tile into Web Mercator."""
     bounds = Bounds(mercantile.bounds(tile), WGS84_CRS)
     shape = tuple(map(int, Affine.scale(scale) * TILE_SHAPE))
@@ -52,4 +47,5 @@ def render_tile_from_sources(tile,
         sources=sources,
         format=format,
         data_band_count=data_band_count,
-        transformation=transformation)
+        transformation=transformation,
+    )
