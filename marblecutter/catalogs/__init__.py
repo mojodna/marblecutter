@@ -1,6 +1,10 @@
 # coding=utf-8
+from __future__ import absolute_import
 
+import mercantile
 from rasterio.crs import CRS
+
+from .. import InvalidTileRequest
 
 WGS84_CRS = CRS.from_epsg(4326)
 
@@ -59,3 +63,24 @@ class Catalog(object):
 
     def get_sources(self, bounds, resolution):
         raise NotImplemented
+
+    def validate(self, tile):
+        if not self.minzoom <= tile.z <= self.maxzoom:
+            raise InvalidTileRequest(
+                "Invalid zoom: {} outside [{}, {}]".format(
+                    tile.z, self.minzoom, self.maxzoom
+                )
+            )
+
+        sw = mercantile.tile(*self.bounds[0:2], zoom=tile.z)
+        ne = mercantile.tile(*self.bounds[2:4], zoom=tile.z)
+
+        if not sw.x <= tile.x <= ne.x:
+            raise InvalidTileRequest(
+                "Invalid x coordinate: {} outside [{}, {}]".format(tile.x, sw.x, ne.x)
+            )
+
+        if not ne.y <= tile.y <= sw.y:
+            raise InvalidTileRequest(
+                "Invalid y coordinate: {} outside [{}, {}]".format(tile.y, sw.y, ne.y)
+            )

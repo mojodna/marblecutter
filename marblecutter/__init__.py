@@ -49,6 +49,19 @@ os.environ["CPL_VSIL_CURL_ALLOWED_EXTENSIONS"] = os.getenv(
 )
 
 
+class InvalidTileRequest(Exception):
+
+    def __init__(self, message, payload=None):
+        Exception.__init__(self)
+        self.message = message
+        self.payload = payload
+
+    def to_dict(self):  # noqa
+        rv = dict(self.payload or ())
+        rv["message"] = self.message
+        return rv
+
+
 class NoCatalogAvailable(Exception):
     pass
 

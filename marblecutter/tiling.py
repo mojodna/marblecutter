@@ -22,6 +22,8 @@ def render_tile(
     bounds = Bounds(mercantile.bounds(tile), WGS84_CRS)
     shape = tuple(map(int, Affine.scale(scale) * TILE_SHAPE))
 
+    catalog.validate(tile)
+
     return render(
         bounds,
         shape,
