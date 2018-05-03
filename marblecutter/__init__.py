@@ -5,6 +5,7 @@ import logging
 import math
 import multiprocessing
 import os
+import unicodedata
 import warnings
 from concurrent import futures
 
@@ -405,7 +406,13 @@ def render(
             for (i, (name, time)) in enumerate(stats)
         ]
         + [
-            'src{};desc="{} — {}"'.format(i, name.replace('"', '\\"'), url)
+            'src{};desc="{} — {}"'.format(
+                i,
+                unicodedata.normalize("NFKD", name).encode("ascii", "ignore").replace(
+                    '"', '\\"'
+                ),
+                url,
+            )
             for (i, (name, url)) in enumerate(sources_used)
         ],
     }
