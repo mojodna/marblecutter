@@ -15,7 +15,7 @@ JPEG_FORMAT = JPEG()
 PNG_FORMAT = PNG()
 
 
-def OPTIMAL():
+def Optimal():
 
     def _format(pixels, data_format):
         if not _isimage(data_format):
