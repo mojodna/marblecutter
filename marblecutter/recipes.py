@@ -77,9 +77,9 @@ def apply(recipes, pixels, source=None):
         if "rgb_bands" in recipes:
             data = np.ma.array([data[i - 1] for i in recipes["rgb_bands"]])
 
-        if data.shape[0] == 4:
-            # alpha band present; drop it
-            # TODO use this as a mask instead
+        if data.shape[0] > 3:
+            # alpha band (and beyond) present; drop it (them)
+            # TODO use band 4 as a mask instead
             data = data[0:3]
 
         if "linear_stretch" in recipes:
