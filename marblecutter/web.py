@@ -16,8 +16,8 @@ CORS(app, send_wildcard=True)
 
 
 @app.route("/favicon.ico")
-def favicon():  # noqa
-    return "", 404
+def favicon():
+    return "NOK"
 
 
 @app.errorhandler(InvalidTileRequest)
