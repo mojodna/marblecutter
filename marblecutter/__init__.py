@@ -44,11 +44,6 @@ EXTENTS = {
     ),
 }
 
-# initialize GDAL environment variables that can't be set w/ Lambda
-os.environ["CPL_VSIL_CURL_ALLOWED_EXTENSIONS"] = os.getenv(
-    "CPL_VSIL_CURL_ALLOWED_EXTENSIONS", ".vrt,.tif,.ovr,.msk"
-)
-
 
 class InvalidTileRequest(Exception):
 
