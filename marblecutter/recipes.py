@@ -101,7 +101,7 @@ def apply(recipes, pixels, source=None):
                         data[band] > 0,
                         utils.linear_rescale(
                             data[band],
-                            in_range=(np.min(data[band]), np.max(data[band])),
+                            in_range=(min_val, max_val),
                             out_range=(dtype_min, dtype_max),
                         ),
                         0,
