@@ -408,7 +408,9 @@ def render(
         + [
             'src{};desc="{} — {}"'.format(
                 i,
-                unicodedata.normalize("NFKD", name).encode("ascii", "ignore").replace(
+                unicodedata.normalize("NFKD", unicode(name)).encode(
+                    "ascii", "ignore"
+                ).replace(
                     '"', '\\"'
                 ),
                 url,
