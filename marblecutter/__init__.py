@@ -4,7 +4,6 @@ from __future__ import absolute_import, division, print_function
 import logging
 import math
 import multiprocessing
-import os
 import unicodedata
 import warnings
 from concurrent import futures
