@@ -400,7 +400,7 @@ def render(
             for (i, (name, time)) in enumerate(stats)
         ]
         + [
-            'src{};desc="{} — {}"'.format(
+            'src{};desc="{} - {}"'.format(
                 i,
                 unicodedata.normalize("NFKD", unicode(name)).encode(
                     "ascii", "ignore"
