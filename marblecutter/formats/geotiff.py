@@ -12,6 +12,7 @@ CONTENT_TYPE = "image/tiff"
 
 
 def GeoTIFF(area_or_point="Area", blocksize=512):
+
     def _format(pixels, data_format):
         data, (data_bounds, data_crs) = pixels
         if data_format is not "raw":
@@ -20,8 +21,7 @@ def GeoTIFF(area_or_point="Area", blocksize=512):
         (count, height, width) = data.shape
 
         if count == 1:
-            resolution = get_resolution_in_meters(pixels.bounds,
-                                                  (height, width))
+            resolution = get_resolution_in_meters(pixels.bounds, (height, width))
 
             # downsample to int16 if ground resolution is more than 10 meters
             # (at the equator)
@@ -29,7 +29,7 @@ def GeoTIFF(area_or_point="Area", blocksize=512):
                 data = data.astype(np.int16)
                 data.fill_value = _nodata(data.dtype)
 
-        if np.issubdtype(data.dtype, np.float):
+        if np.issubdtype(data.dtype, np.floating):
             predictor = 3
         else:
             predictor = 2
@@ -48,9 +48,8 @@ def GeoTIFF(area_or_point="Area", blocksize=512):
             "width": width,
             "tiled": width >= blocksize and height >= blocksize,
             "transform": transform.from_bounds(
-                *data_bounds,
-                width=width,
-                height=height),
+                *data_bounds, width=width, height=height
+            ),
         }
 
         with MemoryFile() as memfile:

@@ -70,14 +70,14 @@ def _isimage(data_format):
 
 
 def _mask(data, nodata):
-    if np.issubdtype(data.dtype, float):
+    if np.issubdtype(data.dtype, np.floating):
         return np.ma.masked_values(data, nodata, copy=False)
 
     return np.ma.masked_equal(data, nodata, copy=False)
 
 
 def _nodata(dtype):
-    if np.issubdtype(dtype, float):
+    if np.issubdtype(dtype, np.floating):
         return np.finfo(dtype).min
     else:
         return np.iinfo(dtype).min

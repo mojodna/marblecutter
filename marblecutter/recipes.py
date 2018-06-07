@@ -108,7 +108,7 @@ def apply(recipes, pixels, source=None):
                     )
         else:
             # rescale after reducing and before increasing dimensionality
-            if data.dtype != np.uint8 and not np.issubdtype(data.dtype, float):
+            if data.dtype != np.uint8 and not np.issubdtype(data.dtype, np.floating):
                 # rescale non-8-bit sources (assuming that they're raw sensor data)
 
                 for band in xrange(0, data.shape[0]):
@@ -146,7 +146,7 @@ def apply(recipes, pixels, source=None):
 
         # normalize to 0..1 based on the range of the source type (only
         # for int*s)
-        if not np.issubdtype(data.dtype, float):
+        if not np.issubdtype(data.dtype, np.floating):
             data = data.astype(np.float32) / np.iinfo(data.dtype).max
 
     return PixelCollection(data, pixels.bounds)
