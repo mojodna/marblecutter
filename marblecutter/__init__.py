@@ -3,18 +3,15 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 import math
-import multiprocessing
 import unicodedata
-import warnings
-from concurrent import futures
 
-from scipy.ndimage import morphology
 from haversine import haversine
 import numpy as np
 import rasterio
 from rasterio import transform, warp, windows
 from rasterio._err import CPLE_OutOfMemoryError
 from rasterio.crs import CRS
+from rasterio.enums import MaskFlags
 from rasterio.transform import Affine
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import Resampling
@@ -260,78 +257,40 @@ def read_window(src, bounds, target_shape, recipes=None):
     if "nodata" in recipes:
         nodata = recipes["nodata"]
 
-    def _read_data():
-        with WarpedVRT(
-            src,
-            src_nodata=nodata,
-            dst_crs=bounds.crs,
-            dst_width=dst_width,
-            dst_height=dst_height,
-            dst_transform=dst_transform,
-            resampling=resampling,
-        ) as vrt:
-            # NOTE rounding offsets (round_offsets()) eliminates 1px border at
-            # 180º east (but not 85º south) at zoom 2 (with Blue Marble)
-            dst_window = vrt.window(*bounds.bounds)
+    src_nodata = nodata
+    add_alpha = False
 
-            data = vrt.read(
-                boundless=True, out_shape=(vrt.count,) + target_shape, window=dst_window
-            )
+    if any([MaskFlags.per_dataset in flags for flags in src.mask_flag_enums]):
+        # prefer the mask if available
+        src_nodata = None
+        add_alpha = True
 
+    with WarpedVRT(
+        src,
+        src_nodata=src_nodata,
+        crs=bounds.crs,
+        width=target_shape[0],
+        height=target_shape[1],
+        transform=transform.from_bounds(
+            *bounds.bounds, width=target_shape[0], height=target_shape[0]
+        ),
+        resampling=resampling,
+        add_alpha=add_alpha,
+    ) as vrt:
+        # NOTE rounding offsets (round_offsets()) eliminates 1px border at
+        # 180º east (but not 85º south) at zoom 2 (with Blue Marble)
+        dst_window = vrt.window(*bounds.bounds)
+
+        data = vrt.read(out_shape=(vrt.count,) + target_shape, window=dst_window)
+
+        if vrt.count > src.count:
+            data = np.ma.masked_array(data[0:src.count], mask=[~data[-1]] * src.count)
+        else:
             # mask with NODATA values
             if nodata is not None and vrt.nodata is not None:
                 data = _mask(data, vrt.nodata)
             else:
                 data = np.ma.masked_array(data, mask=np.ma.nomask)
-
-            return data
-
-    def _read_mask():
-        # open the mask separately so we can take advantage of its overviews
-        try:
-            warnings.simplefilter("ignore")
-            with rasterio.open("{}.msk".format(src.name), crs=src.crs) as mask_src:
-                with WarpedVRT(
-                    mask_src,
-                    src_crs=src.crs,
-                    src_transform=src.transform,
-                    dst_crs=bounds.crs,
-                    dst_width=dst_width,
-                    dst_height=dst_height,
-                    dst_transform=dst_transform,
-                ) as mask_vrt:
-                    warnings.simplefilter("default")
-                    dst_window = mask_vrt.window(*bounds.bounds)
-
-                    mask = mask_vrt.read(
-                        boundless=True,
-                        out_shape=(mask_vrt.count,) + target_shape,
-                        window=dst_window,
-                    )
-
-                    # TODO allow iterations to be configured, zoom threshold to
-                    # apply
-                    # mask = ~morphology.binary_dilation(~mask, iterations=5)
-
-                    return mask
-        except Exception:
-            return
-
-    with futures.ThreadPoolExecutor(
-        max_workers=multiprocessing.cpu_count() * 5
-    ) as executor:
-        data_task = executor.submit(_read_data)
-        mask_task = executor.submit(_read_mask)
-
-    data = data_task.result()
-    mask = mask_task.result()
-
-    if mask is None:
-        # assume that the included mask was dirty and expand it
-        if data.mask.any():
-            data.mask = morphology.binary_dilation(data.mask, iterations=2)
-    else:
-        data.mask = data.mask | ~mask
 
     return PixelCollection(data, bounds)
 
