@@ -5,9 +5,10 @@ import logging
 import math
 import unicodedata
 
-from haversine import haversine
 import numpy as np
+
 import rasterio
+from haversine import haversine
 from rasterio import transform, warp, windows
 from rasterio._err import CPLE_OutOfMemoryError
 from rasterio.crs import CRS
@@ -265,15 +266,22 @@ def read_window(src, bounds, target_shape, recipes=None):
         src_nodata = None
         add_alpha = True
 
+    w, s, e, n = bounds.bounds
+    vrt_transform = (
+        Affine.translation(w, n)
+        * Affine.scale(dst_transform.a, dst_transform.e)
+        * Affine.identity()
+    )
+    vrt_width = math.ceil((e - w) / dst_transform.a)
+    vrt_height = math.ceil((s - n) / dst_transform.e)
+
     with WarpedVRT(
         src,
         src_nodata=src_nodata,
         crs=bounds.crs,
-        width=target_shape[0],
-        height=target_shape[1],
-        transform=transform.from_bounds(
-            *bounds.bounds, width=target_shape[0], height=target_shape[0]
-        ),
+        width=vrt_width,
+        height=vrt_height,
+        transform=vrt_transform,
         resampling=resampling,
         add_alpha=add_alpha,
     ) as vrt:
