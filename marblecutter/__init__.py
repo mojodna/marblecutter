@@ -12,7 +12,7 @@ from haversine import haversine
 from rasterio import transform, warp, windows
 from rasterio._err import CPLE_OutOfMemoryError
 from rasterio.crs import CRS
-from rasterio.enums import MaskFlags
+from rasterio.enums import ColorInterp, MaskFlags
 from rasterio.transform import Affine
 from rasterio.vrt import WarpedVRT
 from rasterio.warp import Resampling
@@ -261,7 +261,10 @@ def read_window(src, bounds, target_shape, recipes=None):
     src_nodata = nodata
     add_alpha = False
 
-    if any([MaskFlags.per_dataset in flags for flags in src.mask_flag_enums]):
+    if (
+        any([MaskFlags.per_dataset in flags for flags in src.mask_flag_enums])
+        and not any([MaskFlags.alpha in flags for flags in src.mask_flag_enums])
+    ):
         # prefer the mask if available
         src_nodata = None
         add_alpha = True
@@ -291,8 +294,11 @@ def read_window(src, bounds, target_shape, recipes=None):
 
         data = vrt.read(out_shape=(vrt.count,) + target_shape, window=dst_window)
 
-        if vrt.count > src.count:
-            data = np.ma.masked_array(data[0:src.count], mask=[~data[-1]] * src.count)
+        if any([ColorInterp.alpha in vrt.colorinterp]):
+            alpha_idx = vrt.colorinterp.index(ColorInterp.alpha)
+            mask = [~data[alpha_idx]] * (vrt.count - 1)
+            bands = [data[i] for i in range(0, vrt.count) if i != alpha_idx]
+            data = np.ma.masked_array(bands, mask=mask)
         else:
             # mask with NODATA values
             if nodata is not None and vrt.nodata is not None:
