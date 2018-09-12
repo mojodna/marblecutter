@@ -67,7 +67,7 @@ class Catalog(object):
         return self._provider_url
 
     def get_sources(self, bounds, resolution):
-        raise NotImplemented
+        raise NotImplementedError
 
     def validate(self, tile):
         if not self.minzoom <= tile.z <= self.maxzoom:
