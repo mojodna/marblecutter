@@ -5,3 +5,4 @@ marblecutter.egg-info/
 *.pyc
 *.tif
 dist/
+.vscode/
