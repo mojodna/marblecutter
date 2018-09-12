@@ -6,11 +6,15 @@ from rasterio.crs import CRS
 
 from .. import InvalidTileRequest
 
+MIN_LAT = -85.05113
+MIN_LON = -180.0
+MAX_LAT = 85.05113
+MAX_LON = 180
 WGS84_CRS = CRS.from_epsg(4326)
 
 
 class Catalog(object):
-    _bounds = [-180, -85.05113, 180, 85.05113]
+    _bounds = [MIN_LON, MIN_LAT, MAX_LON, MAX_LAT]
     _center = [0, 0, 2]
     _headers = {}
     _id = None
@@ -23,7 +27,8 @@ class Catalog(object):
 
     @property
     def bounds(self):
-        return self._bounds
+        w, s, e, n = self._bounds
+        return (max(MIN_LON, w), max(MIN_LAT, s), min(MAX_LAT, e), min(MAX_LON, n))
 
     @property
     def center(self):
