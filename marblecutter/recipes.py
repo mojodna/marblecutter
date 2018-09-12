@@ -142,8 +142,23 @@ def apply(recipes, pixels, source=None):
                     )
 
         if data.shape[0] == 1:
-            # likely greyscale image; use the same band on all channels
-            data = np.ma.array([data[0], data[0], data[0]])
+            if pixels.colormap:
+                # create a lookup table from the source's color map
+                lut = np.ma.zeros(
+                    shape=(max(pixels.colormap.keys()) + 1, 3), dtype=np.uint8
+                )
+                for i, color in pixels.colormap.items():
+                    # NOTE ignores alpha channel in the color map
+                    lut[i] = color[0:3]
+
+                # apply the color map
+                data = lut[data[0], :]
+
+                # re-shape to match band-style
+                data = np.ma.transpose(data, [2, 0, 1])
+            else:
+                # likely greyscale image; use the same band on all channels
+                data = np.ma.array([data[0], data[0], data[0]])
 
         # normalize to 0..1 based on the range of the source type (only
         # for int*s)

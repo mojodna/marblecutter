@@ -83,7 +83,7 @@ def _nodata(dtype):
 
 
 def crop(pixel_collection, data_format, offsets):
-    data, (bounds, data_crs), _ = pixel_collection
+    data, (bounds, data_crs), _, _ = pixel_collection
     left, bottom, right, top = offsets
 
     if _isimage(data_format):
@@ -252,7 +252,10 @@ def read_window(src, bounds, target_shape, recipes=None):
     # better solution, particularly as it avoids artifacts introduced when the
     # NODATA values are resampled using something other than nearest neighbor.
 
-    resampling = Resampling[recipes.get("resample", "bilinear")]
+    if any([ColorInterp.palette in src.colorinterp]):
+        resampling = Resampling[recipes.get("resample", "nearest")]
+    else:
+        resampling = Resampling[recipes.get("resample", "bilinear")]
 
     nodata = src.nodata or _nodata(src.meta["dtype"])
 

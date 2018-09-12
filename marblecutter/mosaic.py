@@ -48,8 +48,14 @@ def composite(sources, bounds, shape, target_crs, band_count):
                 LOG.exception("Error reading %s: %s", source.url, e)
                 return
 
+            colormap = None
+            try:
+                colormap = src.colormap(1)
+            except ValueError:
+                pass
+
             return source, PixelCollection(
-                window_data.data, window_data.bounds, source.band
+                window_data.data, window_data.bounds, source.band, colormap
             )
 
     # iterate over available sources, sorted by decreasing "quality"
@@ -95,8 +101,8 @@ def composite(sources, bounds, shape, target_crs, band_count):
 
 def paste(window_pixels, canvas_pixels):
     """ "Reproject" src data into the correct position within a larger image"""
-    window_data, (window_bounds, window_crs), band = window_pixels
-    canvas, (canvas_bounds, canvas_crs), _ = canvas_pixels
+    window_data, (window_bounds, window_crs), band, _ = window_pixels
+    canvas, (canvas_bounds, canvas_crs), _, _ = canvas_pixels
     if window_crs != canvas_crs:
         raise Exception("CRSes must match: {} != {}".format(window_crs, canvas_crs))
 

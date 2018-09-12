@@ -30,11 +30,15 @@ class TransformationBase:
         # apply buffer
         bounds_orig = bounds
         shape = [dim + (2 * effective_buffer) for dim in shape]
-        bounds = Bounds([
-            p - (buffer * resolution[i % 2])
-            if i < 2 else p + (effective_buffer * resolution[i % 2])
-            for i, p in enumerate(bounds.bounds)
-        ], bounds.crs)
+        bounds = Bounds(
+            [
+                p - (buffer * resolution[i % 2])
+                if i < 2
+                else p + (effective_buffer * resolution[i % 2])
+                for i, p in enumerate(bounds.bounds)
+            ],
+            bounds.crs,
+        )
 
         #
         left = right = bottom = top = buffer
@@ -68,9 +72,8 @@ class TransformationBase:
         return bounds, tuple(shape), (left, bottom, right, top)
 
     def postprocess(self, pixels, data_format, offsets):
-        data, (bounds, data_crs), _ = pixels
-        data, (cropped_bounds, data_crs), _ = crop(pixels, data_format,
-                                                   offsets)
+        data, (bounds, data_crs), _, _ = pixels
+        data, (cropped_bounds, data_crs), _, _ = crop(pixels, data_format, offsets)
 
         if self.collar > 0:
             extent = get_extent(data_crs)
@@ -98,7 +101,9 @@ class TransformationBase:
             else:
                 raise Exception(
                     "Unsupported format for collar postprocessing: {}".format(
-                        data_format))
+                        data_format
+                    )
+                )
 
         return PixelCollection(data, Bounds(cropped_bounds, data_crs))
 
@@ -119,5 +124,4 @@ def apply_latitude_adjustments(pixels):
     factors = 1 / np.cos(np.radians(latitudes))
 
     # convert to 2d array, rotate 270º, scale data
-    return PixelCollection(data * np.rot90(np.atleast_2d(factors), 3),
-                           pixels.bounds)
+    return PixelCollection(data * np.rot90(np.atleast_2d(factors), 3), pixels.bounds)
