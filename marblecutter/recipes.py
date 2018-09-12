@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 import itertools
 import logging
+from builtins import range
 from functools import reduce
 
 import numpy as np
@@ -90,7 +91,7 @@ def apply(recipes, pixels, source=None):
                     out_range=(dtype_min, dtype_max),
                 )
             elif recipes["linear_stretch"] == "per_band":
-                for band in xrange(0, data.shape[0]):
+                for band in range(0, data.shape[0]):
                     min_val = source.meta.get("values", {}).get(band, {}).get(
                         "min", np.min(data[band])
                     )
@@ -111,7 +112,7 @@ def apply(recipes, pixels, source=None):
             if data.dtype != np.uint8 and not np.issubdtype(data.dtype, np.floating):
                 # rescale non-8-bit sources (assuming that they're raw sensor data)
 
-                for band in xrange(0, data.shape[0]):
+                for band in range(0, data.shape[0]):
                     min_val = source.meta.get("values", {}).get(band, {}).get(
                         "min", dtype_min
                     )

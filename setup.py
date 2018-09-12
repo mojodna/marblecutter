@@ -14,6 +14,7 @@ setup(
     zip_safe=False,
     package_data={"marblecutter": ["static/images/*", "templates/*"]},
     install_requires=[
+        "future",
         "futures",
         "haversine",
         "mercantile",

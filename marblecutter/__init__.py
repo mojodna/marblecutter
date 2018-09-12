@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
+from builtins import str
 import logging
 import math
 import unicodedata
@@ -375,7 +376,7 @@ def render(
         + [
             'src{};desc="{} - {}"'.format(
                 i,
-                unicodedata.normalize("NFKD", unicode(name)).encode(
+                unicodedata.normalize("NFKD", str(name)).encode(
                     "ascii", "ignore"
                 ).replace(
                     '"', '\\"'
