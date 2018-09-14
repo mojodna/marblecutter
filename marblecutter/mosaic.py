@@ -16,7 +16,7 @@ from .utils import Bounds, PixelCollection
 LOG = logging.getLogger(__name__)
 
 
-def composite(sources, bounds, shape, target_crs, band_count):
+def composite(sources, bounds, shape, target_crs, expand):
     """Composite data from sources into a single raster covering bounds, but in
     the target CRS."""
     # avoid circular dependencies
@@ -49,13 +49,18 @@ def composite(sources, bounds, shape, target_crs, band_count):
                 return
 
             colormap = None
-            try:
-                colormap = source.meta.get("colormap", src.colormap(1))
-            except ValueError:
-                pass
 
-            return source, PixelCollection(
-                window_data.data, window_data.bounds, source.band, colormap
+            if expand:
+                try:
+                    colormap = source.meta.get("colormap", src.colormap(1))
+                except ValueError:
+                    pass
+
+            return (
+                source,
+                PixelCollection(
+                    window_data.data, window_data.bounds, source.band, colormap
+                ),
             )
 
     # iterate over available sources, sorted by decreasing "quality"
@@ -68,19 +73,22 @@ def composite(sources, bounds, shape, target_crs, band_count):
 
     ws = recipes.postprocess(ws)
 
-    # TODO determine band_count from the first source (or something else, in the case of Landsat 8)
-    canvas_data = np.ma.zeros(
-        (band_count,) + shape, dtype=np.float32, fill_value=_nodata(np.float32)
-    )
-    canvas_data.mask = True
-
-    canvas = PixelCollection(canvas_data, canvas_bounds)
+    canvas = None
 
     for source, window_data in filter(None, ws):
         window_data = recipes.apply(source.recipes, window_data, source=source)
 
         if window_data.data is None:
             continue
+
+        if canvas is None:
+            # initialize canvas data
+            canvas_data = np.ma.zeros(
+                window_data.data.shape, dtype=np.float32, fill_value=_nodata(np.float32)
+            )
+            canvas_data.mask = True
+
+            canvas = PixelCollection(canvas_data, canvas_bounds)
 
         # paste the resulting data onto a canvas
         canvas = paste(

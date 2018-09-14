@@ -318,7 +318,7 @@ def render(
     shape,
     target_crs,
     format,
-    data_band_count,
+    expand,
     catalog=None,
     sources=None,
     transformation=None,
@@ -347,7 +347,7 @@ def render(
 
     with Timer() as t:
         sources_used, pixels = mosaic.composite(
-            sources, bounds, shape, target_crs, data_band_count
+            sources, bounds, shape, target_crs, expand
         )
     stats.append(("Composite", t.elapsed))
 
