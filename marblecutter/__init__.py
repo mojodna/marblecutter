@@ -379,10 +379,8 @@ def render(
         + [
             'src{};desc="{} - {}"'.format(
                 i,
-                unicodedata.normalize("NFKD", str(name)).encode(
+                unicodedata.normalize("NFKD", str(name)).replace('"', '\\"').encode(
                     "ascii", "ignore"
-                ).replace(
-                    '"', '\\"'
                 ),
                 url,
             )
