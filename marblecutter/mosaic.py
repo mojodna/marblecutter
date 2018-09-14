@@ -50,7 +50,7 @@ def composite(sources, bounds, shape, target_crs, band_count):
 
             colormap = None
             try:
-                colormap = src.colormap(1)
+                colormap = source.meta.get("colormap", src.colormap(1))
             except ValueError:
                 pass
 

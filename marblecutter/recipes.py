@@ -144,12 +144,10 @@ def apply(recipes, pixels, source=None):
         if data.shape[0] == 1:
             if pixels.colormap:
                 # create a lookup table from the source's color map
-                lut = np.ma.zeros(
-                    shape=(max(pixels.colormap.keys()) + 1, 3), dtype=np.uint8
-                )
+                lut = np.ma.zeros(shape=(256, 4), dtype=np.uint8)
                 for i, color in pixels.colormap.items():
                     # NOTE ignores alpha channel in the color map
-                    lut[i] = color[0:3]
+                    lut[i] = color
 
                 # apply the color map
                 data = lut[data[0], :]
