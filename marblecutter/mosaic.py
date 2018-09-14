@@ -68,6 +68,7 @@ def composite(sources, bounds, shape, target_crs, band_count):
 
     ws = recipes.postprocess(ws)
 
+    # TODO determine band_count from the first source (or something else, in the case of Landsat 8)
     canvas_data = np.ma.zeros(
         (band_count,) + shape, dtype=np.float32, fill_value=_nodata(np.float32)
     )
