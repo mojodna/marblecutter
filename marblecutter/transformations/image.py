@@ -1,4 +1,3 @@
-# noqa
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
@@ -9,18 +8,19 @@ from .utils import TransformationBase
 
 
 class Image(TransformationBase):
+
     def transform(self, pixels):
         data = pixels.data
-        (count, height, width) = data.shape
+        (count, _, _) = data.shape
 
         if 3 > count > 4:
             raise Exception("Source data must be 3 or 4 bands")
 
-        if count == 4:
-            raise Exception(
-                "Variable opacity (alpha channel) not yet implemented")
-
         data *= np.iinfo(np.uint8).max
+
+        if count == 4:
+            rgba = np.ma.transpose(data.astype(np.uint8), [1, 2, 0])
+            return PixelCollection(rgba, pixels.bounds), "RGBA"
 
         rgb = np.ma.transpose(data.astype(np.uint8), [1, 2, 0])
         if data.mask.any():
@@ -38,4 +38,4 @@ class Image(TransformationBase):
             # a = np.logical_and(sums > threshold, sums <
             #                    (255 * 3) - threshold).astype(np.uint8) * 255
 
-        return PixelCollection(np.dstack((rgb, a)), pixels.bounds), 'RGBA'
+        return PixelCollection(np.dstack((rgb, a)), pixels.bounds), "RGBA"
