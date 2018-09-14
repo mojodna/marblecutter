@@ -14,7 +14,7 @@ CONTENT_TYPE = "image/tiff"
 def GeoTIFF(area_or_point="Area", blocksize=512):
 
     def _format(pixels, data_format):
-        data, (data_bounds, data_crs) = pixels
+        data, (data_bounds, data_crs), _, _ = pixels
         if data_format is not "raw":
             raise Exception("raw data is required")
 
