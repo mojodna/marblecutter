@@ -2,6 +2,7 @@
 from collections import namedtuple
 
 Bounds = namedtuple("Bounds", ["bounds", "crs"])
+# TODO add colorinterp and copy from src.colorinterp
 PixelCollection = namedtuple("PixelCollection", ["data", "bounds", "band", "colormap"])
 PixelCollection.__new__.__defaults__ = (None, None)
 Source = namedtuple(

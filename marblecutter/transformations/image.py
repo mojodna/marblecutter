@@ -16,7 +16,9 @@ class Image(TransformationBase):
         if 3 > count > 4:
             raise Exception("Source data must be 3 or 4 bands")
 
-        data *= np.iinfo(np.uint8).max
+        if data.dtype == np.float32:
+            # data was normalized; expand it
+            data *= np.iinfo(np.uint8).max
 
         if count == 4:
             rgba = np.ma.transpose(data.astype(np.uint8), [1, 2, 0])

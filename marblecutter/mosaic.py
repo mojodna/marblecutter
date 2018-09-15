@@ -49,12 +49,10 @@ def composite(sources, bounds, shape, target_crs, expand):
                 return
 
             colormap = None
-
-            if expand:
-                try:
-                    colormap = source.meta.get("colormap", src.colormap(1))
-                except ValueError:
-                    pass
+            try:
+                colormap = source.meta.get("colormap", src.colormap(1))
+            except ValueError:
+                pass
 
             return (
                 source,
@@ -76,7 +74,9 @@ def composite(sources, bounds, shape, target_crs, expand):
     canvas = None
 
     for source, window_data in filter(None, ws):
-        window_data = recipes.apply(source.recipes, window_data, source=source)
+        window_data = recipes.apply(
+            source.recipes, window_data, source=source, expand=expand
+        )
 
         if window_data.data is None:
             continue
@@ -84,18 +84,23 @@ def composite(sources, bounds, shape, target_crs, expand):
         if canvas is None:
             # initialize canvas data
             canvas_data = np.ma.zeros(
-                window_data.data.shape, dtype=np.float32, fill_value=_nodata(np.float32)
+                window_data.data.shape,
+                dtype=window_data.data.dtype,
+                fill_value=_nodata(window_data.data.dtype),
             )
             canvas_data.mask = True
 
-            canvas = PixelCollection(canvas_data, canvas_bounds)
+            canvas = PixelCollection(
+                canvas_data, canvas_bounds, None, window_data.colormap
+            )
 
         # paste the resulting data onto a canvas
         canvas = paste(
             PixelCollection(
-                window_data.data.astype(np.float32),
+                window_data.data.astype(canvas.data.dtype),
                 window_data.bounds,
                 window_data.band,
+                window_data.colormap,
             ),
             canvas,
         )
@@ -110,8 +115,8 @@ def composite(sources, bounds, shape, target_crs, expand):
 
 def paste(window_pixels, canvas_pixels):
     """ "Reproject" src data into the correct position within a larger image"""
-    window_data, (window_bounds, window_crs), band, _ = window_pixels
-    canvas, (canvas_bounds, canvas_crs), _, _ = canvas_pixels
+    window_data, (window_bounds, window_crs), band, window_colormap = window_pixels
+    canvas, (canvas_bounds, canvas_crs), _, canvas_colormap = canvas_pixels
     if window_crs != canvas_crs:
         raise Exception("CRSes must match: {} != {}".format(window_crs, canvas_crs))
 
@@ -135,4 +140,9 @@ def paste(window_pixels, canvas_pixels):
         canvas[band] = merged_band[0]
         merged = canvas
 
-    return PixelCollection(merged, canvas_pixels.bounds)
+    # drop colormaps if they differ between sources
+    colormap = None
+    if window_colormap == canvas_colormap:
+        colormap = canvas_colormap
+
+    return PixelCollection(merged, canvas_pixels.bounds, None, colormap)

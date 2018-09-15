@@ -18,10 +18,24 @@ BAND_MAPPING = {"r": 0, "g": 1, "b": 2, "pan": 4}
 LOG = logging.getLogger(__name__)
 
 
-def apply(recipes, pixels, source=None):
+def apply(recipes, pixels, expand, source=None):
     data = pixels.data
     dtype_min = np.iinfo(data.dtype).min
     dtype_max = np.iinfo(data.dtype).max
+
+    if data.shape[0] == 1:
+        if expand and pixels.colormap:
+            # create a lookup table from the source's color map
+            lut = np.ma.zeros(shape=(256, 4), dtype=np.uint8)
+            for i, color in pixels.colormap.items():
+                # NOTE ignores alpha channel in the color map
+                lut[i] = color
+
+            # apply the color map
+            data = lut[data[0], :]
+
+            # re-shape to match band-style
+            data = np.ma.transpose(data, [2, 0, 1])
 
     if "landsat8" in recipes:
         LOG.info("Applying landsat 8 recipe")
@@ -142,28 +156,15 @@ def apply(recipes, pixels, source=None):
                     )
 
         if data.shape[0] == 1:
-            if pixels.colormap:
-                # create a lookup table from the source's color map
-                lut = np.ma.zeros(shape=(256, 4), dtype=np.uint8)
-                for i, color in pixels.colormap.items():
-                    # NOTE ignores alpha channel in the color map
-                    lut[i] = color
-
-                # apply the color map
-                data = lut[data[0], :]
-
-                # re-shape to match band-style
-                data = np.ma.transpose(data, [2, 0, 1])
-            else:
-                # likely greyscale image; use the same band on all channels
-                data = np.ma.array([data[0], data[0], data[0]])
+            # likely greyscale image; use the same band on all channels
+            data = np.ma.array([data[0], data[0], data[0]])
 
         # normalize to 0..1 based on the range of the source type (only
         # for int*s)
         if not np.issubdtype(data.dtype, np.floating):
             data = data.astype(np.float32) / np.iinfo(data.dtype).max
 
-    return PixelCollection(data, pixels.bounds)
+    return PixelCollection(data, pixels.bounds, None, pixels.colormap)
 
 
 def preprocess(sources, resolution=None):
