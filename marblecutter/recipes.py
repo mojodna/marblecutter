@@ -20,11 +20,12 @@ LOG = logging.getLogger(__name__)
 
 def apply(recipes, pixels, expand, source=None):
     data = pixels.data
+    colormap = pixels.colormap
     dtype_min = np.iinfo(data.dtype).min
     dtype_max = np.iinfo(data.dtype).max
 
     if data.shape[0] == 1:
-        if expand and pixels.colormap:
+        if expand and colormap:
             # create a lookup table from the source's color map
             lut = np.ma.zeros(shape=(256, 4), dtype=np.uint8)
             for i, color in pixels.colormap.items():
@@ -36,6 +37,8 @@ def apply(recipes, pixels, expand, source=None):
 
             # re-shape to match band-style
             data = np.ma.transpose(data, [2, 0, 1])
+
+            colormap = None
 
     if "landsat8" in recipes:
         LOG.info("Applying landsat 8 recipe")
@@ -164,7 +167,7 @@ def apply(recipes, pixels, expand, source=None):
         if not np.issubdtype(data.dtype, np.floating):
             data = data.astype(np.float32) / np.iinfo(data.dtype).max
 
-    return PixelCollection(data, pixels.bounds, None, pixels.colormap)
+    return PixelCollection(data, pixels.bounds, None, colormap)
 
 
 def preprocess(sources, resolution=None):
