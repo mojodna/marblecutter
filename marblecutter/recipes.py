@@ -27,9 +27,20 @@ def apply(recipes, pixels, expand, source=None):
     if data.shape[0] == 1:
         if expand and colormap:
             # create a lookup table from the source's color map
-            lut = np.ma.zeros(shape=(256, 4), dtype=np.uint8)
-            for i, color in pixels.colormap.items():
-                # NOTE ignores alpha channel in the color map
+            lut = None
+
+            for i, color in colormap.items():
+                if lut is None:
+                    try:
+                        # color is probably a 4 tuple (but might be smaller)
+                        dims = len(color)
+                    except Exception:
+                        # but for convenience it might be an int
+                        dims = 1
+
+                    lut = np.ma.zeros(shape=(256, dims), dtype=np.uint8)
+                    lut.fill_value = data.fill_value
+
                 lut[i] = color
 
             # apply the color map
