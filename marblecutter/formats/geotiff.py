@@ -60,8 +60,7 @@ def GeoTIFF(area_or_point="Area", blocksize=512):
                 dataset.update_tags(AREA_OR_POINT=area_or_point)
                 dataset.write(data.filled())
 
-                if colormap:
-                    # TODO bands may have different colormaps
+                if count == 1 and colormap and len(list(colormap.values())[0]) >= 3:
                     dataset.write_colormap(1, colormap)
 
                 # TODO set colorinterp (may not be possible)
