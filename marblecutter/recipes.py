@@ -38,6 +38,9 @@ def apply(recipes, pixels, expand, source=None):
             # re-shape to match band-style
             data = np.ma.transpose(data, [2, 0, 1])
 
+            # apply mask
+            data = np.ma.masked_equal(data, data.fill_value, copy=False)
+
             colormap = None
 
     if "landsat8" in recipes:
