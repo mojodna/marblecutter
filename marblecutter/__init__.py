@@ -381,6 +381,8 @@ def render(
                 i,
                 unicodedata.normalize("NFKD", str(name)).replace('"', '\\"').encode(
                     "ascii", "ignore"
+                ).decode(
+                    "ascii"
                 ),
                 url,
             )
