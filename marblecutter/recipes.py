@@ -38,10 +38,15 @@ def apply(recipes, pixels, expand, source=None):
                         # but for convenience it might be an int
                         dims = 1
 
-                    lut = np.ma.zeros(shape=(256, dims), dtype=np.uint8)
-                    lut.fill_value = data.fill_value
+                    lut = np.ma.zeros(
+                        shape=(256, dims), dtype=np.uint8, fill_value=data.fill_value
+                    )
+                    lut.mask = True
 
-                lut[i] = color
+                lut[int(i)] = color
+
+            # stash the mask
+            mask = data.mask
 
             # apply the color map
             data = lut[data[0], :]
@@ -49,8 +54,8 @@ def apply(recipes, pixels, expand, source=None):
             # re-shape to match band-style
             data = np.ma.transpose(data, [2, 0, 1])
 
-            # apply mask
-            data = np.ma.masked_equal(data, data.fill_value, copy=False)
+            # re-apply the mask
+            data.mask = mask
 
             colormap = None
 
