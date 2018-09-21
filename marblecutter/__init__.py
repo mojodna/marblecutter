@@ -214,6 +214,7 @@ def read_window(src, bounds, target_shape, recipes=None):
             # provide resolution for improved resampling when overzooming
             resolution = target_resolution
 
+        # TODO this becomes unnecessary after rasterio@1.0.6
         while (
             dst_transform is None
             and src.width // scale_factor > 0
