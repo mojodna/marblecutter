@@ -63,7 +63,7 @@ $.getJSON("{{ tilejson_url }}", function(data) {
     var uri = new URL(window.location.protocol + provider);
 
     // inject scale into the path component
-    var path = decodeURIComponent(uri.pathname).replace(/\.(?!.*\.)/, "@2x.");
+    var path = decodeURIComponent(uri.pathname).replace(/{y}/, "{y}@2x");
 
     // workaround for braces becoming automatically encoded when part of a URL object
     provider = uri.protocol + "//" + uri.host + path + uri.search;
