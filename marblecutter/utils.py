@@ -1,6 +1,8 @@
 # coding=utf-8
 from collections import namedtuple
 
+import numpy as np
+
 Bounds = namedtuple("Bounds", ["bounds", "crs"])
 # TODO add colorinterp and copy from src.colorinterp
 PixelCollection = namedtuple("PixelCollection", ["data", "bounds", "band", "colormap"])
@@ -27,3 +29,23 @@ Source = namedtuple(
 Source.__new__.__defaults__ = (
     {}, {}, {}, None, None, None, None, None, None, None, None
 )
+
+
+def make_colormap(colormap):
+    lut = None
+
+    for i, color in colormap.items():
+        if lut is None:
+            try:
+                # color is probably a 4 tuple (but might be smaller)
+                dims = len(color)
+            except Exception:
+                # but for convenience it might be an int
+                dims = 1
+
+            lut = np.ma.zeros(shape=(256, dims), dtype=np.uint8)
+            lut.mask = True
+
+        lut[int(i)] = color
+
+    return lut

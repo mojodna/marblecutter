@@ -12,7 +12,7 @@ from rio_pansharpen.methods import Brovey
 from rio_tiler import utils
 from rio_toa import reflectance
 
-from .utils import PixelCollection, Source
+from .utils import PixelCollection, Source, make_colormap
 
 BAND_MAPPING = {"r": 0, "g": 1, "b": 2, "pan": 4}
 LOG = logging.getLogger(__name__)
@@ -27,23 +27,7 @@ def apply(recipes, pixels, expand, source=None):
     if data.shape[0] == 1:
         if expand and colormap:
             # create a lookup table from the source's color map
-            lut = None
-
-            for i, color in colormap.items():
-                if lut is None:
-                    try:
-                        # color is probably a 4 tuple (but might be smaller)
-                        dims = len(color)
-                    except Exception:
-                        # but for convenience it might be an int
-                        dims = 1
-
-                    lut = np.ma.zeros(
-                        shape=(256, dims), dtype=np.uint8, fill_value=data.fill_value
-                    )
-                    lut.mask = True
-
-                lut[int(i)] = color
+            lut = make_colormap(colormap)
 
             # stash the mask
             mask = data.mask
