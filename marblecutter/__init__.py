@@ -253,7 +253,7 @@ def read_window(src, bounds, target_shape, recipes=None):
     # NODATA values are resampled using something other than nearest neighbor.
 
     if any([ColorInterp.palette in src.colorinterp]):
-        resampling = Resampling[recipes.get("resample", "nearest")]
+        resampling = Resampling[recipes.get("resample", "mode")]
     else:
         resampling = Resampling[recipes.get("resample", "bilinear")]
 
