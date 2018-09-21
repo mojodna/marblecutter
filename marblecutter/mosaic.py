@@ -36,7 +36,10 @@ def composite(sources, bounds, shape, target_crs, expand):
     def _read_window(source):
         with get_source(source.url) as src:
             LOG.info(
-                "Compositing %s (%s) as band %s", source.url, source.name, source.band
+                "Fetching %s (%s) as band %s",
+                source.url,
+                source.name,
+                source.band or "*",
             )
 
             # load a colormap, if available
