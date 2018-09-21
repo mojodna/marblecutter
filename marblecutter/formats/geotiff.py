@@ -13,14 +13,15 @@ CONTENT_TYPE = "image/tiff"
 LOG = logging.getLogger(__name__)
 
 
-def GeoTIFF(area_or_point="Area", blocksize=512):
+def GeoTIFF(area_or_point="Area", blocksize=512, colormap=None):
 
     def _format(pixels, data_format):
-        data, (data_bounds, data_crs), _, colormap = pixels
+        data, (data_bounds, data_crs), _, _colormap = pixels
         if data_format is not "raw":
             raise Exception("raw data is required")
 
         (count, height, width) = data.shape
+        cm = colormap or _colormap
 
         if np.issubdtype(data.dtype, np.floating):
             predictor = 3
@@ -60,8 +61,8 @@ def GeoTIFF(area_or_point="Area", blocksize=512):
                 dataset.update_tags(AREA_OR_POINT=area_or_point)
                 dataset.write(data.filled())
 
-                if count == 1 and colormap and len(list(colormap.values())[0]) >= 3:
-                    dataset.write_colormap(1, colormap)
+                if count == 1 and cm and len(list(cm.values())[0]) == 3:
+                    dataset.write_colormap(1, cm)
 
                 # TODO set colorinterp (may not be possible)
                 # dataset.colorinterp = [ColorInterp.red, ColorInterp.green, ColorInterp.blue, ColorInterp.alpha]
