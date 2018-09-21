@@ -38,8 +38,8 @@ def apply(recipes, pixels, expand, source=None):
             # re-shape to match band-style
             data = np.ma.transpose(data, [2, 0, 1])
 
-            # re-apply the mask
-            data.mask = mask
+            # re-apply the mask, merging it with pixels that were masked by the color map
+            data.mask = data.mask | mask
 
             colormap = None
 
