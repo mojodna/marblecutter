@@ -39,6 +39,22 @@ def composite(sources, bounds, shape, target_crs, expand):
                 "Compositing %s (%s) as band %s", source.url, source.name, source.band
             )
 
+            # load a colormap, if available
+            _colormap = None
+            try:
+                _colormap = src.colormap(1)
+            except ValueError:
+                pass
+
+            colormap = source.recipes.get(
+                "colormap", source.meta.get("colormap", _colormap)
+            )
+
+            if colormap:
+                # tell read_window to use mode resampling (if not set
+                # otherwise), since it won't see this source as paletted
+                source.recipes["resample"] = source.recipes.get("resample", "mode")
+
             # read a window from the source data
             # TODO ask for a buffer here, get back an updated bounding box
             # reflecting it
@@ -47,12 +63,6 @@ def composite(sources, bounds, shape, target_crs, expand):
             except Exception as e:
                 LOG.exception("Error reading %s: %s", source.url, e)
                 return
-
-            colormap = None
-            try:
-                colormap = source.meta.get("colormap", src.colormap(1))
-            except ValueError:
-                pass
 
             return (
                 source,
