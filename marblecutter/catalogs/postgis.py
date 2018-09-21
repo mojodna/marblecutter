@@ -35,7 +35,7 @@ class PostGISCatalog(Catalog):
         url = urlparse.urlparse(database_url)
 
         self._pool = ThreadedConnectionPool(
-            1,
+            0,
             16,
             database=url.path[1:],
             user=url.username,
