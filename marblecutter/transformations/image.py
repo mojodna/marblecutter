@@ -4,10 +4,10 @@ from __future__ import absolute_import, division, print_function
 import numpy as np
 
 from .. import PixelCollection
-from .utils import TransformationBase
+from .utils import Transformation
 
 
-class Image(TransformationBase):
+class Image(Transformation):
 
     def transform(self, pixels):
         data = pixels.data

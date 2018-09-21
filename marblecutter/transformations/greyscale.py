@@ -5,12 +5,12 @@ import numpy as np
 
 from .. import PixelCollection
 from .image import Image
-from .utils import TransformationBase
+from .utils import Transformation
 
 IMAGE_TRANSFORMATION = Image()
 
 
-class Greyscale(TransformationBase):
+class Greyscale(Transformation):
 
     def transform(self, pixels):
         data = pixels.data

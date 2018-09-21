@@ -11,7 +11,7 @@ from .. import Bounds, PixelCollection, crop, get_extent, get_resolution
 WGS84_CRS = CRS.from_epsg(4326)
 
 
-class TransformationBase:
+class Transformation:
     buffer = 0
 
     def __init__(self, collar=0):
