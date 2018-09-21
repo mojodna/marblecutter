@@ -21,14 +21,17 @@ Infinity = float("inf")
 
 
 class PostGISCatalog(Catalog):
-    def __init__(self,
-                 table="footprints",
-                 database_url=os.getenv("DATABASE_URL"),
-                 geometry_column="geom"):
+
+    def __init__(
+        self,
+        table="footprints",
+        database_url=os.getenv("DATABASE_URL"),
+        geometry_column="geom",
+    ):
         if database_url is None:
             raise Exception("Database URL must be provided.")
-        urlparse.uses_netloc.append('postgis')
-        urlparse.uses_netloc.append('postgres')
+        urlparse.uses_netloc.append("postgis")
+        urlparse.uses_netloc.append("postgres")
         url = urlparse.urlparse(database_url)
 
         self._pool = ThreadedConnectionPool(
@@ -38,20 +41,19 @@ class PostGISCatalog(Catalog):
             user=url.username,
             password=url.password,
             host=url.hostname,
-            port=url.port)
+            port=url.port,
+        )
 
         self._log = logging.getLogger(__name__)
         self.table = table
         self.geometry_column = geometry_column
 
-    def _candidates(self,
-                    bounds,
-                    resolution,
-                    min_zoom,
-                    max_zoom,
-                    include_geometries=False):
-        self._log.info("Resolution: %s; zoom range: %d-%d", resolution,
-                       min_zoom, max_zoom)
+    def _candidates(
+        self, bounds, resolution, min_zoom, max_zoom, include_geometries=False
+    ):
+        self._log.info(
+            "Resolution: %s; zoom range: %d-%d", resolution, min_zoom, max_zoom
+        )
 
         # TODO get sources in native CRS of the target
         query = """
@@ -101,26 +103,31 @@ class PostGISCatalog(Catalog):
         """.format(
             table=self.table,
             geometry_column=self.geometry_column,
-            include_geometries=bool(include_geometries))
+            include_geometries=bool(include_geometries),
+        )
 
         if bounds.crs == WGS84_CRS:
             left, bottom, right, top = bounds.bounds
         else:
             left, bottom, right, top = warp.transform_bounds(
-                bounds.crs, WGS84_CRS, *bounds.bounds)
+                bounds.crs, WGS84_CRS, *bounds.bounds
+            )
 
         connection = self._pool.getconn()
         try:
             with connection as conn, conn.cursor() as cur:
-                cur.execute(query, {
-                    "minx": left if left != Infinity else -180,
-                    "miny": bottom if bottom != Infinity else -90,
-                    "maxx": right if right != Infinity else 180,
-                    "maxy": top if top != Infinity else 90,
-                    "min_zoom": min_zoom,
-                    "max_zoom": max_zoom,
-                    "resolution": min(resolution),
-                })
+                cur.execute(
+                    query,
+                    {
+                        "minx": left if left != Infinity else -180,
+                        "miny": bottom if bottom != Infinity else -90,
+                        "maxx": right if right != Infinity else 180,
+                        "maxy": top if top != Infinity else 90,
+                        "min_zoom": min_zoom,
+                        "max_zoom": max_zoom,
+                        "resolution": min(resolution),
+                    },
+                )
 
                 for record in cur:
                     yield Source(
@@ -128,7 +135,8 @@ class PostGISCatalog(Catalog):
                         geom=json.loads(record[-4]),
                         filename=record[-3],
                         min_zoom=record[-2],
-                        max_zoom=record[-1])
+                        max_zoom=record[-1]
+                    )
         except Exception as e:
             self._log.error(e)
         finally:
@@ -275,25 +283,30 @@ class PostGISCatalog(Catalog):
         """.format(
             table=self.table,
             geometry_column=self.geometry_column,
-            include_geometries=bool(include_geometries))
+            include_geometries=bool(include_geometries),
+        )
 
         if bounds.crs == WGS84_CRS:
             left, bottom, right, top = bounds.bounds
         else:
             left, bottom, right, top = warp.transform_bounds(
-                bounds.crs, WGS84_CRS, *bounds.bounds)
+                bounds.crs, WGS84_CRS, *bounds.bounds
+            )
 
         connection = self._pool.getconn()
         try:
             with connection as conn, conn.cursor() as cur:
-                cur.execute(query, {
-                    "minx": left if left != Infinity else -180,
-                    "miny": bottom if bottom != Infinity else -90,
-                    "maxx": right if right != Infinity else 180,
-                    "maxy": top if top != Infinity else 90,
-                    "zoom": zoom,
-                    "resolution": min(resolution),
-                })
+                cur.execute(
+                    query,
+                    {
+                        "minx": left if left != Infinity else -180,
+                        "miny": bottom if bottom != Infinity else -90,
+                        "maxx": right if right != Infinity else 180,
+                        "maxy": top if top != Infinity else 90,
+                        "zoom": zoom,
+                        "resolution": min(resolution),
+                    },
+                )
 
                 for record in cur:
                     yield Source(*record[:-1], geom=json.loads(record[-1]))
@@ -302,19 +315,18 @@ class PostGISCatalog(Catalog):
         finally:
             self._pool.putconn(connection)
 
-    def get_sources(self,
-                    bounds,
-                    resolution,
-                    min_zoom=None,
-                    max_zoom=None,
-                    include_geometries=False):
+    def get_sources(
+        self, bounds, resolution, min_zoom=None, max_zoom=None, include_geometries=False
+    ):
         if min_zoom is None or max_zoom is None:
             return self._fill_bounds(
-                bounds, resolution, include_geometries=include_geometries)
+                bounds, resolution, include_geometries=include_geometries
+            )
 
         return self._candidates(
             bounds,
             resolution,
             min_zoom,
             max_zoom,
-            include_geometries=include_geometries)
+            include_geometries=include_geometries,
+        )
