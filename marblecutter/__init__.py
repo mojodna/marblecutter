@@ -258,12 +258,11 @@ def read_window(src, bounds, target_shape, recipes=None):
     else:
         resampling = Resampling[recipes.get("resample", "bilinear")]
 
-    nodata = src.nodata or _nodata(src.meta["dtype"])
+    src_nodata = src.nodata or _nodata(src.meta["dtype"])
 
     if "nodata" in recipes:
-        nodata = recipes["nodata"]
+        src_nodata = recipes["nodata"]
 
-    src_nodata = nodata
     add_alpha = False
 
     if (
@@ -306,7 +305,7 @@ def read_window(src, bounds, target_shape, recipes=None):
             data = np.ma.masked_array(bands, mask=mask)
         else:
             # mask with NODATA values
-            if nodata is not None and vrt.nodata is not None:
+            if src_nodata is not None and vrt.nodata is not None:
                 data = _mask(data, vrt.nodata)
             else:
                 data = np.ma.masked_array(data, mask=np.ma.nomask)
