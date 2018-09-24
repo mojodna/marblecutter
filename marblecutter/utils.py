@@ -50,9 +50,12 @@ def make_colormap(colormap):
             lut = np.ma.zeros(shape=(256, dims), dtype=np.uint8)
             lut.mask = True
 
-        if len(color) == 3:
-            # set to full opacity
-            color = tuple(color) + (255,)
+        try:
+            if len(color) == 3:
+                # set to full opacity
+                color = tuple(color) + (255,)
+        except Exception:
+            pass
 
         lut[int(i)] = color
 
