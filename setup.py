@@ -20,7 +20,7 @@ setup(
         "mercantile",
         "numpy",
         "Pillow",
-        "rasterio[s3]>=1.0rc2",
+        "rasterio[s3]>=1.0.6",
         "requests",
         "rio-pansharpen ~= 0.2.0",
         # TODO upgrade me

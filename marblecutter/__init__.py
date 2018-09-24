@@ -199,12 +199,6 @@ def read_window(src, bounds, target_shape, recipes=None):
             resolution[0], 0.0, extent[0], 0.0, -resolution[1], extent[3]
         )
     else:
-        # if raster is overly-large, approximate the transform based on
-        # a scaled-down version and scale it back after
-        attempts = 0
-        scale_factor = 1
-        dst_transform = None
-
         resolution = None
 
         if (
@@ -214,31 +208,14 @@ def read_window(src, bounds, target_shape, recipes=None):
             # provide resolution for improved resampling when overzooming
             resolution = target_resolution
 
-        # TODO this becomes unnecessary after rasterio@1.0.6
-        while (
-            dst_transform is None
-            and src.width // scale_factor > 0
-            and src.height // scale_factor > 0
-        ):
-            try:
-                (
-                    dst_transform, dst_width, dst_height
-                ) = warp.calculate_default_transform(
-                    src.crs,
-                    bounds.crs,
-                    src.width // scale_factor,
-                    src.height // scale_factor,
-                    *src.bounds,
-                    resolution=resolution
-                )
-
-                scale = Affine.scale(scale_factor, scale_factor)
-
-                dst_transform *= ~scale
-                dst_width, dst_height = scale * (dst_width, dst_height)
-            except (MemoryError, CPLE_OutOfMemoryError):
-                attempts += 1
-                scale_factor = 2 * attempts
+        (dst_transform, dst_width, dst_height) = warp.calculate_default_transform(
+            src.crs,
+            bounds.crs,
+            src.width,
+            src.height,
+            *src.bounds,
+            resolution=resolution
+        )
 
     # Some OAM sources have invalid NODATA values (-1000 for a file with a
     # dtype of Byte). rasterio returns None under these circumstances
