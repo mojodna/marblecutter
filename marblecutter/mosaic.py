@@ -49,9 +49,13 @@ def composite(sources, bounds, shape, target_crs, expand):
             except ValueError:
                 pass
 
-            colormap = source.recipes.get(
-                "colormap", source.meta.get("colormap", _colormap)
-            )
+            if expand == "meta":
+                # only use colormap from metadata
+                colormap = source.meta.get("colormap", _colormap)
+            else:
+                colormap = source.recipes.get(
+                    "colormap", source.meta.get("colormap", _colormap)
+                )
 
             if colormap:
                 # tell read_window to use mode resampling (if not set

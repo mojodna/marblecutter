@@ -43,8 +43,16 @@ def make_colormap(colormap):
                 # but for convenience it might be an int
                 dims = 1
 
+            if dims == 3:
+                # add an alpha channel
+                dims = 4
+
             lut = np.ma.zeros(shape=(256, dims), dtype=np.uint8)
             lut.mask = True
+
+        if len(color) == 3:
+            # set to full opacity
+            color = tuple(color) + (255,)
 
         lut[int(i)] = color
 
