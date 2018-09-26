@@ -5,8 +5,8 @@
 <script src="//cdnjs.cloudflare.com/ajax/libs/zepto/1.2.0/zepto.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/leaflet/1.2.0/leaflet.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/leaflet-hash/0.2.1/leaflet-hash.min.js"></script>
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/leaflet-geocoder-mapzen/1.9.3/leaflet-geocoder-mapzen.css">
-<script src="//cdnjs.cloudflare.com/ajax/libs/leaflet-geocoder-mapzen/1.9.3/leaflet-geocoder-mapzen.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <style type="text/css">
 body, #map {
   height: 100%;
@@ -22,8 +22,15 @@ body, #map {
 var map = L.map("map", {
   scrollWheelZoom: false,
   attributionControl: false,
-  keyboardPanOffset: 256  });
-L.control.geocoder("mapzen-LU6enDV").addTo(map);
+  keyboardPanOffset: 256
+});
+
+L.Control.geocoder({
+  defaultMarkGeocode: false,
+  position: "topleft"
+}).on('markgeocode', function (e) {
+  map.fitBounds(e.geocode.bbox);
+}).addTo(map);
 
 $.getJSON("{{ tilejson_url }}", function(data) {
   // provide a default location in the hash, not the L.map (since that will
