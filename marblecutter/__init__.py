@@ -256,8 +256,8 @@ def read_window(src, bounds, target_shape, recipes=None):
         * Affine.scale(dst_transform.a, dst_transform.e)
         * Affine.identity()
     )
-    vrt_width = math.ceil((e - w) / dst_transform.a)
-    vrt_height = math.ceil((s - n) / dst_transform.e)
+    vrt_width = math.floor((e - w) / dst_transform.a)
+    vrt_height = math.floor((s - n) / dst_transform.e)
 
     with WarpedVRT(
         src,
@@ -269,8 +269,6 @@ def read_window(src, bounds, target_shape, recipes=None):
         resampling=resampling,
         add_alpha=add_alpha,
     ) as vrt:
-        # NOTE rounding offsets (round_offsets()) eliminates 1px border at
-        # 180º east (but not 85º south) at zoom 2 (with Blue Marble)
         dst_window = vrt.window(*bounds.bounds)
 
         data = vrt.read(out_shape=(vrt.count,) + target_shape, window=dst_window)
