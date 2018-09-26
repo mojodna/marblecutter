@@ -28,7 +28,7 @@ class Catalog(object):
     @property
     def bounds(self):
         w, s, e, n = self._bounds
-        return (max(MIN_LON, w), max(MIN_LAT, s), min(MAX_LAT, e), min(MAX_LON, n))
+        return (max(MIN_LON, w), max(MIN_LAT, s), min(MAX_LON, e), min(MAX_LAT, n))
 
     @property
     def center(self):
