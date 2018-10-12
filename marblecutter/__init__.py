@@ -247,7 +247,16 @@ def read_window(src, bounds, target_shape, recipes=None):
         and not any([MaskFlags.alpha in flags for flags in src.mask_flag_enums])
     ):
         # prefer the mask if available
-        src_nodata = None
+
+        # per https://github.com/mapbox/rasterio/blob/455b4567569e48d239630df6e3562820bdb4b930/rasterio/_warp.pyx#L730
+        # there's no way to clear the nodata value; use values out of range
+        # for the given dtype
+
+        if np.issubdtype(src.meta["dtype"], np.floating):
+            src_nodata = np.finfo(src.meta["dtype"]).max + 1
+        else:
+            src_nodata = np.iinfo(src.meta["dtype"]).max + 1
+
         add_alpha = True
 
     w, s, e, n = bounds.bounds
