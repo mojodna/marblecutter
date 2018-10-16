@@ -72,6 +72,7 @@ class PostGISCatalog(Catalog):
                  coalesce(recipes, '{{}}'::jsonb) recipes,
                  acquired_at,
                  priority,
+                 ST_Intersection(mask, bbox.geom) mask,
                  ST_Multi(footprints.geom) geom,
                  filename,
                  min_zoom,
@@ -96,6 +97,7 @@ class PostGISCatalog(Catalog):
                   THEN ST_AsGeoJSON(geom)
                   ELSE 'null'
               END geom,
+              ST_AsGeoJSON(mask) mask,
               filename,
               min_zoom,
               max_zoom
@@ -131,8 +133,9 @@ class PostGISCatalog(Catalog):
 
                 for record in cur:
                     yield Source(
-                        *record[:-4],
-                        geom=json.loads(record[-4]),
+                        *record[:-5],
+                        geom=json.loads(record[-5]),
+                        mask=json.loads(record[-4]),
                         filename=record[-3],
                         min_zoom=record[-2],
                         max_zoom=record[-1]
@@ -171,6 +174,7 @@ class PostGISCatalog(Catalog):
                   ARRAY[coalesce(recipes, '{{}}'::jsonb)] recipes,
                   ARRAY[acquired_at] acquisition_dates,
                   ARRAY[priority] priorities,
+                  ARRAY[ST_Intersection(mask, bbox.geom)] masks,
                   ARRAY[ST_Area(ST_Intersection(bbox.geom, footprints.geom)) /
                     ST_Area(bbox.geom)] coverages,
                   ARRAY[ST_Multi(footprints.geom)] geometries,
@@ -214,6 +218,7 @@ class PostGISCatalog(Catalog):
                   sources.acquisition_dates || footprints.acquired_at
                     acquisition_dates,
                   sources.priorities || footprints.priority priorities,
+                  sources.masks || footprints.mask masks,
                   sources.coverages || ST_Area(
                     ST_Intersection(sources.uncovered, footprints.geom)) /
                     ST_Area(bbox.geom) coverages,
@@ -263,6 +268,7 @@ class PostGISCatalog(Catalog):
                   unnest(acquisition_dates) acquired_at,
                   unnest(priorities) priority,
                   unnest(coverages) coverage,
+                  unnest(masks) mask,
                   unnest(geometries) geom
                 FROM candidates
             )
@@ -280,7 +286,11 @@ class PostGISCatalog(Catalog):
               CASE WHEN {include_geometries}
                   THEN ST_AsGeoJSON(geom)
                   ELSE 'null'
-              END geom
+              END geom,
+              CASE WHEN ST_IsEmpty(mask)
+                THEN 'null'
+                ELSE coalesce(ST_AsGeoJSON(mask), 'null')
+              END mask
             FROM candidate_rows
         """.format(
             table=self.table,
@@ -311,7 +321,11 @@ class PostGISCatalog(Catalog):
                 )
 
                 for record in cur:
-                    yield Source(*record[:-1], geom=json.loads(record[-1]))
+                    yield Source(
+                        *record[:-2],
+                        geom=json.loads(record[-2]),
+                        mask=json.loads(record[-1])
+                    )
         except Exception as e:
             self._log.error(e)
         finally:

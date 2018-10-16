@@ -14,9 +14,10 @@ from rasterio import transform, warp, windows
 from rasterio._err import CPLE_OutOfMemoryError
 from rasterio.crs import CRS
 from rasterio.enums import ColorInterp, MaskFlags
-from rasterio.transform import Affine
+from rasterio.features import geometry_mask
+from rasterio.transform import Affine, from_bounds
 from rasterio.vrt import WarpedVRT
-from rasterio.warp import Resampling
+from rasterio.warp import Resampling, transform_geom
 
 from . import mosaic
 from .stats import Timer
@@ -279,17 +280,26 @@ def read_window(src, bounds, target_shape, source):
 
         data = vrt.read(out_shape=(vrt.count,) + target_shape, window=dst_window)
 
+        mask = np.ma.nomask
+        if source.mask:
+            with rasterio.Env(OGR_ENABLE_PARTIAL_REPROJECTION=True):
+                geom_mask = transform_geom(WGS84_CRS, bounds.crs, source.mask)
+
+            mask_transform = from_bounds(*bounds.bounds, *target_shape)
+            mask = geometry_mask([geom_mask], target_shape, transform=mask_transform)
+
         if any([ColorInterp.alpha in vrt.colorinterp]):
             alpha_idx = vrt.colorinterp.index(ColorInterp.alpha)
-            mask = [~data[alpha_idx]] * (vrt.count - 1)
+            mask = [~data[alpha_idx] | mask] * (vrt.count - 1)
             bands = [data[i] for i in range(0, vrt.count) if i != alpha_idx]
             data = np.ma.masked_array(bands, mask=mask)
         else:
             # mask with NODATA values
             if src_nodata is not None and vrt.nodata is not None:
                 data = _mask(data, vrt.nodata)
+                data.mask = data.mask | mask
             else:
-                data = np.ma.masked_array(data, mask=np.ma.nomask)
+                data = np.ma.masked_array(data, mask=mask)
 
     return PixelCollection(data, bounds)
 

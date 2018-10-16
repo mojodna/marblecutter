@@ -21,6 +21,7 @@ Source = namedtuple(
         "priority",
         "coverage",
         "geom",
+        "mask",
         "filename",
         "min_zoom",
         "max_zoom",
