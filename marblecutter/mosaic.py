@@ -62,18 +62,11 @@ def composite(sources, bounds, shape, target_crs, expand):
                 # otherwise), since it won't see this source as paletted
                 source.recipes["resample"] = source.recipes.get("resample", "mode")
 
-            # propagate nodata mappings from meta (since read_window doesn't
-            # have access to source.meta)
-            source.recipes["nodata"] = source.recipes.get(
-                "nodata", source.meta.get("nodata")
-            )
-
             # read a window from the source data
             # TODO ask for a buffer here, get back an updated bounding box
             # reflecting it
             try:
-                # TODO pass source as the last arg
-                window_data = read_window(src, canvas_bounds, shape, source.recipes)
+                window_data = read_window(src, canvas_bounds, shape, source)
             except Exception as e:
                 LOG.exception("Error reading %s: %s", source.url, e)
                 return

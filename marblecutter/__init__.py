@@ -147,10 +147,7 @@ def get_zoom(resolution, op=round):
     return int(op(math.log((2 * math.pi * 6378137) / (resolution * 256)) / math.log(2)))
 
 
-def read_window(src, bounds, target_shape, recipes=None):
-    if recipes is None:
-        recipes = {}
-
+def read_window(src, bounds, target_shape, source):
     source_resolution = get_resolution_in_meters(
         Bounds(src.bounds, src.crs), (src.height, src.width)
     )
@@ -167,7 +164,7 @@ def read_window(src, bounds, target_shape, recipes=None):
     # CRSes in use.
 
     if (
-        "dem" in recipes
+        "dem" in source.recipes
         and bounds.crs == WEB_MERCATOR_CRS
         and (
             target_resolution[0] > source_resolution[0]
@@ -231,15 +228,13 @@ def read_window(src, bounds, target_shape, recipes=None):
     # NODATA values are resampled using something other than nearest neighbor.
 
     if any([ColorInterp.palette in src.colorinterp]):
-        resampling = Resampling[recipes.get("resample", "mode")]
+        resampling = Resampling[source.recipes.get("resample", "mode")]
     else:
-        resampling = Resampling[recipes.get("resample", "bilinear")]
+        resampling = Resampling[source.recipes.get("resample", "bilinear")]
 
-    src_nodata = src.nodata or _nodata(src.meta["dtype"])
-
-    if "nodata" in recipes:
-        src_nodata = recipes["nodata"]
-
+    src_nodata = source.recipes.get(
+        "nodata", source.meta.get("nodata", src.nodata or _nodata(src.meta["dtype"]))
+    )
     add_alpha = False
 
     if (
