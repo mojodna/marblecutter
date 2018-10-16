@@ -246,7 +246,9 @@ def read_window(src, bounds, target_shape, source):
         # per https://github.com/mapbox/rasterio/blob/455b4567569e48d239630df6e3562820bdb4b930/rasterio/_warp.pyx#L730
         # there's no way to clear the nodata value; use values out of range
         # for the given dtype
+        src_nodata = False
 
+    if not src_nodata:
         if np.issubdtype(src.meta["dtype"], np.floating):
             src_nodata = np.finfo(src.meta["dtype"]).max + 1
         else:
