@@ -162,6 +162,7 @@ class PostGISCatalog(Catalog):
               SELECT * FROM (
                 SELECT
                   1 iterations,
+                  ARRAY[source || ' - ' || url] ids,
                   ARRAY[url] urls,
                   ARRAY[source] sources,
                   ARRAY[resolution] resolutions,
@@ -201,6 +202,7 @@ class PostGISCatalog(Catalog):
               SELECT * FROM (
                 SELECT
                   sources.iterations + 1,
+                  sources.ids || ARRAY[source || ' - ' || url] ids,
                   sources.urls || url urls,
                   sources.sources || source sources,
                   sources.resolutions || resolution resolutions,
@@ -223,7 +225,7 @@ class PostGISCatalog(Catalog):
                 -- footprints
                 JOIN sources ON ST_Intersects(
                     footprints.geom, sources.uncovered)
-                WHERE NOT (footprints.url = ANY(sources.urls))
+                WHERE NOT ((footprints.source || ' - ' || footprints.url) = ANY(sources.ids))
                   AND %(zoom)s BETWEEN min_zoom AND max_zoom
                   AND footprints.enabled = true
                 ORDER BY
