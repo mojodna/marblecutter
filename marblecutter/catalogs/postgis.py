@@ -176,7 +176,7 @@ class PostGISCatalog(Catalog):
                   ST_Multi(footprints.geom) geom,
                   ST_Difference(bbox.geom, footprints.geom) uncovered
                 FROM date_range, {table} footprints
-                JOIN bbox ON footprints.geom && bbox.geom
+                JOIN bbox ON ST_Intersects(footprints.geom, bbox.geom)
                 WHERE %(zoom)s BETWEEN min_zoom AND max_zoom
                   AND footprints.enabled = true
                 ORDER BY
