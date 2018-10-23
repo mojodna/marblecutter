@@ -278,7 +278,11 @@ def read_window(src, bounds, target_shape, source):
     ) as vrt:
         dst_window = vrt.window(*bounds.bounds)
 
-        data = vrt.read(out_shape=(vrt.count,) + target_shape, window=dst_window)
+        data = vrt.read(
+            out_shape=(vrt.count,) + target_shape, window=dst_window
+        ).astype(
+            np.dtype(src.meta["dtype"])
+        )
 
         mask = np.ma.nomask
         if source.mask:
