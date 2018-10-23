@@ -278,11 +278,7 @@ def read_window(src, bounds, target_shape, source):
     ) as vrt:
         dst_window = vrt.window(*bounds.bounds)
 
-        data = vrt.read(
-            out_shape=(vrt.count,) + target_shape, window=dst_window
-        ).astype(
-            np.dtype(src.meta["dtype"])
-        )
+        data = vrt.read(out_shape=(vrt.count,) + target_shape, window=dst_window)
 
         mask = np.ma.nomask
         if source.mask:
@@ -307,7 +303,7 @@ def read_window(src, bounds, target_shape, source):
             else:
                 data = np.ma.masked_array(data, mask=mask)
 
-    return PixelCollection(data, bounds)
+    return PixelCollection(data.astype(np.dtype(src.meta["dtype"])), bounds)
 
 
 def render(
