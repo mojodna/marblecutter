@@ -266,7 +266,7 @@ def postprocess(windows):
                 canvas_data = np.ma.zeros(
                     (3,) + pixels.data.shape[1:],
                     dtype=pixels.data.dtype,
-                    fill_value=_nodata(np.int16),
+                    fill_value=_nodata(pixels.data.dtype),
                 )
                 canvas_data.mask = True
 
