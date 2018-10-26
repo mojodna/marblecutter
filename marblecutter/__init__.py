@@ -233,9 +233,7 @@ def read_window(src, bounds, target_shape, source):
     else:
         resampling = Resampling[source.recipes.get("resample", "bilinear")]
 
-    src_nodata = source.recipes.get(
-        "nodata", source.meta.get("nodata", src.nodata or _nodata(src.meta["dtype"]))
-    )
+    src_nodata = source.recipes.get("nodata", source.meta.get("nodata", src.nodata))
     add_alpha = False
 
     if (
@@ -243,7 +241,6 @@ def read_window(src, bounds, target_shape, source):
         and not any([MaskFlags.alpha in flags for flags in src.mask_flag_enums])
     ):
         # prefer the mask if available
-
         src_nodata = None
         add_alpha = True
 
