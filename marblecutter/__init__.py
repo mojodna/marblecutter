@@ -244,17 +244,7 @@ def read_window(src, bounds, target_shape, source):
     ):
         # prefer the mask if available
 
-        # per https://github.com/mapbox/rasterio/blob/455b4567569e48d239630df6e3562820bdb4b930/rasterio/_warp.pyx#L730
-        # there's no way to clear the nodata value; use values out of range
-        # for the given dtype
-        src_nodata = False
-
-    if not src_nodata:
-        if np.issubdtype(src.meta["dtype"], np.floating):
-            src_nodata = np.finfo(src.meta["dtype"]).max + 1
-        else:
-            src_nodata = np.iinfo(src.meta["dtype"]).max + 1
-
+        src_nodata = None
         add_alpha = True
 
     w, s, e, n = bounds.bounds
@@ -303,7 +293,7 @@ def read_window(src, bounds, target_shape, source):
             else:
                 data = np.ma.masked_array(data, mask=mask)
 
-    return PixelCollection(data.astype(np.dtype(src.meta["dtype"])), bounds)
+    return PixelCollection(data, bounds)
 
 
 def render(
