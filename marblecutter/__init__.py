@@ -275,7 +275,9 @@ def read_window(src, bounds, target_shape, source):
             mask_transform = from_bounds(
                 *bounds.bounds, height=target_shape[0], width=target_shape[1]
             )
-            mask = geometry_mask([geom_mask], target_shape, transform=mask_transform)
+            mask = geometry_mask(
+                [geom_mask], target_shape, transform=mask_transform, invert=True
+            )
 
         if any([ColorInterp.alpha in vrt.colorinterp]):
             alpha_idx = vrt.colorinterp.index(ColorInterp.alpha)
