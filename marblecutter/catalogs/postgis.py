@@ -144,7 +144,7 @@ class PostGISCatalog(Catalog):
                         max_zoom=record[-1]
                     )
         except Exception as e:
-            self._log.error(e)
+            self._log.exception(e)
         finally:
             self._pool.putconn(connection)
 
@@ -330,7 +330,7 @@ class PostGISCatalog(Catalog):
                         mask=json.loads(record[-1])
                     )
         except Exception as e:
-            self._log.error(e)
+            self._log.exception(e)
         finally:
             self._pool.putconn(connection)
 
