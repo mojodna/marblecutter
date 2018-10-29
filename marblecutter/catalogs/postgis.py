@@ -72,7 +72,7 @@ class PostGISCatalog(Catalog):
                  coalesce(recipes, '{{}}'::jsonb) recipes,
                  acquired_at,
                  priority,
-                 ST_Intersection(mask, bbox.geom) mask,
+                 ST_Multi(ST_Intersection(mask, bbox.geom)) mask,
                  ST_Multi(footprints.geom) geom,
                  filename,
                  min_zoom,
