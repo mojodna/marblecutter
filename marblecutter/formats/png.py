@@ -11,7 +11,8 @@ CONTENT_TYPE = "image/png"
 
 
 def PNG():
-    def _format(pixels, data_format):
+
+    def _format(pixels, data_format, sources):
         if not _isimage(data_format):
             raise Exception("Must be an image format")
 

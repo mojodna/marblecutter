@@ -12,7 +12,7 @@ CONTENT_TYPE = "image/jpeg"
 
 def JPEG():
 
-    def _format(pixels, data_format):
+    def _format(pixels, data_format, sources):
         if not _isimage(data_format):
             raise Exception("Must be an image format")
 

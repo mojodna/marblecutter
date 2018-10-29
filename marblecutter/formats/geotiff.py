@@ -15,7 +15,7 @@ LOG = logging.getLogger(__name__)
 
 def GeoTIFF(area_or_point="Area", blocksize=512, colormap=None):
 
-    def _format(pixels, data_format):
+    def _format(pixels, data_format, sources):
         data, (data_bounds, data_crs), _, _colormap = pixels
         if data_format is not "raw":
             raise Exception("raw data is required")
@@ -59,6 +59,10 @@ def GeoTIFF(area_or_point="Area", blocksize=512, colormap=None):
         with MemoryFile() as memfile:
             with memfile.open(**meta) as dataset:
                 dataset.update_tags(AREA_OR_POINT=area_or_point)
+                sources_tag = "\n".join(
+                    ["{} - {}".format(name, url) for (name, url) in sources]
+                )
+                dataset.update_tags(SOURCES=sources_tag)
                 dataset.write(data.filled())
 
                 if count == 1 and cm and len(list(cm.values())[0]) == 3:

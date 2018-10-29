@@ -14,24 +14,35 @@ import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
 
-CONTENT_TYPES = {
-    "png": "image/png",
-}
+CONTENT_TYPES = {"png": "image/png"}
 
 GREY_HILLS_RAMP = {
-    "red": [(0.0, 0.0, 0.0), (0.25, 0.0, 0.0), (180 / 255.0, 0.5, 0.5),
-            (1.0, 170 / 255.0, 170 / 255.0)],
-    "green": [(0.0, 0.0, 0.0), (0.25, 0.0, 0.0), (180 / 255.0, 0.5, 0.5),
-              (1.0, 170 / 255.0, 170 / 255.0)],
-    "blue": [(0.0, 0.0, 0.0), (0.25, 0.0, 0.0), (180 / 255.0, 0.5, 0.5),
-             (1.0, 170 / 255.0, 170 / 255.0)],
+    "red": [
+        (0.0, 0.0, 0.0),
+        (0.25, 0.0, 0.0),
+        (180 / 255.0, 0.5, 0.5),
+        (1.0, 170 / 255.0, 170 / 255.0),
+    ],
+    "green": [
+        (0.0, 0.0, 0.0),
+        (0.25, 0.0, 0.0),
+        (180 / 255.0, 0.5, 0.5),
+        (1.0, 170 / 255.0, 170 / 255.0),
+    ],
+    "blue": [
+        (0.0, 0.0, 0.0),
+        (0.25, 0.0, 0.0),
+        (180 / 255.0, 0.5, 0.5),
+        (1.0, 170 / 255.0, 170 / 255.0),
+    ],
 }
 
 GREY_HILLS = LinearSegmentedColormap("grey_hills", GREY_HILLS_RAMP)
 
 
 def ColorRamp(output_format="png", colormap=GREY_HILLS):
-    def _format(pixels, data_format):
+
+    def _format(pixels, data_format, sources):
         if data_format is not "raw":
             raise Exception("raw data is required")
 
@@ -40,12 +51,8 @@ def ColorRamp(output_format="png", colormap=GREY_HILLS):
 
         out = BytesIO()
         plt.imsave(
-            out,
-            pixels.data[0],
-            cmap=colormap,
-            vmin=0,
-            vmax=255,
-            format=output_format)
+            out, pixels.data[0], cmap=colormap, vmin=0, vmax=255, format=output_format
+        )
 
         return (CONTENT_TYPES[output_format], out.getvalue())
 

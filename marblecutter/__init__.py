@@ -349,7 +349,7 @@ def render(
         stats.append(("Post-process", t.elapsed))
 
     with Timer() as t:
-        (content_type, formatted) = format(pixels, data_format)
+        (content_type, formatted) = format(pixels, data_format, sources_used)
     stats.append(("Format", t.elapsed))
 
     headers = {
