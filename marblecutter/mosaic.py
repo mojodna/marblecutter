@@ -70,8 +70,7 @@ def composite(sources, bounds, shape, target_crs, expand):
             except Exception as e:
                 LOG.exception("Error reading %s: %s", source.url, e)
                 return (
-                    source,
-                    PixelCollection(None, window_data.bounds, source.band, colormap),
+                    source, PixelCollection(None, canvas_bounds, source.band, colormap)
                 )
 
             return (
