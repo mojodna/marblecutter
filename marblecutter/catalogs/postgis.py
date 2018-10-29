@@ -97,7 +97,10 @@ class PostGISCatalog(Catalog):
                   THEN ST_AsGeoJSON(geom)
                   ELSE 'null'
               END geom,
-              ST_AsGeoJSON(mask) mask,
+              CASE WHEN ST_IsEmpty(mask)
+                THEN 'null'
+                ELSE coalesce(ST_AsGeoJSON(mask), 'null')
+              END mask,
               filename,
               min_zoom,
               max_zoom
