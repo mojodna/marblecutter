@@ -182,7 +182,7 @@ class PostGISCatalog(Catalog):
                     ST_Area(bbox.geom)] coverages,
                   ARRAY[ST_Multi(footprints.geom)] geometries,
                   ST_Multi(footprints.geom) geom,
-                  ST_Difference(bbox.geom, footprints.geom) uncovered
+                  ST_Difference(bbox.geom, ST_Difference(footprints.geom, footprints.mask)) uncovered
                 FROM date_range, {table} footprints
                 JOIN bbox ON ST_Intersects(footprints.geom, bbox.geom)
                 WHERE %(zoom)s BETWEEN min_zoom AND max_zoom
