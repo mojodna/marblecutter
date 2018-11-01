@@ -355,7 +355,7 @@ def render(
     headers = {
         "Content-Type": content_type,
         "Server-Timing": [
-            'op{};desc="{}";dur={:0.2f}'.format(i, name, time)
+            'op{};desc="{}";dur={:0.2f}'.format(i, name, time * 1000)
             for (i, (name, time)) in enumerate(stats)
         ]
         + [
