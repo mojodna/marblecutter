@@ -113,13 +113,13 @@ class Transformation:
 
 def apply_latitude_adjustments(pixels):
     data, (bounds, crs), _ = pixels
-    (_, height, width) = data.shape
+    (_, height, _) = data.shape
 
     ys = np.interp(np.arange(height), [0, height - 1], [bounds[3], bounds[1]])
     xs = np.empty_like(ys)
     xs.fill(bounds[0])
 
-    longitudes, latitudes = warp.transform(crs, WGS84_CRS, xs, ys)
+    _, latitudes = warp.transform(crs, WGS84_CRS, xs, ys)
 
     factors = 1 / np.cos(np.radians(latitudes))
 
