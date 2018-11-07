@@ -327,7 +327,7 @@ def render(
 
     try:
         # attempt to fetch the next tee'd source
-        s.next()
+        next(s)
     except StopIteration:
         raise NoDataAvailable()
 
