@@ -5,6 +5,7 @@ from builtins import str
 import logging
 import math
 import unicodedata
+import itertools
 
 import numpy as np
 
@@ -321,10 +322,13 @@ def render(
             sources = catalog.get_sources(bounds, resolution_m)
         stats.append(("Get Sources", t.elapsed))
 
-    # TODO try to avoid materializing the iterator
-    sources = list(sources)
+    # clone sources to prevent materializing the iterator
+    sources, s = itertools.tee(sources or [])
 
-    if sources is None or len(sources) == 0:
+    try:
+        # attempt to fetch the next tee'd source
+        s.next()
+    except StopIteration:
         raise NoDataAvailable()
 
     with Timer() as t:
