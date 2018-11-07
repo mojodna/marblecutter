@@ -28,9 +28,9 @@ def Optimal():
             rgb_pixels = PixelCollection(
                 pixels.data[:, :, 0:3], pixels.bounds, pixels.band
             )
-            return JPEG_FORMAT(rgb_pixels, "RGB")
+            return JPEG_FORMAT(rgb_pixels, "RGB", sources)
         else:
             # partially transparent
-            return PNG_FORMAT(pixels, data_format)
+            return PNG_FORMAT(pixels, data_format, sources)
 
     return _format
