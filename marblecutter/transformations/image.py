@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import numpy as np
+from rasterio.plot import reshape_as_image
 
 from .. import PixelCollection
 from .utils import Transformation
@@ -21,10 +22,10 @@ class Image(Transformation):
             data *= np.iinfo(np.uint8).max
 
         if count == 4:
-            rgba = np.ma.transpose(data.astype(np.uint8), [1, 2, 0])
+            rgba = reshape_as_image(data.astype(np.uint8))
             return PixelCollection(rgba, pixels.bounds), "RGBA"
 
-        rgb = np.ma.transpose(data.astype(np.uint8), [1, 2, 0])
+        rgb = reshape_as_image(data.astype(np.uint8))
         if data.mask.any():
             a = np.logical_and.reduce(~data.mask).astype(np.uint8) * 255
         else:
