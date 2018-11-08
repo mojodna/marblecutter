@@ -10,7 +10,7 @@ from .. import _isimage
 CONTENT_TYPE = "image/png"
 
 
-def PNG():
+def PNG(paletted=False):
 
     def _format(pixels, data_format, sources):
         if not _isimage(data_format):
@@ -18,6 +18,10 @@ def PNG():
 
         out = BytesIO()
         im = Image.fromarray(pixels.data, data_format.upper())
+
+        if paletted:
+            im = im.convert("P", dither="NONE")
+
         im.save(out, "png")
 
         return (CONTENT_TYPE, out.getvalue())
