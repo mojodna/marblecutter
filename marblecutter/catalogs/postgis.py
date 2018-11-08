@@ -182,7 +182,11 @@ class PostGISCatalog(Catalog):
                     ST_Area(bbox.geom)] coverages,
                   ARRAY[ST_Multi(footprints.geom)] geometries,
                   ST_Multi(footprints.geom) geom,
-                  ST_Difference(bbox.geom, ST_Difference(footprints.geom, footprints.mask)) uncovered
+                  ST_Difference(
+                    bbox.geom,
+                    coalesce(
+                      ST_Difference(footprints.geom, footprints.mask),
+                      footprints.geom)) uncovered
                 FROM date_range, {table} footprints
                 JOIN bbox ON ST_Intersects(footprints.geom, bbox.geom)
                 WHERE %(zoom)s BETWEEN min_zoom AND max_zoom
@@ -223,11 +227,17 @@ class PostGISCatalog(Catalog):
                   sources.priorities || footprints.priority priorities,
                   sources.masks || footprints.mask masks,
                   sources.coverages || ST_Area(
-                    ST_Intersection(sources.uncovered, footprints.geom)) /
+                    ST_Intersection(
+                      sources.uncovered,
+                      coalesce(ST_Difference(footprints.geom, footprints.mask), footprints.geom))) /
                     ST_Area(bbox.geom) coverages,
                   sources.geometries || footprints.geom,
                   ST_Collect(sources.geom, footprints.geom) geom,
-                  ST_Difference(sources.uncovered, footprints.geom) uncovered
+                  ST_Difference(
+                    sources.uncovered,
+                    coalesce(
+                      ST_Difference(footprints.geom, footprints.mask),
+                      footprints.geom)) uncovered
                 FROM bbox, date_range, {table} footprints
                 -- use proper intersection to prevent voids from irregular
                 -- footprints
