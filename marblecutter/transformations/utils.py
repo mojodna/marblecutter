@@ -72,40 +72,7 @@ class Transformation:
         return bounds, tuple(shape), (left, bottom, right, top)
 
     def postprocess(self, pixels, data_format, offsets):
-        data, (bounds, data_crs), _, _ = pixels
-        data, (cropped_bounds, data_crs), _, _ = crop(pixels, data_format, offsets)
-
-        if self.collar > 0:
-            extent = get_extent(data_crs)
-
-            if data_format == "RGBA":
-                if np.isclose(bounds[0], extent[0]):
-                    # wrap left
-                    cols = data[:, :self.collar]
-                    data = np.hstack((cols, data))
-
-                if np.isclose(bounds[2], extent[2]):
-                    # wrap right
-                    cols = data[:, -self.collar:]
-                    data = np.hstack((data, cols))
-
-                if np.isclose(bounds[1], extent[1]):
-                    # repeat bottom
-                    rows = data[-self.collar:]
-                    data = np.vstack((data, rows))
-
-                if np.isclose(bounds[3], extent[3]):
-                    # repeat top
-                    rows = data[:self.collar]
-                    data = np.vstack((rows, data))
-            else:
-                raise Exception(
-                    "Unsupported format for collar postprocessing: {}".format(
-                        data_format
-                    )
-                )
-
-        return PixelCollection(data, Bounds(cropped_bounds, data_crs))
+        return pixels
 
     def transform(self, pixels):
         return pixels, "raw"
