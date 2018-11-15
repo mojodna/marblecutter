@@ -15,7 +15,7 @@ class Transformation:
     buffer = 0
 
     def __init__(self, collar=0):
-        self.collar = collar
+        self.collar = int(collar)
 
     def expand(self, bounds, shape):
         buffer = self.buffer
