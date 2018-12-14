@@ -15,7 +15,6 @@ setup(
     package_data={"marblecutter": ["static/images/*", "templates/*"]},
     install_requires=[
         "future",
-        "futures",
         "haversine",
         "mercantile",
         "numpy",
@@ -34,5 +33,7 @@ setup(
         "color_ramp": "matplotlib",
         "postgis": "psycopg2",
         "web": ["flask", "flask-cors"],
+        # TODO eventually move to environment markers, per https://hynek.me/articles/conditional-python-dependencies/
+        ":python_version<'3.0'": ["futures"],
     },
 )
