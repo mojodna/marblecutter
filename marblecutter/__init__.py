@@ -237,7 +237,6 @@ def read_window(src, bounds, target_shape, source):
         resampling = Resampling[source.recipes.get("resample", "bilinear")]
 
     src_nodata = source.recipes.get("nodata", source.meta.get("nodata", src.nodata))
-    add_alpha = False
 
     if (
         any([MaskFlags.per_dataset in flags for flags in src.mask_flag_enums])
@@ -245,7 +244,6 @@ def read_window(src, bounds, target_shape, source):
     ):
         # prefer the mask if available
         src_nodata = None
-        add_alpha = True
 
     w, s, e, n = bounds.bounds
     vrt_transform = (
@@ -264,7 +262,7 @@ def read_window(src, bounds, target_shape, source):
         height=vrt_height,
         transform=vrt_transform,
         resampling=resampling,
-        add_alpha=add_alpha,
+        add_alpha=True,
     ) as vrt:
         dst_window = vrt.window(*bounds.bounds)
 
