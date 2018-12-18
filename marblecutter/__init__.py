@@ -341,7 +341,7 @@ def render(
         )
     stats.append(("Composite", t.elapsed))
 
-    if pixels.data is None:
+    if pixels is None or pixels.data is None:
         raise NoDataAvailable()
 
     data_format = "raw"
