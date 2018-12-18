@@ -78,9 +78,6 @@ $.getJSON("{{ tilejson_url }}", function(data) {
 
   L.tileLayer(provider, options).addTo(map);
 
-
-  L.tileLayer(provider, options).addTo(map);
-
   var context = getParameterByName("context");
 
   if (context != null && context !== "false") {
