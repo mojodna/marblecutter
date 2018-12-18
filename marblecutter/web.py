@@ -4,7 +4,7 @@ from __future__ import absolute_import
 import logging
 import types
 
-from flask import Flask, jsonify, request
+from flask import Blueprint, Markup, jsonify, request, render_template
 from flask import url_for as _url_for
 from flask_cors import CORS
 
@@ -12,9 +12,8 @@ from . import InvalidTileRequest, NoCatalogAvailable, NoDataAvailable
 
 LOG = logging.getLogger(__name__)
 
-app = Flask("marblecutter")
-app.url_map.strict_slashes = False
-CORS(app, send_wildcard=True)
+bp = Blueprint("marblecutter", __name__)
+CORS(bp, send_wildcard=True)
 
 
 def make_prefix():
@@ -42,31 +41,31 @@ def route(self, rule, **options):
     return decorator
 
 
-app.route = types.MethodType(route, app)
+bp.route = types.MethodType(route, bp)
 
 
-@app.route("/favicon.ico")
+@bp.route("/favicon.ico")
 def favicon():
     return "NOK"
 
 
-@app.errorhandler(InvalidTileRequest)
+@bp.app_errorhandler(InvalidTileRequest)
 def handle_invalid_tile_request(error):
     return jsonify(error.to_dict()), 204
 
 
-@app.errorhandler(NoDataAvailable)
+@bp.app_errorhandler(NoDataAvailable)
 def handle_no_data_available(error):
     return "", 204
 
 
-@app.errorhandler(NoCatalogAvailable)
+@bp.app_errorhandler(NoCatalogAvailable)
 def handle_no_catalog_available(error):
     return "", 404
 
 
-@app.errorhandler(IOError)
+@bp.app_errorhandler(IOError)
 def handle_ioerror(error):
-    LOG.warn(error)
+    LOG.exception(error)
 
     return "", 500
