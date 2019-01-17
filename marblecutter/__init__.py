@@ -66,6 +66,10 @@ class NoDataAvailable(Exception):
     pass
 
 
+class DataReadFailed(Exception):
+    pass
+
+
 def _isimage(data_format):
     return data_format.upper() in ["RGB", "RGBA"]
 
