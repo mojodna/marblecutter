@@ -70,7 +70,7 @@ def composite(sources, bounds, shape, target_crs, expand):
                 from . import DataReadFailed
 
                 raise DataReadFailed(
-                    "Error reading {}: {}".format(source.url, e.message)
+                    "Error reading {}: {}".format(source.url, str(e))
                 )
 
             return (
