@@ -6,14 +6,12 @@ import types
 
 from flask import Blueprint, Markup, jsonify, request, render_template
 from flask import url_for as _url_for
-from flask_cors import CORS
 
 from . import InvalidTileRequest, NoCatalogAvailable, NoDataAvailable
 
 LOG = logging.getLogger(__name__)
 
 bp = Blueprint("marblecutter", __name__)
-CORS(bp, send_wildcard=True)
 
 
 def make_prefix():

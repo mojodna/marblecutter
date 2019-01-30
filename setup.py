@@ -28,7 +28,7 @@ setup(
     extras_require={
         "color_ramp": "matplotlib",
         "postgis": "psycopg2",
-        "web": ["flask", "flask-cors"],
+        "web": ["flask"],
         # TODO eventually move to environment markers, per https://hynek.me/articles/conditional-python-dependencies/
         ":python_version<'3.0'": ["futures"],
     },
