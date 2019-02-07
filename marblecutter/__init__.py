@@ -250,7 +250,10 @@ def read_window(src, bounds, target_shape, source):
         # prefer the mask if available
         src_nodata = None
 
-    if any([MaskFlags.alpha in flags for flags in src.mask_flag_enums]):
+    if (
+        any([MaskFlags.alpha in flags for flags in src.mask_flag_enums])
+        or ColorInterp.alpha in src.colorinterp
+    ):
         add_alpha = False
 
     w, s, e, n = bounds.bounds
