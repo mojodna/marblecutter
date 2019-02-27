@@ -293,7 +293,9 @@ def read_window(src, bounds, target_shape, source):
 
         if any([ColorInterp.alpha in vrt.colorinterp]):
             alpha_idx = vrt.colorinterp.index(ColorInterp.alpha)
-            mask = [~data[alpha_idx] | mask] * (vrt.count - 1)
+            # TODO this coerces the alpha channel to a boolean mask; it should
+            # eventually be used *as alpha*, setting transparency
+            mask = [~data[alpha_idx].astype(np.bool) | mask] * (vrt.count - 1)
             bands = [data[i] for i in range(0, vrt.count) if i != alpha_idx]
             data = np.ma.masked_array(bands, mask=mask)
         else:
