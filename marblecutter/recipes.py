@@ -21,8 +21,12 @@ LOG = logging.getLogger(__name__)
 def apply(recipes, pixels, expand, source=None):
     data = pixels.data
     colormap = pixels.colormap
-    dtype_min = np.iinfo(data.dtype).min
-    dtype_max = np.iinfo(data.dtype).max
+    if np.issubdtype(data.dtype, np.floating):
+        dtype_min = np.finfo(data.dtype).min
+        dtype_max = np.finfo(data.dtype).max
+    else:
+        dtype_min = np.iinfo(data.dtype).min
+        dtype_max = np.iinfo(data.dtype).max
 
     if data.shape[0] == 1:
         if expand and colormap:
