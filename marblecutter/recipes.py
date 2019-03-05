@@ -96,7 +96,9 @@ def apply(recipes, pixels, expand, source=None):
         LOG.info("Applying imagery recipe")
 
         if "rgb_bands" in recipes:
-            data = np.ma.array([data[i - 1] for i in recipes["rgb_bands"]])
+            data = np.ma.array(
+                [data[i - 1] for i in recipes["rgb_bands"] if data.shape[0] >= i]
+            )
         elif data.shape[0] > 3:
             # alpha(?) band (and beyond) present; drop it (them)
             # TODO use band 4 as an alpha channel if colorinterp == alpha instead
