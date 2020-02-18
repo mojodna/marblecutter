@@ -17,6 +17,7 @@ setup(
         "future",
         "haversine",
         "mercantile",
+        "numexpr",
         "numpy",
         "Pillow",
         "rasterio[s3]>=1.0.9",
