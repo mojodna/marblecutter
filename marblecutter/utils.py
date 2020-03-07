@@ -25,10 +25,11 @@ Source = namedtuple(
         "filename",
         "min_zoom",
         "max_zoom",
+        "expr"
     ],
 )
 Source.__new__.__defaults__ = (
-    {}, {}, {}, None, None, None, None, None, None, None, None, None
+    {}, {}, {}, None, None, None, None, None, None, None, None, None, None
 )
 
 

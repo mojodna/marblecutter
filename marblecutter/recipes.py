@@ -7,6 +7,8 @@ from builtins import range
 from functools import reduce
 
 import numpy as np
+import numexpr as ne
+import re
 
 from rio_pansharpen.methods import Brovey
 from rio_tiler import utils
@@ -95,10 +97,30 @@ def apply(recipes, pixels, expand, source=None):
     if "imagery" in recipes:
         LOG.info("Applying imagery recipe")
 
+
         if "rgb_bands" in recipes:
             data = np.ma.array(
                 [data[i - 1] for i in recipes["rgb_bands"] if data.shape[0] >= i]
             )
+        elif "expr" in recipes:
+            num_bands = data.shape[0]
+            expressions = recipes["expr"].split(",")
+            band_names = ["b" + str(i) for i in range(1, num_bands + 1)]
+            local_dict = dict(zip(band_names, data.data))
+
+            old_mask = data.mask
+            old_mask_shape = old_mask.shape
+            new_mask_shape = (len(expressions), old_mask_shape[1], old_mask_shape[2])
+            new_mask = np.ndarray(new_mask_shape, dtype=np.bool)
+            for (expression_index, expression) in enumerate(expressions):
+                # identify bands used in expression
+                band_indexes = [int(i) - 1 for i in re.findall(r"(?<=b)(\d{1,2})", expression)]
+                old_band_masks = [old_mask[i] for i in band_indexes]
+                new_mask[expression_index] = np.logical_and.reduce(old_band_masks)
+            data = np.ma.array([
+                np.nan_to_num(ne.evaluate(expression.strip(), local_dict=local_dict))
+                for expression in expressions
+            ], mask=new_mask)
         elif data.shape[0] > 3:
             # alpha(?) band (and beyond) present; drop it (them)
             # TODO use band 4 as an alpha channel if colorinterp == alpha instead
